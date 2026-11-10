@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sync360 Payments — accounts, transfers, terminals, expenses and approvals in one dashboard." />
+    <title>Sync360 Payments</title>
+    <!-- Paint the app background immediately so there is never a white flash before React loads. -->
+    <style>
+      html, body { margin: 0; background: #F7F9F5; }
+      .boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .boot span { width: 34px; height: 34px; border-radius: 999px; border: 3px solid #529661; border-top-color: transparent; animation: boot-spin .8s linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div class="boot" role="status" aria-label="Loading"><span></span></div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

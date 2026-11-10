@@ -1,0 +1,22 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# The app calls the API on its own origin (/api/v1/...). In development Vite proxies
+# that to Sync360; on Netlify this rule does the same, so the browser never needs CORS.
+# Point it at https://api.sync360.africa for production.
+[[redirects]]
+  from = "/api/v1/*"
+  to = "https://staging-api.sync360.africa/api/v1/:splat"
+  status = 200
+  force = true
+
+# Single-page app: every other path serves index.html so React Router can handle it
+# (otherwise refreshing /shipments or /settings/payments would 404).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
