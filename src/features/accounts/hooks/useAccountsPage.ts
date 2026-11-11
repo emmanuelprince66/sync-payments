@@ -11,6 +11,9 @@ import { useBusinessCurrency } from '@/hooks/useCurrencySymbol'
 import { useDisclosure } from '@/hooks/useDisclosure'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { paths } from '@/routes/paths'
+import { RULES_SECTIONS, type RulesSection } from '../rules-sections'
+
+const sectionFrom = (value: string | null): RulesSection => RULES_SECTIONS.find(item => item.value === value)?.value ?? 'pin'
 
 const COLORS = ['bg-primary', 'bg-secondary', 'bg-[#356C82]', 'bg-[#9A6A43]']
 const SPLIT_COLORS = ['bg-secondary', 'bg-[#91C99D]', 'bg-[#6FA0B5]', 'bg-[#C49168]']
@@ -37,6 +40,8 @@ export function useAccountsPage() {
   const payoutBank = useDisclosure()
   const fund = useDisclosure()
   const [rulesOpen, setRulesOpen] = useState(() => params.get('action') === 'rules')
+  // Which part of Account rules opens: the PIN, or the expense rules / approval rights Expenses links to.
+  const [rulesSection, setRulesSection] = useState<RulesSection>(() => sectionFrom(params.get('section')))
   const [kycPrompt, setKycPrompt] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
@@ -45,7 +50,8 @@ export function useAccountsPage() {
     if (params.get('action') !== 'rules') return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the URL is the trigger
     setRulesOpen(true)
-    setParams(current => { current.delete('action'); return current }, { replace: true })
+    setRulesSection(sectionFrom(params.get('section')))
+    setParams(current => { current.delete('action'); current.delete('section'); return current }, { replace: true })
   }, [params, setParams])
 
   const account = useWalletAccount({ page: 1, search: '', filter: 'ALL', startDate: '', endDate: '', limit: STATEMENT_ROWS })
@@ -118,7 +124,7 @@ export function useAccountsPage() {
     subAccount,
     payoutBank,
     fund,
-    rules: { open: rulesOpen, show: () => setRulesOpen(true), close: () => setRulesOpen(false) },
+    rules: { open: rulesOpen, section: rulesSection, setSection: setRulesSection, show: () => { setRulesSection('pin'); setRulesOpen(true) }, close: () => setRulesOpen(false) },
     kycPrompt: { open: kycPrompt, close: () => setKycPrompt(false), verify: () => navigate(paths.kyc) },
   }
 }

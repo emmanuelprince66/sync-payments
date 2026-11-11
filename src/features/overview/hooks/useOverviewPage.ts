@@ -10,8 +10,10 @@ import { lastDays, useDateRangeFilter } from '@/hooks/useDateRangeFilter'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { greeting, isoDay } from '@/lib/format'
 import { paths } from '@/routes/paths'
+import { useDisclosure } from '@/hooks/useDisclosure'
 import { useAuthStore } from '@/stores/auth-store'
-import { SAMPLE_NEXT_PAYOUT, SAMPLE_RECONCILIATION } from '../sample'
+// Reconciliation is switched off for now; restore with the card in OverviewPage.
+// import { SAMPLE_RECONCILIATION } from '../sample'
 
 /** Enough rows to total a period from one request; the API has no daily series. */
 const FLOW_LIMIT = 200
@@ -54,6 +56,7 @@ export function useOverviewPage() {
   const money = useFormatMoney()
   const { symbol } = useBusinessCurrency()
   const details = useTransactionDetails()
+  const transfer = useDisclosure()
   const account = useWalletAccount({ page: 1, search: '', filter: 'ALL', startDate: range.startDate, endDate: range.endDate, limit: FLOW_LIMIT })
   const sales = useSalesSummary(range.startDate, range.endDate)
   const data = account.data
@@ -69,6 +72,7 @@ export function useOverviewPage() {
     const yesterdayInflow = sumBy(rows, trx => trx.type === 'CREDIT' && settled(trx) && dayOf(trx) === yesterday)
     const pending = rows.filter(trx => trx.status === 'PENDING')
     const successful = rows.filter(trx => trx.status === 'SUCCESS').length
+    const transfers = rows.filter(trx => trx.type === 'DEBIT' && settled(trx))
     return {
       todayInflow: money(todayInflow),
       todayNote: changeNote(todayInflow, yesterdayInflow),
@@ -76,6 +80,9 @@ export function useOverviewPage() {
       processingNote: `${pending.length} awaiting settlement`,
       count: (data?.total ?? 0).toLocaleString(),
       countNote: rows.length ? `${((successful / rows.length) * 100).toFixed(1)}% successful` : 'In selected period',
+      // A payout is a transfer out of the wallet: the period's settled debits.
+      paidOut: money(transfers.reduce((total, trx) => total + trx.amount, 0)),
+      paidOutNote: `${transfers.length} transfer${transfers.length === 1 ? '' : 's'} in this period`,
     }
   }, [rows, data, money])
 
@@ -101,16 +108,17 @@ export function useOverviewPage() {
     axisTick: (value: number) => (value >= 1000 ? `${symbol}${Math.round(value / 1000)}k` : `${symbol}${value}`),
     tooltipValue: (value: number) => money(value),
     sales: sales.data && sales.data.revenue > 0 ? { revenue: money(sales.data.revenue), change: `${sales.data.revenueChange >= 0 ? '+' : ''}${sales.data.revenueChange}%` } : null,
-    sample: { nextPayout: money(SAMPLE_NEXT_PAYOUT.amount), nextPayoutNote: SAMPLE_NEXT_PAYOUT.note, reconciliation: SAMPLE_RECONCILIATION },
+    // sample: { reconciliation: SAMPLE_RECONCILIATION },
     recent: rows.slice(0, RECENT_ROWS),
     details,
     statement: () => {
       if (!rows.length) { toast.info('There are no transactions in this period yet.'); return }
       exportTransactionsCsv(rows, 'statement')
     },
-    makePayout: () => navigate(paths.payments),
+    /** "Make payout" is a transfer out of the wallet (sink's Transfer Funds), opened in place. */
+    transfer,
     goToTransactions: () => navigate(paths.transactions),
-    goToReconciliation: () => navigate(paths.reconciliation),
+    // goToReconciliation: () => navigate(paths.reconciliation),
   }
 }
 

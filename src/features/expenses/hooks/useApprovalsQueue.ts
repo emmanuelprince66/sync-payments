@@ -1,57 +1,67 @@
 import { useMemo, useState } from 'react'
-import { useExpensePermissions, useExpenses, useExpenseTransfers } from '@/api/expenses'
+import { useExpensePermissions, useExpenseTransfers } from '@/api/expenses'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { useAuthStore } from '@/stores/auth-store'
-import { useSampleApprovalsStore } from '@/stores/sample-approvals-store'
-import { fromExpense, fromSample, fromTransfer } from '../approval-items'
+import { fromTransfer } from '../approval-items'
 import { useApprovalDecision } from './useApprovalDecision'
 
+/** sink's ExpenseApprovals filters, in its order. 'ALL' is a value the list endpoint understands. */
 export const APPROVAL_FILTERS = [
   { value: 'ALL', label: 'All' },
   { value: 'PENDING_APPROVAL', label: 'Needs approval' },
   { value: 'PENDING_OWNER_APPROVAL', label: 'Awaiting owner' },
+  { value: 'SUCCESS', label: 'Paid' },
   { value: 'REJECTED', label: 'Rejected' },
+  { value: 'FAILED', label: 'Failed' },
 ] as const
 
 export type ApprovalFilter = (typeof APPROVAL_FILTERS)[number]['value']
 
-const ROLE_TITLES: Record<string, string> = { OWNER: 'Business owner', ACCOUNTANT: 'Accountant', 'ADMIN-ATTENDANT': 'Administrator' }
-
-/** Real expense and transfer approvals plus the session's sample items, one queue. */
+/**
+ * The payout approval queue (sink: expenses/approvals). Opens on everything rather than the pending
+ * slice, so "nothing waiting" and "nothing at all" don't look the same; "Needs approval" is one click away.
+ */
 export function useApprovalsQueue() {
-  const user = useAuthStore(state => state.user)
+  const userId = useAuthStore(state => String(state.user?.id ?? ''))
   const permissions = useExpensePermissions()
   const money = useFormatMoney()
   const decision = useApprovalDecision()
   const [filter, setFilter] = useState<ApprovalFilter>('ALL')
+  const [searchInput, setSearchInput] = useState('')
+  const search = useDebounce(searchInput, 500)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
-  const status = filter === 'ALL' ? '' : filter
   const allowed = permissions.canApprove || permissions.canTransfer
-  const expenses = useExpenses({ page, search: '', category: '', status, startDate: '', endDate: '' })
-  const transfers = useExpenseTransfers({ page, status, search: '' }, allowed)
-  const sample = useSampleApprovalsStore(state => state.items)
+  const transfers = useExpenseTransfers({ page, status: filter, search, limit: pageSize }, allowed)
+  const items = useMemo(() => (transfers.data?.rows ?? []).map(row => fromTransfer(row, userId)), [transfers.data, userId])
 
-  const items = useMemo(() => {
-    const samples = sample.map(fromSample).filter(item => filter === 'ALL' || (filter === 'PENDING_APPROVAL' && item.status === 'Awaiting approval') || (filter === 'REJECTED' && item.status === 'Rejected'))
-    const live = [...(expenses.data?.rows ?? []).map(fromExpense), ...(transfers.data?.rows ?? []).map(row => fromTransfer(row, String(user?.id ?? ''), money))]
-    // Items needing a decision first; each list already comes newest first.
-    return [...samples, ...live].sort((a, b) => Number(b.canDecide) - Number(a.canDecide))
-  }, [expenses.data, transfers.data, sample, filter, user?.id, money])
-
-  const waiting = (expenses.data?.rows ?? []).filter(row => row.canApprove).length + (transfers.data?.rows ?? []).filter(row => row.canApprove).length + sample.filter(item => item.status === 'Pending').length
-
-  const firstName = user?.firstname || user?.name?.split(/\s+/)[0] || 'Your'
   return {
     allowed,
-    loading: (expenses.isLoading && !expenses.data) || (allowed && transfers.isLoading && !transfers.data),
+    canApprove: permissions.canApprove,
+    loading: transfers.isLoading && !transfers.data,
+    refreshing: transfers.isFetching && Boolean(transfers.data),
     items,
-    waiting,
+    total: transfers.data?.total ?? 0,
+    subtitle: permissions.canApprove
+      ? 'Payouts waiting on a decision, and everything already decided.'
+      : 'Where your requests got to. Someone with approval rights decides them.',
+    /** What this person may release, said once at the top rather than discovered request by request. */
+    capNote: permissions.canApprove && permissions.approvalCap !== null ? `You can approve up to ${money(permissions.approvalCap)}. Anything above that goes to the business owner.` : '',
+    emptyNote: filter === 'PENDING_APPROVAL' ? 'No payouts are waiting on a decision.' : 'No transfers match this filter.',
     filter,
     setFilter: (value: ApprovalFilter) => { setFilter(value); setPage(1) },
-    pagination: { page, pages: Math.max(expenses.data?.pages ?? 1, transfers.data?.pages ?? 1), setPage },
-    queueTitle: firstName === 'Your' ? 'Your approval queue' : `${firstName}’s approval queue`,
-    queueNote: `${(user?.role && ROLE_TITLES[user.role]) || 'Team member'} · ${permissions.approvalCap === null ? 'no personal approval limit' : `can approve payments up to ${money(permissions.approvalCap)}`}`,
+    searchInput,
+    setSearch: (value: string) => { setSearchInput(value); setPage(1) },
+    pagination: {
+      page,
+      pages: transfers.data?.pages ?? 1,
+      setPage,
+      pageSize,
+      setPageSize: (size: number) => { setPageSize(size); setPage(1) },
+    },
+    money,
     decision,
   }
 }

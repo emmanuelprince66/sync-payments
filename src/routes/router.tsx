@@ -6,8 +6,9 @@ import { GuestOnly, RequireAuth, RequireBusiness } from './guards'
 import { pages } from './pages'
 import { paths } from './paths'
 
-const { AuthPage, SelectBusinessPage, OverviewPage, TransactionsPage, BranchesPage, PaymentsPage, ExpensesPage, InvoicesPage, CreateInvoicePage, ReconciliationPage, PayoutsPage, TerminalsPage, AccountsPage, PayrollPage, CompliancePage, KycPage } = pages
+const { AuthPage, SelectBusinessPage, OverviewPage, TransactionsPage, BranchesPage, PaymentsPage, ExpensesPage, InvoicesPage, CreateInvoicePage, /* ReconciliationPage, (switched off for now) */ PayoutsPage, TerminalsPage, AccountsPage, PayrollPage, CompliancePage, KycPage } = pages
 const { CustomersPage, CustomerDetailPage, StorefrontPage, BnplPage } = pages
+const { InvoiceDetailPage } = pages
 
 export const router = createBrowserRouter([
   {
@@ -36,8 +37,10 @@ export const router = createBrowserRouter([
           { path: paths.expenses, element: <ExpensesPage/> },
           { path: paths.invoices, element: <InvoicesPage/> },
           { path: paths.invoiceNew, element: <CreateInvoicePage/> },
+          { path: paths.invoiceDetail, element: <InvoiceDetailPage/> },
           { path: paths.approvals, element: <Navigate to={paths.expenseApprovals} replace/> },
-          { path: paths.reconciliation, element: <ReconciliationPage/> },
+          // Reconciliation is switched off for now; restore with its nav item and page loader.
+          // { path: paths.reconciliation, element: <ReconciliationPage/> },
           { path: paths.payouts, element: <PayoutsPage/> },
           { path: paths.terminals, element: <TerminalsPage/> },
           { path: paths.accounts, element: <AccountsPage/> },

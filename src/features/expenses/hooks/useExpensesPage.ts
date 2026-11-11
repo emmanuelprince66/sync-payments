@@ -42,7 +42,6 @@ export function useExpensesPage() {
   const audit = useDisclosure()
   const filterModal = useDisclosure()
   const categoriesModal = useDisclosure()
-  const settingsModal = useDisclosure()
 
   const [searchInput, setSearchInput] = useState('')
   const search = useDebounce(searchInput, 500)
@@ -85,7 +84,8 @@ export function useExpensesPage() {
 
   const budgetRows = useMemo(() => (budgets.data ?? []).slice(0, 4).map(budget => {
     const used = categorySpend.data?.find(row => row.name === budget.categoryName)?.spent ?? 0
-    return { id: budget.id, label: budget.categoryName, amount: money(used), percent: budget.total ? Math.min(Math.round((used / budget.total) * 100), 100) : 0 }
+    const percent = budget.total ? Math.round((used / budget.total) * 100) : 0
+    return { id: budget.id, label: budget.categoryName, amount: `${money(used)} of ${money(budget.total)}`, percent: Math.min(percent, 100), over: percent >= 100 }
   }), [budgets.data, categorySpend.data, money])
 
   const pendingRow = stat.awaiting.find(row => row.canApprove) ?? null
@@ -116,7 +116,6 @@ export function useExpensesPage() {
     policy: settings.data
       ? `${settings.data.requireApprovalForAll ? 'Every transfer needs an approver.' : 'Transfers under your limits go straight out.'} ${Number(settings.data.maxPerTransaction) > 0 ? `Up to ${money(Number(settings.data.maxPerTransaction))} per transaction.` : 'No per-transaction limit.'}`
       : 'Loading your approval policy…',
-    settings: settings.data ?? null,
 
     inline: inline && {
       expense: inline,
@@ -162,8 +161,11 @@ export function useExpensesPage() {
     view: setViewing,
     closeView: () => setViewing(null),
     edit: (expense: Expense) => { setViewing(null); setEditing(expense) },
+    /** A pending logged expense is signed off with a PIN or rejected with a reason (sink: TransactionDetailsModal). */
+    review: (expense: Expense) => { setViewing(null); decision.open(fromExpense(expense)) },
     categoriesModal,
-    settingsModal,
+    /** Expense rules live in Settings (Accounts › Account rules), next to the transaction PIN. */
+    openRules: () => navigate(`${paths.accounts}?action=rules&section=expense-rules`),
 
     createInvoice: (expense: Expense) => navigate(paths.invoiceNew, { state: { draft: { client: '', amount: expense.amount, note: `Reimbursement for ${expense.name} · ${expense.reference}` } } }),
     exportCsv: () => {

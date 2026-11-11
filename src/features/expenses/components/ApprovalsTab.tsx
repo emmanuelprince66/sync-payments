@@ -1,89 +1,80 @@
-import { ChevronDown, ClipboardCheck, CreditCard, FileText, Lock, Send, UserCheck } from 'lucide-react'
-import { KitEmpty, KitFilterPills } from '@/components/ui/KitExtras'
-import { SampleDataBadge } from '@/components/ui/misc'
+import { createColumnHelper } from '@tanstack/react-table'
+import { ChevronRight, ClipboardCheck, Lock, ShieldCheck } from 'lucide-react'
+import { useMemo } from 'react'
+import { DataTable } from '@/components/ui/DataTable'
+import { KitEmpty, KitFilterPills, KitSearch, kitTableClass } from '@/components/ui/KitExtras'
 import { Pagination } from '@/components/ui/Pagination'
-import { ListSkeleton, Skeleton } from '@/components/ui/Skeleton'
-import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { cn } from '@/lib/cn'
-import type { ApprovalItem } from '../approval-items'
+import { transferStatus, type ApprovalItem } from '../approval-items'
 import { APPROVAL_FILTERS, useApprovalsQueue } from '../hooks/useApprovalsQueue'
 import { ApprovalDecisionModal } from './ApprovalDecisionModal'
 
-const STATUS_CLASS: Record<ApprovalItem['status'], string> = {
-  'Awaiting approval': 'bg-[#FFF6E4] text-[#A76700]',
-  Approved: 'bg-accent text-secondary',
-  Paid: 'bg-[#E7F1FC] text-[#1C6FA8]',
-  Processing: 'bg-[#E7F1FC] text-[#1C6FA8]',
-  Rejected: 'bg-[#FDEAEA] text-[#C72D34]',
-  Failed: 'bg-[#FDEAEA] text-[#C72D34]',
+const column = createColumnHelper<ApprovalItem>()
+
+export function TransferStatusChip({ status }: { status: string }) {
+  const meta = transferStatus(status)
+  return <span className={cn('whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-extrabold', meta.className)}>{meta.label}</span>
 }
 
-const SOURCE_ICON = { expense: CreditCard, transfer: Send, sample: FileText }
+const requestedOn = (item: ApprovalItem) => item.details.find(([label]) => label === 'Requested on')?.[1] ?? ''
 
-function ApprovalRow({ item, onOpen }: { item: ApprovalItem; onOpen: () => void }) {
-  const money = useFormatMoney()
-  const Icon = SOURCE_ICON[item.kind]
-  return <button type="button" onClick={onOpen} className="flex w-full flex-col gap-4 p-5 text-left transition hover:bg-[#F8FAF8] sm:flex-row sm:items-center">
-    <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-xl', item.kind === 'expense' ? 'bg-accent text-secondary' : 'bg-[#E7F1FC] text-[#1C6FA8]')}><Icon size={17}/></span>
-    <span className="min-w-0 flex-1">
-      <span className="flex flex-wrap items-center gap-2">
-        <span className="min-w-0 truncate text-xs font-extrabold">{item.title}</span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[8px] font-extrabold text-muted-foreground">{item.source}</span>
-        {item.kind === 'sample' && <SampleDataBadge/>}
-      </span>
-      <span className="mt-1 block text-[10px] text-muted-foreground">{item.requester} · {item.category} · {item.submitted}</span>
-    </span>
-    <span className="block shrink-0 sm:text-right">
-      <span className="block text-sm font-extrabold">{money(item.amount)}</span>
-      <span className={cn('mt-1 inline-block rounded-full px-2.5 py-1 text-[9px] font-extrabold', STATUS_CLASS[item.status])}>{item.status}</span>
-    </span>
-    <ChevronDown size={15} className="hidden -rotate-90 text-muted-foreground sm:block"/>
-  </button>
-}
-
-const STEPS = [
-  ['Requester', 'Creates request', 'Team members submit expenses and transfers with the business purpose.'],
-  ['Approver', 'Reviews and approves', 'A designated manager checks policy, budget, and supporting documents.'],
-  ['Sync360', 'Moves the money', 'Only approved transfers are released from the account, with a full audit trail.'],
-]
-
-/** The approvals queue: real expense and transfer approvals plus the session's sample items. */
+/** Expenses › Approvals: sink's transfer approval queue (filters, search, table, details → PIN / reason). */
 export function ApprovalsTab() {
   const page = useApprovalsQueue()
+  const { money, decision } = page
 
-  return <div className="flex flex-col gap-6">
-    {!page.allowed
-      ? <section className="rounded-2xl border border-border bg-white"><KitEmpty icon={<Lock size={18}/>} title="You don't have access to approvals" note="Ask the business owner to give you expense or transfer permissions."/></section>
-      : <section className="overflow-hidden rounded-2xl border border-border bg-white">
-        <div className="flex flex-col gap-4 border-b border-border p-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-white"><UserCheck size={18}/></div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-sm font-extrabold">{page.queueTitle}</h2>
-                {page.loading ? <Skeleton className="h-5 w-24 rounded-full"/> : <span className="rounded-full bg-[#FFF6E4] px-2.5 py-1 text-[9px] font-extrabold text-[#A76700]">{page.waiting} WAITING FOR YOU</span>}
-              </div>
-              <p className="mt-1 text-[10px] text-muted-foreground">{page.queueNote}</p>
-            </div>
-          </div>
-          <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 lg:mx-0 lg:px-0"><KitFilterPills value={page.filter} options={APPROVAL_FILTERS} onChange={page.setFilter}/></div>
-        </div>
-        {page.loading
-          ? <ListSkeleton rows={4} rowClassName="flex items-center gap-4 border-b border-border p-5 last:border-0"/>
-          : page.items.length === 0
-            ? <KitEmpty icon={<ClipboardCheck size={18}/>} title="Nothing in this queue" note="Requests that need a decision will show up here."/>
-            : <div className="divide-y divide-border">{page.items.map(item => <ApprovalRow key={`${item.kind}-${item.id}`} item={item} onOpen={() => page.decision.open(item)}/>)}</div>}
-        {page.pagination.pages > 1 && <Pagination currentPage={page.pagination.page} totalPages={page.pagination.pages} onPageChange={page.pagination.setPage} className="border-border"/>}
-      </section>}
+  const columns = useMemo(() => [
+    column.display({ id: 'requested', header: 'Requested', meta: { headerClassName: 'px-5', cellClassName: 'px-5' }, cell: ({ row: { original } }) => <span className="text-muted-foreground">{requestedOn(original)}</span> }),
+    column.display({ id: 'beneficiary', header: 'Beneficiary', cell: ({ row: { original } }) => <button type="button" onClick={() => decision.open(original)} className="max-w-[220px] text-left"><p className="truncate font-extrabold hover:text-secondary">{original.title}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">{original.reference} · {original.category}</p></button> }),
+    column.display({ id: 'requester', header: 'Requested by', cell: ({ row: { original } }) => <span className="font-bold text-foreground/70">{original.requester}</span> }),
+    column.display({ id: 'amount', header: 'Amount', meta: { headerClassName: 'text-right', cellClassName: 'text-right' }, cell: ({ row: { original } }) => <span className="font-extrabold">{money(original.amount)}</span> }),
+    column.display({ id: 'status', header: 'Status', cell: ({ row: { original } }) => <TransferStatusChip status={original.status}/> }),
+    column.display({ id: 'action', header: 'Action', meta: { headerClassName: 'px-5 text-right', cellClassName: 'px-5 text-right' }, cell: ({ row: { original } }) => <button type="button" onClick={() => decision.open(original)} className={cn('rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold', original.canDecide ? 'bg-primary text-white hover:bg-primary/90' : 'border border-border text-secondary hover:bg-accent')}>{original.canDecide ? 'Review' : 'View'}</button> }),
+  ], [money, decision])
 
-    <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[repeat(3,minmax(0,1fr))]">
-      {STEPS.map(([eyebrow, title, copy], index) => <div key={title} className="rounded-2xl border border-border bg-white p-5">
-        <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[10px] font-extrabold text-white">{index + 1}</span><p className="text-[9px] font-extrabold uppercase tracking-wider text-secondary">{eyebrow}</p></div>
-        <p className="mt-4 text-sm font-extrabold">{title}</p>
-        <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{copy}</p>
-      </div>)}
+  if (!page.allowed) {
+    return <section className="rounded-2xl border border-border bg-white">
+      <KitEmpty icon={<Lock size={18}/>} title="Nothing to see here" note="Your account doesn't handle expense payouts. The business owner can grant that in Settings › Approval rights."/>
+    </section>
+  }
+
+  return <div className="flex flex-col gap-4">
+    <div>
+      <h2 className="text-sm font-extrabold">Transfer approvals</h2>
+      <p className="mt-1 text-[10px] text-muted-foreground">{page.subtitle}</p>
+    </div>
+
+    {page.capNote && <p className="flex items-center gap-2 rounded-xl bg-[#F8FAF8] px-3 py-2.5 text-[10px] font-bold text-muted-foreground"><ShieldCheck size={14} className="shrink-0 text-secondary"/>{page.capNote}</p>}
+
+    <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-white">
+      <div className="flex flex-col gap-3 border-b border-border p-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 xl:mx-0 xl:px-0"><KitFilterPills value={page.filter} options={APPROVAL_FILTERS} onChange={page.setFilter}/></div>
+        <div className="flex w-full xl:max-w-xs"><KitSearch value={page.searchInput} onChange={page.setSearch} placeholder="Reference, beneficiary or narration"/></div>
+      </div>
+      <div className={cn('transition-opacity', page.refreshing && 'opacity-60')}>
+        <DataTable
+          columns={columns}
+          data={page.items}
+          loading={page.loading}
+          minWidthClassName="min-w-[820px]"
+          className={cn(kitTableClass, '[&_tbody_tr]:static')}
+          getRowId={row => row.id}
+          emptyState={<KitEmpty icon={<ClipboardCheck size={18}/>} title={page.emptyNote} note="Payout requests from expense accounts show up here." className="py-4"/>}
+          mobileListClassName="divide-y divide-border/70"
+          renderMobileCard={item => <button type="button" onClick={() => decision.open(item)} className="flex w-full items-center gap-3 p-4 text-left text-xs">
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-extrabold">{item.title}</span>
+              <span className="mt-1 block truncate text-[10px] text-muted-foreground">{item.requester} · {requestedOn(item)}</span>
+              <span className="mt-2 block"><TransferStatusChip status={item.status}/></span>
+            </span>
+            <span className="shrink-0 text-right font-extrabold">{money(item.amount)}</span>
+            <ChevronRight size={15} className="shrink-0 text-muted-foreground"/>
+          </button>}
+        />
+      </div>
+      {page.total > 0 && <Pagination currentPage={page.pagination.page} totalPages={page.pagination.pages} onPageChange={page.pagination.setPage} pageSize={page.pagination.pageSize} onPageSizeChange={page.pagination.setPageSize} className="border-border"/>}
     </section>
 
-    <ApprovalDecisionModal decision={page.decision}/>
+    <ApprovalDecisionModal decision={decision}/>
   </div>
 }

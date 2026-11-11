@@ -6,13 +6,13 @@ import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 /**
  * Real Sync360 auth endpoints (same contract sink-inventory uses):
  *  POST auth/login/         { email, password }                         → { tokens: { access, refresh }, ...user }
- *  POST auth/signup/        { firstname, lastname, phone, email, password }
+ *  POST auth/signup/        { firstname, lastname, phone, email, password, referal? }
  *  POST auth/verify-phone/  { token, phone }
  * Set VITE_AUTH_MODE=mock to bypass the backend with a demo account.
  */
 
 export type LoginInput = { email: string; password: string }
-export type SignupInput = { firstname: string; lastname: string; phone: string; email: string; password: string }
+export type SignupInput = { firstname: string; lastname: string; phone: string; email: string; password: string; referal?: string }
 export type VerifyPhoneInput = { token: string; phone: string }
 
 type LoginResponse = AuthUser & { tokens: { access: string; refresh: string } }

@@ -1,67 +1,69 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { useApproveExpense, useApproveTransfer, useRejectExpense, useRejectTransfer } from '@/api/expenses'
-import { useSampleApprovalsStore } from '@/stores/sample-approvals-store'
+import { paths } from '@/routes/paths'
 import type { ApprovalItem } from '../approval-items'
 
 type Mode = 'review' | 'approve' | 'reject'
 
-const WRONG_PIN = /pin/i
+/**
+ * sink: classifyPinFault. The approve endpoints answer every PIN problem with a 400 and a sentence, and
+ * "you have not set your PIN" needs the create-PIN flow rather than a cleared box.
+ */
+const pinFault = (message: string): 'not-set' | 'invalid' | null => {
+  const text = message.toLowerCase()
+  if (text.includes('not set') || text.includes('have not set')) return 'not-set'
+  if (text.includes('pin')) return 'invalid'
+  return null
+}
 
 /**
- * Deciding one item. Approving a transfer dispatches the payout; approving a logged
- * expense is bookkeeping only (sink keeps these apart). Both need the approver's PIN.
- * Sample items only change the session-only store.
+ * Deciding one request, as sink does it: Approve asks for the approver's transaction PIN (a payout is
+ * dispatched; a logged expense is only signed off), Reject needs a reason the requester will see.
  */
 export function useApprovalDecision() {
+  const navigate = useNavigate()
   const [selected, setSelected] = useState<ApprovalItem | null>(null)
   const [mode, setMode] = useState<Mode>('review')
   const [pin, setPin] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
+  const [needsPin, setNeedsPin] = useState(false)
 
   const approveExpense = useApproveExpense()
   const approveTransfer = useApproveTransfer()
   const rejectExpense = useRejectExpense()
   const rejectTransfer = useRejectTransfer()
-  const updateSample = useSampleApprovalsStore(state => state.updateStatus)
 
-  const close = () => { setSelected(null); setMode('review'); setPin(''); setReason(''); setError('') }
+  const reset = () => { setMode('review'); setPin(''); setReason(''); setError(''); setNeedsPin(false) }
+  const close = () => { setSelected(null); reset() }
 
   const onFailure = (failure: unknown) => {
     const message = errorMessage(failure, 'That did not go through. Please try again.')
-    setError(message)
-    if (WRONG_PIN.test(message)) setPin('')
+    const fault = pinFault(message)
+    setNeedsPin(fault === 'not-set')
+    setError(fault === 'not-set' ? 'You have not set a transaction PIN yet. Create one, then approve.' : message)
+    if (fault === 'invalid') setPin('')
   }
 
   const approve = () => {
     if (!selected) return
-    if (selected.kind === 'sample') {
-      updateSample(selected.id, 'Approved')
-      toast.success('Marked approved. This is sample data, so no money moved.')
-      close()
-      return
-    }
     if (pin.length !== 4) { setError('Enter your 4-digit transaction PIN.'); return }
     setError('')
     const options = { onError: onFailure }
-    if (selected.kind === 'transfer') approveTransfer.mutate({ id: selected.id, pin }, { ...options, onSuccess: () => { toast.success('Transfer approved and sent to the bank'); close() } })
+    // sink's toasts: "approved and sent" for a payout, plain "approved" for a logged expense (nothing moves).
+    if (selected.kind === 'transfer') approveTransfer.mutate({ id: selected.id, pin }, { ...options, onSuccess: () => { toast.success('Transfer approved and sent'); close() } })
     else approveExpense.mutate({ id: selected.id, pin }, { ...options, onSuccess: () => { toast.success('Expense approved'); close() } })
   }
 
   const reject = () => {
     if (!selected) return
-    if (selected.kind === 'sample') {
-      updateSample(selected.id, 'Rejected')
-      toast.success('Marked rejected')
-      close()
-      return
-    }
-    if (!reason.trim()) { setError('Give a reason so the requester knows what to change.'); return }
+    if (!reason.trim()) { setError('Say why, so whoever raised it knows what to fix.'); return }
     setError('')
     const input = { id: selected.id, reason: reason.trim() }
-    const options = { onError: onFailure, onSuccess: () => { toast.success('Request rejected'); close() } }
+    const options = { onError: onFailure, onSuccess: () => { toast.success(selected.kind === 'transfer' ? 'Transfer rejected' : 'Expense rejected'); close() } }
     if (selected.kind === 'transfer') rejectTransfer.mutate(input, options)
     else rejectExpense.mutate(input, options)
   }
@@ -72,13 +74,15 @@ export function useApprovalDecision() {
     pin,
     setPin,
     reason,
-    setReason,
+    setReason: (value: string) => { setReason(value); if (error) setError('') },
     error,
-    open: (item: ApprovalItem) => setSelected(item),
+    needsPin,
+    createPin: () => { close(); navigate(`${paths.accounts}?action=rules`) },
+    open: (item: ApprovalItem) => { reset(); setSelected(item) },
     close,
-    startApprove: () => { setError(''); if (selected?.kind === 'sample') approve(); else setMode('approve') },
-    startReject: () => { setError(''); if (selected?.kind === 'sample') reject(); else setMode('reject') },
-    back: () => { setMode('review'); setError('') },
+    startApprove: () => { setError(''); setMode('approve') },
+    startReject: () => { setError(''); setMode('reject') },
+    back: () => { setMode('review'); setError(''); setNeedsPin(false) },
     approve,
     reject,
     submitting: approveExpense.isPending || approveTransfer.isPending || rejectExpense.isPending || rejectTransfer.isPending,

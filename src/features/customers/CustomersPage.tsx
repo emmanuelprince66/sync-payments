@@ -1,5 +1,5 @@
-import { HandCoins, Plus, UsersRound, Wallet, WalletCards } from 'lucide-react'
-import { KitEmpty, KitSearch, StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
+import { FileCheck2, FileWarning, Plus, UsersRound } from 'lucide-react'
+import { KitEmpty, KitSearch, SampleStatTile, StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { Pagination } from '@/components/ui/Pagination'
 import { KitButton } from '@/components/ui/PaymentKit'
@@ -11,9 +11,11 @@ import { CustomersTable } from './components/CustomersTable'
 import { DeleteCustomerModal } from './components/DeleteCustomerModal'
 import { useCustomersPage } from './hooks/useCustomersPage'
 
-const statIcons = [UsersRound, HandCoins, Wallet, WalletCards]
-const statTones = ['green', 'blue', 'green', 'amber'] as const
-const statsGrid = 'grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 xl:grid-cols-4'
+const statIcons = [UsersRound, FileWarning, FileCheck2]
+const statTones = ['green', 'amber', 'green'] as const
+const statsGrid = 'grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3'
+/** The unpaid figure reads in red while anything is owed. */
+const dangerValue = '[&_p.mt-3]:text-[#C72D34]'
 
 export default function CustomersPage() {
   const page = useCustomersPage()
@@ -28,12 +30,15 @@ export default function CustomersPage() {
     <KitPageHeader
       eyebrow="Relationships"
       title="Customers"
-      subtitle="Everyone you sell to, with their spend, balances and history."
+      subtitle="Everyone you sell to, with what they've paid and what they still owe on invoices."
       actions={<KitButton onClick={page.openAdd} className="self-start md:self-auto"><Plus size={14}/> Add customer</KitButton>}
     />
 
     {page.stats
-      ? <div className={statsGrid}>{page.stats.map((stat, index) => <StatTile key={stat.label} label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/>)}</div>
+      ? <div className={statsGrid}>{page.stats.map((stat, index) => index === 0
+        ? <StatTile key={stat.label} label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/>
+        // Invoices come from sample data until the invoices endpoint exists.
+        : <div key={stat.label} className={stat.danger ? dangerValue : undefined}><SampleStatTile label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/></div>)}</div>
       : page.isLoading && <SkeletonGroup label="Loading customer stats" className={statsGrid}>{statIcons.map((_, index) => <StatTileSkeleton key={index}/>)}</SkeletonGroup>}
 
     <section className="overflow-hidden rounded-xl border border-border bg-white">
@@ -42,7 +47,7 @@ export default function CustomersPage() {
         <Select aria-label="Filter by status" options={page.statusOptions} value={page.status || 'all'} onValueChange={page.setStatus} className="w-full sm:w-[180px]" boxClassName="h-10 border-border px-3 text-xs font-bold text-foreground"/>
       </div>
       <div className={cn('transition-opacity', page.isFetching && 'opacity-60')}>
-        <CustomersTable customers={page.customers} loading={page.isLoading} emptyState={emptyState} onOpen={page.openCustomer} onEdit={page.openEdit} onDelete={page.askDelete}/>
+        <CustomersTable customers={page.customers} invoiceFigures={page.invoiceFigures} loading={page.isLoading} emptyState={emptyState} onOpen={page.openCustomer} onEdit={page.openEdit} onDelete={page.askDelete}/>
       </div>
       {!page.isLoading && page.customers.length > 0 && <Pagination currentPage={page.page} totalPages={page.totalPages} onPageChange={page.setPage} pageSize={page.pageSize} onPageSizeChange={page.setPageSize}/>}
     </section>

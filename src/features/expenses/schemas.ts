@@ -34,3 +34,19 @@ export const settingsSchema = z.object({
   return !(daily > 0 && single > 0 && daily < single)
 }, { message: 'The daily limit cannot be lower than the single-transaction limit.', path: ['dailyTransferLimit'] })
 export type SettingsValues = z.infer<typeof settingsSchema>
+
+/** One staff member's expense rights (sink: StaffExpensePermissions). Blank caps mean "no personal cap". */
+export const rightsSchema = z.object({
+  canLog: z.boolean(),
+  canInitiate: z.boolean(),
+  canApprove: z.boolean(),
+  maxTransfer: z.string(),
+  dailyTransfer: z.string(),
+  dailyCount: z.string(),
+  maxApproval: z.string(),
+}).refine(values => {
+  const daily = Number(values.dailyTransfer)
+  const single = Number(values.maxTransfer)
+  return !(daily > 0 && single > 0 && daily < single)
+}, { message: 'The daily limit cannot be lower than the single-transaction limit.', path: ['dailyTransfer'] })
+export type RightsValues = z.infer<typeof rightsSchema>

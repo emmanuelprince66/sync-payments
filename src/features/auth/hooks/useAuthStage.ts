@@ -4,7 +4,7 @@ import { useIsAuthenticated } from '@/stores/auth-store'
 import { SETUP_STAGES, STEP_TO_STAGE, type AccessMode, type AuthStage } from '../constants'
 import { useSignupStore } from './useSignupStore'
 
-const headings: Record<AuthStage, string> = { access: '', otp: 'Verify your phone', business: 'Set up your business', kyc: 'Verify your business' }
+const headings: Record<AuthStage, string> = { access: '', otp: 'Verify OTP', business: 'Set up your business', kyc: 'Verify your business' }
 
 /**
  * Resolves which auth screen to show from the URL, the copy for it, and
@@ -14,7 +14,7 @@ export function useAuthStage() {
   const { pathname } = useLocation()
   const { step } = useParams<{ step?: string }>()
   const authenticated = useIsAuthenticated()
-  const phone = useSignupStore(state => state.draft?.phone)
+  const email = useSignupStore(state => state.draft?.email)
 
   const mode: AccessMode = pathname.startsWith(paths.signup) ? 'signup' : 'login'
   const stage: AuthStage | undefined = step ? STEP_TO_STAGE[step] : 'access'
@@ -28,7 +28,7 @@ export function useAuthStage() {
   const heading = resolved === 'access' ? (mode === 'login' ? 'Welcome back' : 'Create your account') : headings[resolved]
   const subtitle = resolved === 'access'
     ? (mode === 'login' ? 'Log in to manage collections, expenses, and payouts.' : 'Start collecting and paying in just a few steps.')
-    : resolved === 'otp' ? `We sent a 6-digit code to ${phone || 'your phone number'}.`
+    : resolved === 'otp' ? `Enter the 6-digit code sent to ${email || 'your email'}.`
     : resolved === 'business' ? 'This information appears on your invoices and customer checkout.'
     : 'Complete KYC to unlock higher transaction and withdrawal limits.'
 

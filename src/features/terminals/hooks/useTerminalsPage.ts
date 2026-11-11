@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { isTerminalSuccess, useTerminalPayments, useTerminals, type TerminalPayment } from '@/api/terminals'
 import { useBusinessBanks, useWalletAccount } from '@/api/transactions'
 import { useClipboard } from '@/hooks/useClipboard'
@@ -6,6 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useDisclosure } from '@/hooks/useDisclosure'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { isoDay } from '@/lib/format'
+import { PAY_CARD_PRINT_ID } from '../constants'
 
 /** Figures for the stat cards and terminal cards are read from the latest payments. */
 const STATS_LIMIT = 100
@@ -29,6 +31,27 @@ export function useTerminalsPage() {
   const payCard = useDisclosure()
   const addInfo = useDisclosure()
   const { copied, copy } = useClipboard()
+  const [downloading, setDownloading] = useState(false)
+
+  /** sink's "Download Payment Terminal": the card captured at 3x as a PNG, with the sm layout forced on. */
+  const downloadPayCard = async (name: string) => {
+    const element = document.getElementById(PAY_CARD_PRINT_ID)
+    if (!element) return
+    setDownloading(true)
+    try {
+      await Promise.all(Array.from(element.querySelectorAll('img')).map(img => (img.complete ? null : new Promise(resolve => { img.onload = resolve; img.onerror = resolve }))))
+      const html2canvas = (await import('html2canvas-pro')).default
+      const canvas = await html2canvas(element, { scale: 3, backgroundColor: '#ffffff', logging: false, useCORS: true, windowWidth: Math.max(element.scrollWidth, 800), windowHeight: Math.max(element.scrollHeight, 800) })
+      const link = document.createElement('a')
+      link.href = canvas.toDataURL('image/png')
+      link.download = `${(name || 'store').replace(/[^a-zA-Z0-9]/g, '_')}_payment_terminal.png`
+      link.click()
+    } catch {
+      toast.error('Could not download the payment terminal. Try Print instead.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const [searchInput, setSearchInput] = useState('')
   const search = useDebounce(searchInput, 500)
@@ -102,6 +125,8 @@ export function useTerminalsPage() {
       copied,
       copyUrl: () => { if (storeUrl) void copy(storeUrl) },
       print: () => window.print(),
+      downloading,
+      download: () => { void downloadPayCard(details?.accountName ?? '') },
     },
     addInfo,
   }

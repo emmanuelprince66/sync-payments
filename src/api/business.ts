@@ -13,7 +13,7 @@ import { queryKeys } from './query-keys'
  *  GET   business/        → { results: Business[] }
  *  GET   business/{id}/   → Business (with `shipbubble`, `banks`, `store_url`, …)
  *  PATCH business/{id}/   → partial update (JSON for nested `shipbubble_settings`)
- *  POST  business/        → create (multipart: name, type, currency, country, state, city, street, phone?, email?, logo?)
+ *  POST  business/        → create (multipart: name, type, currency, country, state, city, street, phone?, email?, delivery_days[]?, logo?)
  */
 
 export type ShipbubbleCategory = { category_id: number; category: string }
@@ -197,6 +197,7 @@ export type CreateBusinessInput = {
   street: string
   phone?: string
   email?: string
+  delivery_days?: string[]
   logo?: File | null
 }
 
@@ -205,6 +206,7 @@ const createLiveBusiness = async (input: CreateBusinessInput) => {
   for (const key of ['name', 'type', 'currency', 'country', 'state', 'city', 'street'] as const) form.append(key, input[key])
   if (input.phone) form.append('phone', input.phone)
   if (input.email) form.append('email', input.email)
+  input.delivery_days?.forEach(day => form.append('delivery_days', day))
   if (input.logo) form.append('logo', input.logo)
   const response = asRecord(await apiFormRequest<unknown>('business/', 'POST', form))
   return mapBusiness(response.id ? response : response.data)

@@ -1,12 +1,15 @@
-export const INVOICE_TEMPLATES = [
-  { name: 'Classic', note: 'Clear corporate letterhead', accent: '#529661' },
-  { name: 'Ledger', note: 'Dense accounting document', accent: '#1D261C' },
-  { name: 'Studio', note: 'Expressive client presentation', accent: '#B97445' },
-] as const
+import type { InvoiceDesign } from '@/api/invoices'
 
-export type InvoiceTemplate = (typeof INVOICE_TEMPLATES)[number]['name']
+/** The three printable designs, with the brand colour each starts with. */
+export const INVOICE_TEMPLATES: readonly { name: InvoiceDesign; note: string; accent: string }[] = [
+  { name: 'Classic', note: 'Clean letterhead with a tinted bill-to panel', accent: '#529661' },
+  { name: 'Ledger', note: 'Bold header band and ruled accounting table', accent: '#1D261C' },
+  { name: 'Studio', note: 'Big number, side stripe, editorial layout', accent: '#B97445' },
+]
 
-export const LETTERHEADS = ['Top', 'Left', 'Minimal'] as const
+export type InvoiceTemplate = InvoiceDesign
+
+export const designAccent = (design: InvoiceDesign) => INVOICE_TEMPLATES.find(item => item.name === design)?.accent ?? INVOICE_TEMPLATES[0].accent
 
 /** How line prices treat tax, as Xero's "Amounts are" setting. */
 export const TAX_MODES = [

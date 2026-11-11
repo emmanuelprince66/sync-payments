@@ -1,87 +1,152 @@
-import type { Ref } from 'react'
-import { Logo } from '@/components/ui/Logo'
+import type { ReactNode, Ref } from 'react'
+import { createPortal } from 'react-dom'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
-import type { InvoiceTemplate } from '../constants'
-import { ledgerDate, shortDate } from '../dates'
-import type { InvoicePreviewModel } from '../hooks/useInvoiceForm'
-import { InvoicePreviewBody } from './InvoicePreviewBody'
+import { longDate, ledgerDate } from '../dates'
+import { A4_HEIGHT_PX, A4_WIDTH_PX, documentNumber, tint, type InvoiceDocumentModel } from '../document'
+import { useFitScale } from '../hooks/useFitScale'
+import { DocumentFooter, DocumentLines, DocumentLogo, DocumentTotals, INK, MUTED, PaidStamp, RULE } from './InvoicePreviewBody'
 
-type TemplateProps = { preview: InvoicePreviewModel }
+type DesignProps = { doc: InvoiceDocumentModel }
 
-function ClassicTemplate({ preview }: TemplateProps) {
-  const { accent } = preview
-  return <div className="mx-auto min-h-[500px] max-w-sm bg-white p-7 shadow-[0_12px_30px_rgba(29,38,28,.12)]">
-    <div className={`${preview.letterhead === 'Minimal' ? 'h-px' : 'h-2'} w-full`} style={{ background: accent }}/>
-    <div className="mt-6 flex justify-between gap-3">
+function Meta({ label, value, color }: { label: string; value: ReactNode; color?: string }) {
+  return <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[.14em]" style={{ color: MUTED }}>{label}</p><p className="mt-1 break-words text-[13px] font-bold" style={{ color: color ?? INK }}>{value}</p></div>
+}
+
+function PartyLines({ doc }: DesignProps) {
+  return <>
+    {doc.partyEmail && <p className="mt-1 text-[12px]" style={{ color: MUTED }}>{doc.partyEmail}</p>}
+    {doc.partyPhone && <p className="text-[12px]" style={{ color: MUTED }}>{doc.partyPhone}</p>}
+  </>
+}
+
+/** Classic: accent rule, letterhead, tinted bill-to panel. */
+function ClassicDesign({ doc }: DesignProps) {
+  return <div className="px-14 pb-14">
+    <div className="h-2.5" style={{ background: doc.accent }}/>
+    <div className="mt-10 flex items-start justify-between gap-8">
       <div className="min-w-0">
-        {preview.logoUrl ? <img src={preview.logoUrl} alt="Business logo" className="h-10 max-w-32 object-contain object-left"/> : <Logo/>}
-        <p className="mt-3 max-w-[150px] text-[8px] leading-4 text-muted-foreground">{preview.legalName}<br/>{preview.address}</p>
+        <DocumentLogo doc={doc}/>
+        <p className="mt-4 text-[14px] font-extrabold" style={{ color: INK }}>{doc.legalName}</p>
+        {doc.address && <p className="mt-1 max-w-[300px] whitespace-pre-line text-[12px] leading-5" style={{ color: MUTED }}>{doc.address}</p>}
       </div>
-      <div className="text-right"><p className="text-2xl font-black tracking-[.14em]">INVOICE</p><p className="mt-2 text-[9px] text-muted-foreground">#{preview.number} · Due {shortDate(preview.dueDate)}</p></div>
+      <div className="shrink-0 text-right">
+        <p className="text-[34px] font-black tracking-[.18em]" style={{ color: INK }}>INVOICE</p>
+        <p className="mt-1 text-[13px] font-bold" style={{ color: doc.accent }}>{doc.number}</p>
+        <div className="mt-3"><PaidStamp doc={doc}/></div>
+      </div>
     </div>
-    <div className="mt-8 rounded-sm p-4" style={{ background: `${accent}14` }}>
-      <p className="text-[8px] font-extrabold uppercase tracking-wider" style={{ color: accent }}>Bill to</p>
-      <p className="mt-1 break-words text-xs font-extrabold">{preview.party}</p>
-      {preview.partyEmail && <p className="mt-1 text-[8px] text-muted-foreground">{preview.partyEmail}</p>}
+    <div className="mt-10 grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-6">
+      <div className="rounded-lg p-5" style={{ background: tint(doc.accent, 0.08) }}>
+        <p className="text-[10px] font-extrabold uppercase tracking-[.16em]" style={{ color: doc.accent }}>Bill to</p>
+        <p className="mt-2 break-words text-[16px] font-extrabold" style={{ color: INK }}>{doc.party}</p>
+        <PartyLines doc={doc}/>
+      </div>
+      <div className="grid grid-cols-2 content-start gap-x-4 gap-y-4 py-2">
+        <Meta label="Issue date" value={longDate(doc.issueDate)}/>
+        <Meta label="Due date" value={longDate(doc.dueDate)} color={doc.accent}/>
+        {doc.reference && <Meta label="Reference" value={doc.reference}/>}
+      </div>
     </div>
-    <InvoicePreviewBody preview={preview}/>
-    <p className="mt-8 border-t pt-4 text-[8px] leading-4 text-muted-foreground">ACH: Thread Bank · Routing 064009445 · Account •• 6735<br/>Use {preview.number} as payment reference.</p>
+    <div className="mt-10"><DocumentLines doc={doc} variant="classic"/></div>
+    <DocumentTotals doc={doc}/>
+    <DocumentFooter doc={doc}/>
   </div>
 }
 
-function LedgerTemplate({ preview }: TemplateProps) {
+/** Ledger: solid header band, ruled meta strip, numbered rows, boxed totals. */
+function LedgerDesign({ doc }: DesignProps) {
   const money = useFormatMoney()
-  const { accent } = preview
-  return <div className="mx-auto min-h-[500px] max-w-sm bg-[#FBFBF8] shadow-[0_12px_30px_rgba(29,38,28,.12)]">
-    <div className="p-7 text-white" style={{ background: accent }}>
-      <div className="flex items-start justify-between gap-3">
+  return <div>
+    <div className="flex items-start justify-between gap-8 px-14 py-10" style={{ background: doc.accent, color: '#FFFFFF' }}>
+      <div className="min-w-0">
+        <DocumentLogo doc={doc} onDark size={40}/>
+        <p className="mt-4 text-[14px] font-extrabold">{doc.legalName}</p>
+        {doc.address && <p className="mt-1 max-w-[300px] whitespace-pre-line text-[12px] leading-5" style={{ color: 'rgba(255,255,255,.72)' }}>{doc.address}</p>}
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-[11px] font-bold tracking-[.28em]" style={{ color: 'rgba(255,255,255,.7)' }}>DOCUMENT {documentNumber(doc.number)}</p>
+        <p className="mt-2 text-[40px] font-light leading-none">Invoice</p>
+      </div>
+    </div>
+    <div className="px-14 pb-14">
+      <div className="mt-10 grid grid-cols-4 gap-4 py-4" style={{ borderTop: `1px solid ${INK}`, borderBottom: `1px solid ${INK}` }}>
+        <Meta label="Issued" value={ledgerDate(doc.issueDate)}/>
+        <Meta label="Due" value={ledgerDate(doc.dueDate)}/>
+        <Meta label="Number" value={doc.number}/>
+        <Meta label={doc.amountPaid > 0 ? 'Balance due' : 'Total'} value={money(doc.amountPaid > 0 ? doc.balance : doc.total)}/>
+      </div>
+      <div className="mt-8 flex items-start justify-between gap-6">
         <div className="min-w-0">
-          {preview.logoUrl ? <img src={preview.logoUrl} alt="Business logo" className="h-8 max-w-28 object-contain object-left brightness-0 invert"/> : <div className="truncate text-sm font-black tracking-tight">{preview.legalName.split(' ')[0].toUpperCase()} /</div>}
-          <p className="mt-2 text-[8px] leading-4 text-white/65">{preview.legalName}<br/>{preview.address}</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[.2em]" style={{ color: MUTED }}>Account</p>
+          <p className="mt-2 break-words text-[16px] font-extrabold" style={{ color: INK }}>{doc.party}</p>
+          <PartyLines doc={doc}/>
+          {doc.reference && <p className="mt-2 text-[12px]" style={{ color: MUTED }}>Ref. {doc.reference}</p>}
         </div>
-        <div className="shrink-0 text-right"><p className="text-[8px] font-bold tracking-[.22em] text-white/60">DOCUMENT {preview.documentNumber}</p><p className="mt-2 text-2xl font-light">Invoice</p></div>
+        <PaidStamp doc={doc}/>
+      </div>
+      <div className="mt-8"><DocumentLines doc={doc} variant="ledger"/></div>
+      <DocumentTotals doc={doc} boxed/>
+      <DocumentFooter doc={doc}/>
+    </div>
+  </div>
+}
+
+/** Studio: side stripe, oversized number, editorial spacing, tinted thank-you card. */
+function StudioDesign({ doc }: DesignProps) {
+  const money = useFormatMoney()
+  return <div className="relative pb-14 pl-24 pr-14" style={{ minHeight: A4_HEIGHT_PX }}>
+    <div className="absolute inset-y-0 left-0 w-8" style={{ background: doc.accent }}/>
+    <div className="flex items-start justify-between gap-8 pt-12">
+      <DocumentLogo doc={doc} size={52}/>
+      <div className="min-w-0 text-right">
+        <p className="text-[11px] font-extrabold uppercase tracking-[.22em]" style={{ color: INK }}>{doc.legalName}</p>
+        {doc.address && <p className="mt-2 max-w-[300px] whitespace-pre-line text-[12px] leading-5" style={{ color: MUTED }}>{doc.address}</p>}
       </div>
     </div>
-    <div className="p-7">
-      <div className="grid grid-cols-3 gap-1 border-y border-foreground py-3 text-[8px]">
-        <div><p className="text-muted-foreground">ISSUED</p><p className="mt-1 font-extrabold">{ledgerDate(preview.issueDate)}</p></div>
-        <div><p className="text-muted-foreground">DUE</p><p className="mt-1 font-extrabold">{ledgerDate(preview.dueDate)}</p></div>
-        <div><p className="text-muted-foreground">TOTAL</p><p className="mt-1 font-extrabold">{money(preview.total)}</p></div>
-      </div>
-      <div className="mt-7"><p className="break-words text-[8px] font-extrabold uppercase tracking-[.2em] text-muted-foreground">Account / {preview.party}</p></div>
-      <InvoicePreviewBody preview={preview} compact/>
-      <div className="mt-12 grid grid-cols-2 gap-5 border-t border-foreground pt-4 text-[8px] leading-4">
-        <p>PAYMENT<br/>Thread Bank •• 6735<br/>Reference {preview.number}</p>
-        <p className="text-right">QUESTIONS<br/>billing@northstar.co<br/>+1 212 555 0148</p>
+    <p className="mt-14 text-[12px] font-extrabold uppercase tracking-[.3em]" style={{ color: doc.accent }}>Invoice</p>
+    <div className="flex items-end justify-between gap-6">
+      <p className="text-[72px] font-black leading-none tracking-[-.06em]" style={{ color: INK }}>{documentNumber(doc.number)}<span style={{ color: doc.accent }}>.</span></p>
+      <PaidStamp doc={doc}/>
+    </div>
+    <div className="mt-10 grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] gap-6 pb-8" style={{ borderBottom: `1px solid ${RULE}` }}>
+      <div className="min-w-0"><p className="text-[10px] uppercase tracking-[.16em]" style={{ color: MUTED }}>Prepared for</p><p className="mt-2 break-words text-[16px] font-extrabold" style={{ color: INK }}>{doc.party}</p><PartyLines doc={doc}/></div>
+      <Meta label="Issued" value={longDate(doc.issueDate)}/>
+      <Meta label="Due" value={longDate(doc.dueDate)} color={doc.accent}/>
+    </div>
+    <div className="mt-8"><DocumentLines doc={doc} variant="studio"/></div>
+    <DocumentTotals doc={doc}/>
+    <div data-pdf-block className="mt-8 flex items-center justify-between gap-6 rounded-xl p-6" style={{ background: tint(doc.accent, 0.1) }}>
+      <p className="max-w-[340px] text-[12px] leading-5" style={{ color: INK }}>Thank you for your business. Please use <b>{doc.number}</b> as your payment reference{doc.reference ? ` (${doc.reference})` : ''}.</p>
+      <div className="shrink-0 text-right"><p className="text-[10px] uppercase tracking-[.16em]" style={{ color: MUTED }}>{doc.amountPaid > 0 ? 'Balance due' : 'Amount due'}</p><p className="text-[22px] font-black" style={{ color: doc.accent }}>{money(doc.amountPaid > 0 ? doc.balance : doc.total)}</p></div>
+    </div>
+  </div>
+}
+
+const designs = { Classic: ClassicDesign, Ledger: LedgerDesign, Studio: StudioDesign }
+
+/** The invoice at true A4 width (794 px): what the PDF is made from. */
+export function InvoiceDocument({ doc, ref }: { doc: InvoiceDocumentModel; ref?: Ref<HTMLDivElement> }) {
+  const Design = designs[doc.design] ?? ClassicDesign
+  return <div ref={ref} data-invoice-document className="bg-white font-sans antialiased" style={{ width: A4_WIDTH_PX, minHeight: A4_HEIGHT_PX, color: INK }}>
+    <Design doc={doc}/>
+  </div>
+}
+
+/** The A4 document shrunk to fit its container, for screens. */
+export function InvoicePreview({ doc, className }: { doc: InvoiceDocumentModel; className?: string }) {
+  const { boxRef, contentRef, scale, height } = useFitScale(A4_WIDTH_PX)
+  return <div className={className ?? 'bg-[#EEF1ED] p-3 sm:p-6'}>
+    <div ref={boxRef} className="w-full">
+      <div className="relative mx-auto overflow-hidden shadow-[0_12px_30px_rgba(29,38,28,.14)]" style={{ width: A4_WIDTH_PX * scale, height: height * scale }}>
+        <div ref={contentRef} className="absolute left-0 top-0 origin-top-left" style={{ transform: `scale(${scale})` }}><InvoiceDocument doc={doc}/></div>
       </div>
     </div>
   </div>
 }
 
-function StudioTemplate({ preview }: TemplateProps) {
-  const { accent } = preview
-  return <div className="relative mx-auto min-h-[500px] max-w-sm overflow-hidden bg-white shadow-[0_12px_30px_rgba(29,38,28,.12)]">
-    <div className="absolute inset-y-0 left-0 w-5" style={{ background: accent }}/>
-    <div className="p-8 pl-12">
-      <div className="flex items-start justify-between gap-3">
-        {preview.logoUrl ? <img src={preview.logoUrl} alt="Business logo" className="h-12 max-w-28 object-contain object-left"/> : <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-lg font-black text-white" style={{ background: accent }}>{preview.legalName.charAt(0).toUpperCase()}</div>}
-        <div className="min-w-0 text-right"><p className="text-[8px] font-extrabold uppercase tracking-[.2em] text-muted-foreground">{preview.legalName}</p><p className="mt-2 text-[8px] leading-4 text-muted-foreground">{preview.address}</p></div>
-      </div>
-      <p className="mt-10 text-[9px] font-extrabold uppercase tracking-[.24em]" style={{ color: accent }}>Invoice</p>
-      <p className="mt-1 text-4xl font-black tracking-[-.06em]">{preview.documentNumber}<span style={{ color: accent }}>.</span></p>
-      <div className="mt-8 flex justify-between gap-3">
-        <div className="min-w-0"><p className="text-[8px] uppercase text-muted-foreground">Prepared for</p><p className="mt-1 break-words text-xs font-extrabold">{preview.party}</p></div>
-        <div className="shrink-0 text-right text-[8px] leading-4"><p>Issued {shortDate(preview.issueDate)}</p><p className="font-extrabold" style={{ color: accent }}>Due {shortDate(preview.dueDate)}</p></div>
-      </div>
-      <InvoicePreviewBody preview={preview}/>
-      <div className="mt-8 rounded-lg p-4 text-[8px] leading-4" style={{ background: `${accent}12` }}>Thank you for your business. Pay securely by ACH to account •• 6735 using reference {preview.number}.</div>
-    </div>
-  </div>
-}
-
-const templates: Record<InvoiceTemplate, (props: TemplateProps) => React.ReactNode> = { Classic: ClassicTemplate, Ledger: LedgerTemplate, Studio: StudioTemplate }
-
-export function InvoicePreview({ template, preview, ref }: { template: InvoiceTemplate; preview: InvoicePreviewModel; ref?: Ref<HTMLDivElement> }) {
-  const Template = templates[template]
-  return <div ref={ref} className="bg-[#EEF1ED] p-4 sm:p-6"><Template preview={preview}/></div>
+/** An unscaled copy kept off screen (in <body>, clear of any dialog), so the PDF is captured at full size whatever the screen. */
+export function InvoicePdfSource({ doc, sourceRef }: { doc: InvoiceDocumentModel; sourceRef: (node: HTMLDivElement | null) => void }) {
+  return createPortal(<div aria-hidden="true" inert className="pointer-events-none fixed top-0" style={{ left: -(A4_WIDTH_PX + 200) }}>
+    <InvoiceDocument ref={sourceRef} doc={doc}/>
+  </div>, document.body)
 }

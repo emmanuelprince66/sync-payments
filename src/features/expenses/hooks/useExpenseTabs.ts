@@ -1,20 +1,22 @@
 import { useSearchParams } from 'react-router'
 import { usePendingApprovalCount } from '@/api/expenses'
-import { useSampleApprovalsStore } from '@/stores/sample-approvals-store'
 
 export const EXPENSE_TABS = [
   { value: 'expenses', label: 'Expenses' },
+  { value: 'budgets', label: 'Budgets' },
   { value: 'approvals', label: 'Approvals' },
 ] as const
 
 export type ExpenseTab = (typeof EXPENSE_TABS)[number]['value']
 
-/** The Expenses | Approvals switch, kept in the URL (?tab=approvals) so links and refreshes land on the right tab. */
+const isTab = (value: string | null): value is ExpenseTab => EXPENSE_TABS.some(item => item.value === value)
+
+/** Expenses | Budgets | Approvals, kept in the URL (?tab=budgets) so links and refreshes land on the right tab. */
 export function useExpenseTabs() {
   const [params, setParams] = useSearchParams()
-  const tab: ExpenseTab = params.get('tab') === 'approvals' ? 'approvals' : 'expenses'
-  const live = usePendingApprovalCount()
-  const sample = useSampleApprovalsStore(state => state.items.filter(item => item.status === 'Pending').length)
+  const requested = params.get('tab')
+  const tab: ExpenseTab = isTab(requested) ? requested : 'expenses'
+  const pendingCount = usePendingApprovalCount()
 
   const setTab = (next: ExpenseTab) => setParams(current => {
     const updated = new URLSearchParams(current)
@@ -23,5 +25,5 @@ export function useExpenseTabs() {
     return updated
   })
 
-  return { tab, setTab, pendingCount: live + sample }
+  return { tab, setTab, pendingCount }
 }

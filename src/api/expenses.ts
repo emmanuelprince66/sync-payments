@@ -23,6 +23,8 @@ import { queryKeys } from './query-keys'
  *  POST         expenses/transfers/{id}/approve/ { pin } dispatches the payout
  *  POST         expenses/transfers/{id}/reject/  { rejection_reason }
  *  GET/PATCH    expenses/settings/{id}/                 limits and approval policy (owner writes)
+ *  GET          business/list_attendants/{id}/          the team, for approval rights
+ *  GET/PATCH    business/attendant_permissions/{attendant_id}/  one person's expense rights and caps (owner writes)
  */
 
 export const EXPENSES_PAGE_SIZE = 20
@@ -90,7 +92,7 @@ export type ExpensesPageData = { rows: Expense[]; total: number; pages: number; 
 export type ExpenseQuery = { page: number; search: string; category: string; status: string; startDate: string; endDate: string; limit?: number }
 export type ExpenseInput = { name: string; categoryId: string; amount: number; date: string; note?: string }
 
-export type Budget = { id: string; categoryName: string; year: number; total: number; months: number; monthly: number }
+export type Budget = { id: string; categoryName: string; year: number; total: number; months: number; monthly: number; createdAt?: string }
 export type BudgetInput = { categoryId: string; year: number; total: number; months: number }
 export type CategorySpend = { id: string; name: string; spent: number; count: number; budget: number }
 export type ActivityRow = { id: string; name: string; category: string; by: string; amount: number; status: string; createdAt: string }
@@ -111,9 +113,30 @@ export type ExpenseTransfer = {
   initiatedBy: string
   initiatedByName: string
   approvedByName: string
+  approvedAt: string
+  rejectedByName: string
+  rejectedAt: string
   rejectionReason: string
   canApprove: boolean
   createdAt: string
+}
+
+/** A staff member as business/list_attendants/{business_id}/ lists them. */
+export type TeamMember = { id: string; name: string; role: string; email: string }
+
+/**
+ * One staff member's expense rights (sink: AttendantPermissions, business/attendant_permissions/{id}/).
+ * Caps are decimal strings; '' (sent as null) means no personal cap, so the business ceiling governs.
+ */
+export type ApprovalRights = {
+  role: string
+  canLog: boolean
+  canInitiate: boolean
+  canApprove: boolean
+  maxTransfer: string
+  dailyTransfer: string
+  dailyCount: string
+  maxApproval: string
 }
 
 // ─── Mappers ────────────────────────────────────────────────────────────────
@@ -142,7 +165,7 @@ const mapExpense = (value: unknown): Expense => {
 const mapBudget = (value: unknown): Budget => {
   const row = asRecord(value)
   // total_budget_amount / monthly_allocated_amount are the real figures; the *_formatted siblings aren't.
-  return { id: str(row.id), categoryName: str(row.category_name), year: num(row.year), total: num(row.total_budget_amount), months: num(row.duration_months), monthly: num(row.monthly_allocated_amount) }
+  return { id: str(row.id), categoryName: str(row.category_name), year: num(row.year), total: num(row.total_budget_amount), months: num(row.duration_months), monthly: num(row.monthly_allocated_amount), createdAt: str(row.created_at) }
 }
 
 const mapCategorySpend = (value: unknown): CategorySpend => {
@@ -166,9 +189,37 @@ const mapTransfer = (value: unknown): ExpenseTransfer => {
     initiatedBy: str(row.initiated_by),
     initiatedByName: str(row.initiated_by_name),
     approvedByName: str(row.approved_by_name),
+    approvedAt: str(row.approved_at),
+    rejectedByName: str(row.rejected_by_name),
+    rejectedAt: str(row.rejected_at),
     rejectionReason: str(row.rejection_reason),
     canApprove: canCurrentUserApprove(row.can_current_user_approve),
     createdAt: str(row.created_at),
+  }
+}
+
+const mapTeamMember = (value: unknown): TeamMember => {
+  const row = asRecord(value)
+  const user = asRecord(row.user)
+  const name = str(row.name) || [str(row.firstname) || str(user.firstname), str(row.lastname) || str(user.lastname)].filter(Boolean).join(' ') || str(row.fullname) || str(user.email) || str(row.email)
+  return { id: str(row.id), name: name || 'Team member', role: str(row.role) || str(user.role), email: str(row.email) || str(user.email) }
+}
+
+/** The doc shows { role, permissions: {...} }, the OpenAPI schema a flat object: read whichever arrives (sink does the same). */
+const mapRights = (value: unknown): ApprovalRights => {
+  const root = asRecord(value)
+  const payload = asRecord(root.data ?? root)
+  const flags = asRecord(payload.permissions ?? payload)
+  const amount = (input: unknown) => (input === null || input === undefined || input === '' ? '' : String(Number(input)))
+  return {
+    role: str(payload.role),
+    canLog: flags.can_log_expenses === true,
+    canInitiate: flags.can_initiate_expense_transfer === true,
+    canApprove: flags.can_approve_expenses === true,
+    maxTransfer: amount(flags.max_expense_transfer_amount),
+    dailyTransfer: amount(flags.daily_expense_transfer_limit),
+    dailyCount: flags.daily_expense_transaction_limit === null || flags.daily_expense_transaction_limit === undefined ? '' : String(flags.daily_expense_transaction_limit),
+    maxApproval: amount(flags.max_expense_approval_amount),
   }
 }
 
@@ -180,9 +231,35 @@ const mapSettings = (value: unknown): ExpenseSettings => {
 
 // ─── Mock (VITE_AUTH_MODE=mock only): the design's sample rows ──────────────
 
+/** Same ids as the mock categories in api/transactions, so budgets and filters line up in mock mode. */
+const MOCK_CATEGORY_IDS: Record<string, string> = { Operations: 'cat-ops', Travel: 'cat-travel', Software: 'cat-software', Marketing: 'cat-marketing' }
+
 const mockExpense = (id: string, name: string, category: string, owner: string, amount: number, status: string, days: number, canApprove = false): Expense => {
   const date = new Date(Date.now() - days * 86_400_000)
-  return { id, reference: id, name, category, categoryId: `cat-${category.toLowerCase()}`, amount, date: date.toISOString().slice(0, 10), note: '', status, owner, approvedBy: status === 'APPROVED' ? 'Tobi Olosunde' : '', rejectedBy: '', rejectionReason: '', canApprove, createdAt: date.toISOString() }
+  return { id, reference: id, name, category, categoryId: MOCK_CATEGORY_IDS[category] ?? `cat-${category.toLowerCase()}`, amount, date: date.toISOString().slice(0, 10), note: '', status, owner, approvedBy: status === 'APPROVED' ? 'Tobi Olosunde' : '', rejectedBy: '', rejectionReason: '', canApprove, createdAt: date.toISOString() }
+}
+
+const mockTransfer = (id: string, amount: number, category: string, beneficiaryName: string, beneficiaryBank: string, narration: string, status: string, initiatedByName: string, hoursAgo: number, extra: Partial<ExpenseTransfer> = {}): ExpenseTransfer => {
+  const created = new Date(Date.now() - hoursAgo * 3_600_000).toISOString()
+  const decided = new Date(Date.now() - (hoursAgo - 1) * 3_600_000).toISOString()
+  return {
+    id, reference: id, amount, charges: estimateExpenseCharges(amount), category, beneficiaryName, beneficiaryAccount: '10288340' + id.slice(-2), beneficiaryBank, narration, status,
+    initiatedBy: `u-${initiatedByName.split(' ')[0].toLowerCase()}`, initiatedByName,
+    approvedByName: '', approvedAt: extra.approvedByName ? decided : '', rejectedByName: '', rejectedAt: extra.rejectedByName ? decided : '', rejectionReason: '',
+    canApprove: false, createdAt: created, ...extra,
+  }
+}
+
+const mockTeam: TeamMember[] = [
+  { id: 'att-1', name: 'Tobi Olosunde', role: 'ACCOUNTANT', email: 'tobi@kemistore.com' },
+  { id: 'att-2', name: 'David Cole', role: 'ADMIN-ATTENDANT', email: 'david@kemistore.com' },
+  { id: 'att-3', name: 'Maya Chen', role: 'ATTENDANT', email: 'maya@kemistore.com' },
+]
+
+const mockRights: Record<string, ApprovalRights> = {
+  'att-1': { role: 'ACCOUNTANT', canLog: true, canInitiate: true, canApprove: true, maxTransfer: '200000', dailyTransfer: '1000000', dailyCount: '10', maxApproval: '1000000' },
+  'att-2': { role: 'ADMIN-ATTENDANT', canLog: true, canInitiate: true, canApprove: false, maxTransfer: '100000', dailyTransfer: '300000', dailyCount: '5', maxApproval: '' },
+  'att-3': { role: 'ATTENDANT', canLog: true, canInitiate: false, canApprove: false, maxTransfer: '', dailyTransfer: '', dailyCount: '', maxApproval: '' },
 }
 
 const mock = {
@@ -195,12 +272,16 @@ const mock = {
     mockExpense('EXP-2035', 'Duplicate courier claim', 'Operations', 'David Cole', 42000, 'REJECTED', 6),
   ] as Expense[],
   transfers: [
-    { id: 'PAY-4821', reference: 'PAY-4821', amount: 680000, charges: 100, category: 'Operations', beneficiaryName: 'Atlas Print Co.', beneficiaryAccount: '1028834012', beneficiaryBank: 'Zenith Bank', narration: 'Print production', status: 'PENDING_APPROVAL', initiatedBy: 'u2', initiatedByName: 'David Cole', approvedByName: '', rejectionReason: '', canApprove: true, createdAt: new Date(Date.now() - 3_600_000).toISOString() },
-    { id: 'PAY-4790', reference: 'PAY-4790', amount: 144000, charges: 50, category: 'Software', beneficiaryName: 'Figma Inc', beneficiaryAccount: '2034567810', beneficiaryBank: 'Access Bank', narration: 'Annual plan', status: 'SUCCESS', initiatedBy: 'u3', initiatedByName: 'Maya Chen', approvedByName: 'Tobi Olosunde', rejectionReason: '', canApprove: false, createdAt: new Date(Date.now() - 86_400_000).toISOString() },
+    mockTransfer('PAY-4821', 680000, 'Marketing', 'Atlas Print Co.', 'Zenith Bank', 'Q3 campaign print production', 'PENDING_APPROVAL', 'David Cole', 1, { canApprove: true }),
+    mockTransfer('PAY-4818', 1450000, 'Operations', 'Lekki Fleet Services', 'GTBank', 'Delivery van servicing', 'PENDING_OWNER_APPROVAL', 'Maya Chen', 5, { canApprove: true }),
+    mockTransfer('PAY-4806', 96000, 'Travel', 'Arik Air', 'First Bank', 'Abuja client visit', 'PENDING_APPROVAL', 'Tobi Olosunde', 20, { initiatedBy: 'me' }),
+    mockTransfer('PAY-4790', 144000, 'Software', 'Figma Inc', 'Access Bank', 'Annual plan', 'SUCCESS', 'Maya Chen', 26, { approvedByName: 'Kemi Adeyemi' }),
+    mockTransfer('PAY-4772', 42000, 'Operations', 'Swift Couriers', 'UBA', 'Duplicate courier claim', 'REJECTED', 'David Cole', 70, { rejectedByName: 'Kemi Adeyemi', rejectionReason: 'Already paid on PAY-4760.' }),
+    mockTransfer('PAY-4751', 230000, 'Software', 'Cloudflare', 'Wema Bank', 'Annual CDN plan', 'FAILED', 'Maya Chen', 120, { approvedByName: 'Kemi Adeyemi' }),
   ] as ExpenseTransfer[],
   budgets: [
     { id: 'bud-1', categoryName: 'Operations', year: new Date().getFullYear(), total: 2_800_000, months: 12, monthly: 233333 },
-    { id: 'bud-2', categoryName: 'Travel', year: new Date().getFullYear(), total: 1_920_000, months: 12, monthly: 160000 },
+    { id: 'bud-2', categoryName: 'Travel', year: new Date().getFullYear(), total: 120_000, months: 3, monthly: 40000 },
     { id: 'bud-3', categoryName: 'Software', year: new Date().getFullYear(), total: 1_860_000, months: 12, monthly: 155000 },
     { id: 'bud-4', categoryName: 'Marketing', year: new Date().getFullYear(), total: 1_920_000, months: 12, monthly: 160000 },
   ] as Budget[],
@@ -209,7 +290,7 @@ const mock = {
 
 const mockCategorySpend = (): CategorySpend[] => {
   const byName = new Map<string, CategorySpend>()
-  for (const name of ['Operations', 'Travel', 'Software', 'Marketing']) byName.set(name, { id: `cat-${name.toLowerCase()}`, name, spent: 0, count: 0, budget: mock.budgets.find(budget => budget.categoryName === name)?.total ?? 0 })
+  for (const name of ['Operations', 'Travel', 'Software', 'Marketing']) byName.set(name, { id: MOCK_CATEGORY_IDS[name], name, spent: 0, count: 0, budget: mock.budgets.find(budget => budget.categoryName === name)?.total ?? 0 })
   for (const row of mock.expenses) {
     const entry = byName.get(row.category)
     if (entry && row.status !== 'REJECTED') { entry.spent += row.amount; entry.count += 1 }
@@ -336,13 +417,15 @@ export const useExpenseSettings = () => {
 
 // ─── Transfers ──────────────────────────────────────────────────────────────
 
+/** status is one of sink's TRANSFER_STATUSES or 'ALL' (the backend's own "everything" value). */
 export type TransferQuery = { page: number; status: string; search: string; limit?: number }
 
 const getTransfers = async (businessId: string, query: TransferQuery) => {
   const limit = query.limit ?? EXPENSES_PAGE_SIZE
   if (!isLive()) {
-    const rows = mock.transfers.filter(row => !query.status || row.status === query.status)
-    return mockDelay({ rows, total: rows.length, pages: 1 })
+    const term = query.search.trim().toLowerCase()
+    const rows = mock.transfers.filter(row => (!query.status || query.status === 'ALL' || row.status === query.status) && (!term || `${row.reference} ${row.beneficiaryName} ${row.beneficiaryAccount} ${row.narration}`.toLowerCase().includes(term)))
+    return mockDelay({ rows: rows.slice((query.page - 1) * limit, query.page * limit), total: rows.length, pages: Math.max(Math.ceil(rows.length / limit), 1) })
   }
   const params = new URLSearchParams({ page: String(query.page), limit: String(limit) })
   if (query.status) params.set('status', query.status)
@@ -362,14 +445,42 @@ export const useExpenseTransfers = (query: TransferQuery, enabled = true) => {
   })
 }
 
-/** Waiting items for the sidebar badge: one row each is enough, the envelope carries the total. */
-export const usePendingApprovalCount = () => {
+/** Payouts waiting on a decision, for the Approvals tab badge (sink: PendingApprovalsBanner reads PENDING_APPROVAL). */
+export const usePendingTransfers = () => {
   const { canApprove, canTransfer } = useExpensePermissions()
   const relevant = canApprove || canTransfer
-  const transfers = useExpenseTransfers({ page: 1, status: 'PENDING_APPROVAL', search: '', limit: 1 }, relevant)
-  const expenses = useExpenses({ page: 1, search: '', category: '', status: 'PENDING_APPROVAL', startDate: '', endDate: '', limit: 1 })
-  return (transfers.data?.total ?? 0) + (expenses.data?.total ?? 0)
+  const transfers = useExpenseTransfers({ page: 1, status: 'PENDING_APPROVAL', search: '', limit: 10 }, relevant)
+  const rows = transfers.data?.rows ?? []
+  return {
+    total: transfers.data?.total ?? 0,
+    /** Only counted across the first page, so it is phrased as "some of these" (sink does the same). */
+    yours: rows.filter(row => row.canApprove).length,
+    value: rows.reduce((sum, row) => sum + row.amount, 0),
+  }
 }
+
+/** Just the number, for the sidebar and tab badges. */
+export const usePendingApprovalCount = () => usePendingTransfers().total
+
+// ─── Team approval rights (owner only) ──────────────────────────────────────
+
+const getTeam = async (businessId: string): Promise<TeamMember[]> => {
+  if (!isLive()) return mockDelay([...mockTeam])
+  const response = await apiRequest<unknown>(`business/list_attendants/${businessId}/`)
+  return listFrom(response, ['data', 'results', 'attendants', 'data.data', 'results.data']).map(mapTeamMember).filter(member => member.id)
+}
+
+export const useTeamMembers = (enabled = true) => {
+  const { businessId } = useCurrentBusinessId()
+  return useQuery({ queryKey: [...queryKeys.expenses, 'team', businessId], queryFn: () => getTeam(businessId as string), enabled: enabled && (!isLive() || Boolean(businessId)) })
+}
+
+const getRights = async (memberId: string) => {
+  if (!isLive()) return mockDelay({ ...(mockRights[memberId] ?? { role: '', canLog: false, canInitiate: false, canApprove: false, maxTransfer: '', dailyTransfer: '', dailyCount: '', maxApproval: '' }) })
+  return mapRights(await apiRequest<unknown>(`business/attendant_permissions/${memberId}/`))
+}
+
+export const useApprovalRights = (memberId: string) => useQuery({ queryKey: [...queryKeys.expenses, 'rights', memberId], queryFn: () => getRights(memberId), enabled: Boolean(memberId) })
 
 // ─── Mutations ──────────────────────────────────────────────────────────────
 
@@ -406,25 +517,43 @@ const deleteExpense = async (id: string) => {
   return apiRequest<unknown>(`expenses/${id}/`, { method: 'DELETE' })
 }
 
+/** Who decides things in mock mode: the signed-in demo owner. */
+const MOCK_APPROVER = 'Kemi Adeyemi'
+
 const decideMock = <T extends { id: string; status: string }>(rows: T[], id: string, status: string) => rows.map(row => (row.id === id ? { ...row, status, canApprove: false } : row))
 
 const approveExpense = async ({ id, pin }: { id: string; pin: string }) => {
-  if (!isLive()) { mock.expenses = decideMock(mock.expenses, id, 'APPROVED'); return mockDelay(null, 600) }
+  if (!isLive()) {
+    if (pin === '0000') throw new Error('Invalid transaction PIN.')
+    mock.expenses = decideMock(mock.expenses, id, 'APPROVED').map(row => (row.id === id ? { ...row, approvedBy: MOCK_APPROVER } : row))
+    return mockDelay(null, 600)
+  }
   return apiRequest<unknown>(`expenses/${id}/approve/`, { method: 'POST', body: { pin } })
 }
 
 const rejectExpense = async ({ id, reason }: { id: string; reason: string }) => {
-  if (!isLive()) { mock.expenses = decideMock(mock.expenses, id, 'REJECTED'); return mockDelay(null, 600) }
+  if (!isLive()) {
+    mock.expenses = decideMock(mock.expenses, id, 'REJECTED').map(row => (row.id === id ? { ...row, rejectedBy: MOCK_APPROVER, rejectionReason: reason } : row))
+    return mockDelay(null, 600)
+  }
   return apiRequest<unknown>(`expenses/${id}/reject/`, { method: 'POST', body: { rejection_reason: reason } })
 }
 
+
 const approveTransfer = async ({ id, pin }: { id: string; pin: string }) => {
-  if (!isLive()) { mock.transfers = decideMock(mock.transfers, id, 'SUCCESS'); return mockDelay(null, 600) }
+  if (!isLive()) {
+    if (pin === '0000') throw new Error('Invalid transaction PIN.')
+    mock.transfers = decideMock(mock.transfers, id, 'SUCCESS').map(row => (row.id === id ? { ...row, approvedByName: MOCK_APPROVER, approvedAt: new Date().toISOString() } : row))
+    return mockDelay(null, 600)
+  }
   return apiRequest<unknown>(`expenses/transfers/${id}/approve/`, { method: 'POST', body: { pin } })
 }
 
 const rejectTransfer = async ({ id, reason }: { id: string; reason: string }) => {
-  if (!isLive()) { mock.transfers = decideMock(mock.transfers, id, 'REJECTED'); return mockDelay(null, 600) }
+  if (!isLive()) {
+    mock.transfers = decideMock(mock.transfers, id, 'REJECTED').map(row => (row.id === id ? { ...row, rejectedByName: MOCK_APPROVER, rejectedAt: new Date().toISOString(), rejectionReason: reason } : row))
+    return mockDelay(null, 600)
+  }
   return apiRequest<unknown>(`expenses/transfers/${id}/reject/`, { method: 'POST', body: { rejection_reason: reason } })
 }
 
@@ -434,7 +563,7 @@ export type InitiateTransferInput = { businessId: string; amount: number; accoun
 const initiateTransfer = async ({ businessId, amount, accountNumber, bankCode, categoryId, narration, pin }: InitiateTransferInput): Promise<{ status: string; reference: string }> => {
   if (!isLive()) {
     const reference = `PAY-${1000 + mock.transfers.length}`
-    mock.transfers = [{ id: reference, reference, amount, charges: estimateExpenseCharges(amount), category: 'Operations', beneficiaryName: 'ATLAS PRINT CO', beneficiaryAccount: accountNumber, beneficiaryBank: 'Zenith Bank', narration: narration ?? '', status: 'PENDING_APPROVAL', initiatedBy: 'me', initiatedByName: 'Tobi Olosunde', approvedByName: '', rejectionReason: '', canApprove: false, createdAt: new Date().toISOString() }, ...mock.transfers]
+    mock.transfers = [{ ...mockTransfer(reference, amount, 'Operations', 'ATLAS PRINT CO', 'Zenith Bank', narration ?? '', 'PENDING_APPROVAL', 'Tobi Olosunde', 0, { initiatedBy: 'me' }), beneficiaryAccount: accountNumber }, ...mock.transfers]
     return mockDelay({ status: 'PENDING_APPROVAL', reference }, 800)
   }
   const response = await apiRequest<unknown>(`expenses/transfers/initiate/${businessId}/`, {
@@ -446,7 +575,7 @@ const initiateTransfer = async ({ businessId, amount, accountNumber, bankCode, c
 
 const createBudget = async ({ businessId, input }: { businessId: string; input: BudgetInput }) => {
   if (!isLive()) {
-    mock.budgets = [...mock.budgets, { id: `bud-${Date.now()}`, categoryName: input.categoryId.replace('cat-', ''), year: input.year, total: input.total, months: input.months, monthly: input.total / input.months }]
+    mock.budgets = [...mock.budgets, { id: `bud-${Date.now()}`, categoryName: Object.entries(MOCK_CATEGORY_IDS).find(([, id]) => id === input.categoryId)?.[0] ?? input.categoryId, year: input.year, total: input.total, months: input.months, monthly: input.total / input.months }]
     return mockDelay(null, 500)
   }
   return apiRequest<unknown>(`expenses/business/${businessId}/budgets/`, { method: 'POST', body: { category_id: input.categoryId, year: input.year, total_budget_amount: input.total, duration_months: input.months } })
@@ -493,3 +622,26 @@ export const useCreateBudget = () => useExpenseMutation(createBudget)
 export const useEditBudget = () => useExpenseMutation(editBudget)
 export const useDeleteBudget = () => useExpenseMutation(deleteBudget)
 export const useSaveExpenseSettings = () => useExpenseMutation(saveSettings)
+
+/** PATCH business/attendant_permissions/{id}/ with sink's StaffExpensePermissions body. Blank caps go up as null. */
+const saveRights = async ({ memberId, rights }: { memberId: string; rights: ApprovalRights }) => {
+  if (!isLive()) {
+    mockRights[memberId] = { ...rights }
+    return mockDelay(null, 500)
+  }
+  const amountOrNull = (value: string) => (value.trim() ? (Number(value) || 0).toFixed(2) : null)
+  return apiRequest<unknown>(`business/attendant_permissions/${memberId}/`, {
+    method: 'PATCH',
+    body: {
+      can_log_expenses: rights.canLog,
+      can_initiate_expense_transfer: rights.canInitiate,
+      can_approve_expenses: rights.canApprove,
+      max_expense_transfer_amount: amountOrNull(rights.maxTransfer),
+      daily_expense_transfer_limit: amountOrNull(rights.dailyTransfer),
+      daily_expense_transaction_limit: rights.dailyCount.trim() ? Number(rights.dailyCount) || 0 : null,
+      max_expense_approval_amount: amountOrNull(rights.maxApproval),
+    },
+  })
+}
+
+export const useSaveApprovalRights = () => useExpenseMutation(saveRights)

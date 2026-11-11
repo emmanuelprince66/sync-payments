@@ -4,16 +4,20 @@ import { useMemo, type ReactNode } from 'react'
 import type { Customer } from '@/api/customers'
 import { DataTable } from '@/components/ui/DataTable'
 import { kitTableClass, stretchedButton } from '@/components/ui/KitExtras'
-import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { cn } from '@/lib/cn'
 import { initials } from '@/lib/format'
 import { CustomerStatus } from './CustomerStatus'
+import { UnpaidCell } from './InvoiceRisk'
 
 const column = createColumnHelper<Customer>()
 const head = 'py-3.5'
 
+export type CustomerInvoiceCells = { paid: string; paidNote: string; unpaid: string; atRisk: boolean }
+
 type Props = {
   customers: Customer[]
+  /** Invoice figures for a row (sample invoices until the endpoint exists). */
+  invoiceFigures: (customer: Customer) => CustomerInvoiceCells
   loading: boolean
   emptyState: ReactNode
   onOpen: (customer: Customer) => void
@@ -33,8 +37,7 @@ function Actions({ customer, onEdit, onDelete }: { customer: Customer; onEdit: P
 }
 
 /** Customer list: a table on desktop, cards on phones. The whole row opens the profile. */
-export function CustomersTable({ customers, loading, emptyState, onOpen, onEdit, onDelete }: Props) {
-  const money = useFormatMoney()
+export function CustomersTable({ customers, invoiceFigures, loading, emptyState, onOpen, onEdit, onDelete }: Props) {
   const columns = useMemo(() => [
     column.display({
       id: 'customer',
@@ -49,17 +52,21 @@ export function CustomersTable({ customers, loading, emptyState, onOpen, onEdit,
       meta: { headerClassName: `${head} px-5`, cellClassName: 'px-5' },
     }),
     column.accessor('phone', { header: 'Phone', cell: info => <span className="font-bold text-foreground/75">{info.getValue() || '—'}</span>, meta: { headerClassName: head } }),
-    column.accessor('ordersCount', { header: 'Orders', cell: info => <span className="font-bold text-foreground/75">{info.getValue()}</span>, meta: { headerClassName: head } }),
-    column.accessor('totalSpent', { header: 'Total spent', cell: info => <span className="font-extrabold">{money(info.getValue())}</span>, meta: { headerClassName: head } }),
     column.display({
-      id: 'balance',
-      header: 'Wallet / debt',
-      cell: ({ row: { original } }) => <div><p className="font-bold text-foreground/75">{money(original.walletBalance)}</p>{original.creditBalance > 0 && <p className="mt-0.5 text-[10px] font-extrabold text-[#C72D34]">Owes {money(original.creditBalance)}</p>}</div>,
+      id: 'paid',
+      header: 'Invoices paid',
+      cell: ({ row: { original } }) => { const figures = invoiceFigures(original); return <div><p className="font-extrabold">{figures.paid}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{figures.paidNote}</p></div> },
+      meta: { headerClassName: head },
+    }),
+    column.display({
+      id: 'unpaid',
+      header: 'Unpaid',
+      cell: ({ row: { original } }) => { const figures = invoiceFigures(original); return <UnpaidCell amount={figures.unpaid} atRisk={figures.atRisk}/> },
       meta: { headerClassName: head },
     }),
     column.accessor('status', { header: 'Status', cell: info => <CustomerStatus value={info.getValue()}/>, meta: { headerClassName: head } }),
     column.display({ id: 'actions', header: '', cell: ({ row: { original } }) => <Actions customer={original} onEdit={onEdit} onDelete={onDelete}/>, meta: { headerClassName: `${head} px-5`, cellClassName: 'px-5' } }),
-  ], [money, onOpen, onEdit, onDelete])
+  ], [invoiceFigures, onOpen, onEdit, onDelete])
 
   return <div className={kitTableClass}>
     <DataTable
@@ -74,7 +81,7 @@ export function CustomersTable({ customers, loading, emptyState, onOpen, onEdit,
         <div className="min-w-0 flex-1">
           <button type="button" onClick={() => onOpen(customer)} className={cn('block max-w-full truncate text-left font-extrabold', stretchedButton)}>{customer.name}</button>
           <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{customer.phone}{customer.email ? ` · ${customer.email}` : ''}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2"><span className="font-extrabold">{money(customer.totalSpent)}</span><span className="text-[10px] text-muted-foreground">{customer.ordersCount} orders</span><CustomerStatus value={customer.status}/></div>
+          {(() => { const figures = invoiceFigures(customer); return <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><span><span className="font-extrabold">{figures.paid}</span> <span className="text-[10px] text-muted-foreground">paid</span></span>{figures.atRisk && <UnpaidCell amount={figures.unpaid} atRisk/>}<CustomerStatus value={customer.status}/></div> })()}
         </div>
         <Actions customer={customer} onEdit={onEdit} onDelete={onDelete}/>
       </div>}

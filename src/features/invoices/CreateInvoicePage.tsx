@@ -2,6 +2,7 @@ import { Check, Eye, Save, Send } from 'lucide-react'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { KitButton } from '@/components/ui/PaymentKit'
 import { BackLink, SampleDataBadge } from '@/components/ui/misc'
+import { InvoiceDesignPicker } from './components/InvoiceDesignPicker'
 import { InvoiceHeaderFields } from './components/InvoiceHeaderFields'
 import { InvoiceLineTable, InvoiceTotals } from './components/InvoiceLineTable'
 import { InvoicePreviewModal } from './components/InvoicePreviewModal'
@@ -9,17 +10,22 @@ import { NewContactModal, NewItemModal } from './components/InvoiceQuickCreateMo
 import { useInvoiceForm } from './hooks/useInvoiceForm'
 
 export default function CreateInvoicePage() {
-  const { previewRef, ...model } = useInvoiceForm()
+  const model = useInvoiceForm()
   const busy = model.saving !== null
 
   return <KitPage className="pb-0 md:pb-0">
     <div>
       <BackLink label="Back to invoices" onClick={model.back}/>
-      <KitPageHeader title="New invoice" subtitle="Bill a customer. Save it as a draft, approve it, or send it straight away." badge={<SampleDataBadge/>}/>
+      <KitPageHeader title="New invoice" subtitle="Bill a customer in one of three designs. Save it as a draft, approve it, or save and share the PDF." badge={<SampleDataBadge/>}/>
     </div>
 
     <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">
       <InvoiceHeaderFields model={model}/>
+    </section>
+
+    <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">
+      <InvoiceDesignPicker value={model.design.value} onChange={model.design.choose} accent={model.values.accent}/>
+      <button type="button" onClick={model.preview.show} className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-secondary hover:underline"><Eye size={13}/> Preview and edit branding</button>
     </section>
 
     <InvoiceLineTable model={model}/>
@@ -37,6 +43,6 @@ export default function CreateInvoicePage() {
 
     <NewContactModal model={model.contactForm}/>
     <NewItemModal model={model.itemForm}/>
-    <InvoicePreviewModal model={model} previewRef={previewRef}/>
+    <InvoicePreviewModal model={model}/>
   </KitPage>
 }

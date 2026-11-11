@@ -97,7 +97,7 @@ export default function AccountsPage() {
     <SubAccountModal open={page.subAccount.isOpen} onClose={page.subAccount.close}/>
     <PayoutBankModal open={page.payoutBank.isOpen} onClose={page.payoutBank.close}/>
     <FundModal page={page}/>
-    <AccountRulesModal open={page.rules.open} onClose={page.rules.close}/>
+    <AccountRulesModal open={page.rules.open} section={page.rules.section} onSectionChange={page.rules.setSection} onClose={page.rules.close}/>
     <KycPromptModal open={page.kycPrompt.open} onClose={page.kycPrompt.close} onVerify={page.kycPrompt.verify}/>
   </KitPage>
 }

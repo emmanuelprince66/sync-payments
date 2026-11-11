@@ -50,6 +50,9 @@ export function useTransferFlow() {
   const fromBank = banks.banks.find(bank => bank.id === fromBankId) ?? null
   const isExpenseAccount = fromBank?.isExpenses === true
   const fee = isExpenseAccount ? estimateExpenseCharges(Number(amount)) : transferCharge(amount)
+  // sink's ConfirmTransfer: wallet transfers above 10,000 carry a 50 stamp duty.
+  const stampDuty = !isExpenseAccount && Number(amount) > 10000 ? 50 : 0
+  const availableBalance = balances.balances[fromBankId] ?? 0
   const beneficiary = enquiry.data ?? null
   const fromLabel = fromBank ? `${fromBank.account_name || 'Account'} ${maskAccount(fromBank.account_number)}` : 'Select an account'
 
@@ -64,6 +67,7 @@ export function useTransferFlow() {
     const valid = await form.trigger([...TRANSFER_DETAIL_FIELDS])
     if (!valid) return
     if (!beneficiary?.name) { setError('Verify the beneficiary before continuing.'); return }
+    if (!balances.loading && Number(amount) > availableBalance) { setError('Insufficient balance for this transfer.'); return }
     setError('')
     setSubmittedForApproval(false)
     setStep(2)
@@ -117,7 +121,7 @@ export function useTransferFlow() {
     fromBankId,
     setFromBank: (id: string) => form.setValue('fromBankId', id, { shouldValidate: true }),
     fromLabel,
-    available: money(balances.balances[fromBankId] ?? 0),
+    available: money(availableBalance),
     availableLoading: balances.loading,
     isExpenseAccount,
     bank: { options: bankOptions, loading: bankList.isLoading, value: bankCode, name: bankName },
@@ -127,11 +131,20 @@ export function useTransferFlow() {
     verifying: enquiry.isFetching,
     beneficiary,
     enquiryFailed: enquiry.isError && !enquiry.isFetching,
-    recent: { rows: recent.data ?? [], loading: recent.isLoading, apply: applyBeneficiary },
+    recent: {
+      rows: recent.data ?? [],
+      loading: recent.isLoading,
+      apply: applyBeneficiary,
+      /** sink's "Recent recipient" picker: the label carries name, bank and number so search finds any of them. */
+      options: (recent.data ?? []).map(row => ({ value: `${row.bankCode ?? row.bankName}-${row.accountNumber}`, label: `${row.accountName || 'Beneficiary'} · ${row.bankName} · ${row.accountNumber}` })),
+      value: (() => { const row = (recent.data ?? []).find(item => item.accountNumber === accountNumber && (!item.bankCode || item.bankCode === bankCode)); return row ? `${row.bankCode ?? row.bankName}-${row.accountNumber}` : '' })(),
+      applyKey: (key: string) => { const row = (recent.data ?? []).find(item => `${item.bankCode ?? item.bankName}-${item.accountNumber}` === key); if (row) applyBeneficiary(row) },
+    },
     categories: (categories.data ?? []).map(category => ({ value: category.id, label: category.name })),
     amount: money(Number(amount) || 0),
     fee: money(fee),
-    total: money((Number(amount) || 0) + fee),
+    stampDuty: stampDuty ? money(stampDuty) : '',
+    total: money((Number(amount) || 0) + fee + stampDuty),
     categoryName: categories.data?.find(category => category.id === categoryId)?.name ?? '',
     narration,
     pin,

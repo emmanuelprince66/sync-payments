@@ -134,4 +134,7 @@
   #loyalty-card-print { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; }
   #transfer-receipt, #transfer-receipt * { visibility: visible !important; }
   #transfer-receipt { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; border: 0 !important; }
+  /* Terminals → Pay card: sink's 595px "Pay with transfer" card, centred at the top of the page, colours kept. */
+  #pay-card-print, #pay-card-print * { visibility: visible !important; print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+  #pay-card-print { position: fixed !important; top: 0 !important; left: 50% !important; transform: translateX(-50%) !important; width: 595px !important; max-width: 100% !important; margin: 0 !important; }
 }

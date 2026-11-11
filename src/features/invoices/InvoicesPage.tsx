@@ -29,7 +29,7 @@ export default function InvoicesPage() {
       currentPage={page.currentPage}
       totalPages={page.totalPages}
       onPageChange={page.setCurrentPage}
-      onCreateExpense={page.createExpense}
+      onView={page.viewInvoice}
       actions={<>
         <DateRangeFilter value={page.dateRange} onChange={page.setDateRange} placeholder="All dates" className="flex-1 sm:flex-none"/>
         <KitButton variant="secondary" className="flex-1 sm:flex-none" onClick={page.exportCsv}><Download size={14}/> Export</KitButton>

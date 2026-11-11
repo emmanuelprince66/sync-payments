@@ -1,24 +1,17 @@
-import { useQuery } from '@tanstack/react-query'
 import { eachDayOfInterval } from 'date-fns'
 import { useMemo } from 'react'
 import { isoDay } from '@/lib/format'
-import { queryKeys } from './query-keys'
-import { getPayoutSchedule } from './sample/payouts'
 import { useBusinessBanks, useWalletAccount } from './transactions'
-
-export type { NextPayout, ScheduledPayout } from './sample/payouts'
 
 /**
  * Payouts are money leaving the wallet, so activity reads the DEBIT side of
  * wallet/{bank_id}/. terminal/businesses/{id}/payments/ is collections on POS
- * terminals, not payouts. The automatic schedule has no endpoint: sample data.
+ * terminals, not payouts. A payout is a transfer the merchant sends (sink: Transfer Funds).
  */
 
 const ACTIVITY_LIMIT = 100
 /** The chart stays readable on long ranges: newest days only. */
 const MAX_CHART_DAYS = 31
-
-export const usePayoutSchedule = () => useQuery({ queryKey: [...queryKeys.payouts, 'schedule'], queryFn: getPayoutSchedule })
 
 /** Debit transfers in the range, and their total per day for the chart. */
 export const usePayoutActivity = (from: Date, to: Date) => {
@@ -36,5 +29,5 @@ export const usePayoutActivity = (from: Date, to: Date) => {
     }))
   }, [startDate, endDate, rows])
 
-  return { rows, chart, isLoading: loading || wallet.isLoading, isError: wallet.isError, hasBank: Boolean(selectedBankId) }
+  return { rows, chart, balance: wallet.data?.wallet?.balance ?? 0, isLoading: loading || wallet.isLoading, isError: wallet.isError, hasBank: Boolean(selectedBankId) }
 }

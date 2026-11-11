@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { LETTERHEADS, TAX_MODES, TAX_RATES } from './constants'
+import { INVOICE_DESIGNS, INVOICE_PAYMENT_METHODS } from '@/api/invoices'
+import { TAX_MODES, TAX_RATES } from './constants'
 
 const required = (label: string) => z.string().trim().min(1, `${label} is required`)
 const values = <T extends readonly { value: string }[]>(list: T) => list.map(item => item.value) as [T[number]['value'], ...T[number]['value'][]]
@@ -30,9 +31,9 @@ export const invoiceSchema = z.object({
   currency: z.literal('NGN'),
   taxMode: z.enum(values(TAX_MODES)),
   lines: z.array(lineSchema),
-  // Branding for the printable preview.
+  // Design and branding for the printable invoice and its PDF.
+  design: z.enum(INVOICE_DESIGNS),
   accent: z.string(),
-  letterhead: z.enum(LETTERHEADS),
   legalName: z.string(),
   address: z.string(),
 }).superRefine((form, ctx) => {
@@ -46,3 +47,13 @@ export const invoiceSchema = z.object({
 })
 
 export type InvoiceFormValues = z.infer<typeof invoiceSchema>
+
+/** Record payment. The upper limit (the balance due) is checked when submitting, since it changes with every payment. */
+export const paymentSchema = z.object({
+  amount: z.string().trim().min(1, 'Enter the amount paid').refine(value => Number.isFinite(Number(value.replace(/,/g, ''))) && Number(value.replace(/,/g, '')) > 0, 'Enter an amount above 0'),
+  date: required('Payment date'),
+  method: z.enum(INVOICE_PAYMENT_METHODS),
+  note: z.string().max(200, 'Keep the note under 200 characters'),
+})
+export type PaymentFormValues = z.infer<typeof paymentSchema>
+export const parseAmount = (value: string) => Number(value.replace(/,/g, '')) || 0

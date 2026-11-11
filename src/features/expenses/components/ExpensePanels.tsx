@@ -58,7 +58,7 @@ export function InlineApproval({ page }: { page: ExpensesModel }) {
 }
 
 /** The design's monthly budget card, with who spent what underneath. */
-export function BudgetCard({ page }: { page: ExpensesModel }) {
+export function BudgetCard({ page, onManageBudgets }: { page: ExpensesModel; onManageBudgets: () => void }) {
   const { budget } = page
   return <section className="min-w-0 rounded-2xl border border-border bg-white p-5">
     <div className="flex items-center justify-between gap-3"><div><h2 className="text-sm font-extrabold">{budget.month} budget</h2><p className="mt-1 text-[10px] text-muted-foreground">Across all categories</p></div><span className="text-xs font-extrabold text-secondary">{budget.percent}%</span></div>
@@ -68,8 +68,10 @@ export function BudgetCard({ page }: { page: ExpensesModel }) {
       ? <div className="mt-6 flex flex-col gap-4">{Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-6"/>)}</div>
       : budget.rows.length > 0 && <div className="mt-6 flex flex-col gap-4">{budget.rows.map(row => <div key={row.id}>
         <div className="mb-1.5 flex justify-between gap-2 text-[10px]"><span className="truncate font-bold">{row.label}</span><span className="shrink-0 text-muted-foreground">{row.amount}</span></div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${row.percent}%` }}/></div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className={cn('h-full rounded-full', row.over ? 'bg-[#C72D34]' : 'bg-primary')} style={{ width: `${row.percent}%` }}/></div>
+        {row.over && <p className="mt-1 text-[9px] font-extrabold text-[#C72D34]">Over budget</p>}
       </div>)}</div>}
+    <button type="button" onClick={onManageBudgets} className="mt-4 text-[10px] font-extrabold text-secondary hover:underline">{budget.rows.length ? 'Manage budgets' : 'Set a budget'}</button>
     {page.spendByUser.length > 0 && <div className="mt-6 border-t border-border pt-4">
       <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Spend by person</p>
       <div className="mt-3 flex flex-col gap-2">{page.spendByUser.map(row => <div key={row.id || row.name} className="flex justify-between gap-2 text-[10px]"><span className="truncate font-bold">{row.name}</span><span className="shrink-0 text-muted-foreground">{row.total}</span></div>)}</div>
@@ -78,7 +80,7 @@ export function BudgetCard({ page }: { page: ExpensesModel }) {
       <Sparkles size={16} className="text-secondary"/>
       <p className="mt-2 text-xs font-extrabold">Your approval policy</p>
       <p className="mt-1 text-[10px] leading-4 text-muted-foreground">{page.policy}</p>
-      {page.permissions.isOwner && <button type="button" onClick={page.settingsModal.open} className="mt-2 text-[10px] font-extrabold text-secondary hover:underline">Change approval rules</button>}
+      {page.permissions.isOwner && <button type="button" onClick={page.openRules} className="mt-2 text-[10px] font-extrabold text-secondary hover:underline">Change in Settings</button>}
     </div>
   </section>
 }

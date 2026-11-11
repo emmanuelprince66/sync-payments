@@ -8,7 +8,6 @@ import { formatLongDate, initials } from '@/lib/format'
 import { paths } from '@/routes/paths'
 import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 import { useBusinessDataStore } from '@/stores/business-data-store'
-import { useSampleApprovalsStore } from '@/stores/sample-approvals-store'
 import { useUiStore } from '@/stores/ui-store'
 
 const SUPPORT_EMAIL = 'support@sync360.africa'
@@ -44,8 +43,7 @@ export function useSidebar() {
   const user = useAuthStore(state => state.user)
   const logout = useAuthStore(state => state.logout)
   const business = useBusinessDataStore(state => state.businessData)
-  const live = usePendingApprovalCount()
-  const sample = useSampleApprovalsStore(state => state.items.filter(item => item.status === 'Pending').length)
+  const pendingApprovals = usePendingApprovalCount()
   const verification = useVerification()
   const { close } = useMobileSidebar()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -55,7 +53,7 @@ export function useSidebar() {
   const go = (to: string, state?: unknown) => { setMenuOpen(false); close(); navigate(to, { state }) }
 
   return {
-    pendingApprovals: live + sample,
+    pendingApprovals,
     verification,
     fullName: fullName || 'User',
     email: user?.email ?? '',

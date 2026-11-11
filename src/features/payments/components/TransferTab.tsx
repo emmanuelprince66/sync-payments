@@ -47,7 +47,7 @@ function Details({ flow }: { flow: TransferFlow }) {
 }
 
 function Review({ flow }: { flow: TransferFlow }) {
-  const rows = [['From', flow.fromLabel], ['Reference', flow.narration || '—'], ...(flow.categoryName ? [['Category', flow.categoryName]] : []), ['Fee', flow.fee], ['Total', flow.total], ['Approval', flow.isExpenseAccount ? 'Per your approval rules' : 'Your transaction PIN']]
+  const rows = [['From', flow.fromLabel], ['Reference', flow.narration || '—'], ...(flow.categoryName ? [['Category', flow.categoryName]] : []), ['Fee', flow.fee], ...(flow.stampDuty ? [['Stamp duty', flow.stampDuty]] : []), ['Total', flow.total], ['Approval', flow.isExpenseAccount ? 'Per your approval rules' : 'Your transaction PIN']]
   return <div className="p-6">
     <p className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground">Review transfer</p>
     <p className="mt-3 text-3xl font-extrabold [overflow-wrap:anywhere]">{flow.amount}</p>

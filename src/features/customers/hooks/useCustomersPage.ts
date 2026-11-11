@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
@@ -6,6 +6,7 @@ import { CUSTOMER_STATUS_OPTIONS, useCustomers, useDeleteCustomer, type Customer
 import { useDebounce } from '@/hooks/useDebounce'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { paths } from '@/routes/paths'
+import { useCustomerInvoices } from './useCustomerInvoices'
 
 export type CustomerDialog = { mode: 'add' } | { mode: 'edit'; customer: Customer } | null
 
@@ -24,9 +25,16 @@ export function useCustomersPage() {
   const search = debounced.length >= 3 ? debounced : ''
   const query = useCustomers({ page, limit: pageSize, search, status })
   const remove = useDeleteCustomer()
+  const invoices = useCustomerInvoices()
 
   const customers = query.data?.customers ?? []
   const summary = query.data?.summary
+  const { totals, forCustomer } = invoices
+  /** Invoice figures per row: total paid, and what's still owed ("At risk" when anything is). */
+  const invoiceFigures = useCallback((customer: Customer) => {
+    const figures = forCustomer(customer)
+    return { paid: money(figures.paid), paidNote: `${figures.paidCount} paid invoice${figures.paidCount === 1 ? '' : 's'}`, unpaid: money(figures.unpaid), atRisk: figures.atRisk }
+  }, [forCustomer, money])
 
   return {
     searchInput,
@@ -35,12 +43,12 @@ export function useCustomersPage() {
     statusOptions: CUSTOMER_STATUS_OPTIONS.map(option => ({ value: option.value || 'all', label: option.label })),
     setStatus: (value: string) => { setStatus((value === 'all' ? '' : value) as CustomerStatusFilter); setPage(1) },
     customers,
-    stats: summary
+    invoiceFigures,
+    stats: summary && !invoices.isLoading
       ? [
           { label: 'Customers', value: summary.count.toLocaleString(), note: 'On your customer list' },
-          { label: 'Total spend', value: money(summary.totalSpend), note: 'Lifetime, all customers' },
-          { label: 'Wallet balances', value: money(summary.totalWallet), note: 'Held for customers' },
-          { label: 'Outstanding debt', value: money(summary.totalDebt), note: 'Owed to you' },
+          { label: 'Unpaid invoices', value: money(totals.unpaid), note: totals.unpaidCount ? `Owed on ${totals.unpaidCount} invoice${totals.unpaidCount === 1 ? '' : 's'}${totals.overdueCount ? `, ${totals.overdueCount} overdue` : ''}` : 'Nothing owed', danger: totals.unpaid > 0 },
+          { label: 'Invoices paid', value: money(totals.paid), note: `${totals.paidCount} invoice${totals.paidCount === 1 ? '' : 's'} paid in full` },
         ]
       : null,
     isLoading: query.isLoading,

@@ -10,7 +10,8 @@ type TransactionModalProps = {
   accountLabel: string
   onClose: () => void
   onReceipt: (trx: WalletTrx) => void
-  onReconcile: () => void
+  /** Shows the "Reconcile" action. Not passed while reconciliation is switched off. */
+  onReconcile?: () => void
 }
 
 /** The design's payment record. The timeline shows only what the API actually records. */
@@ -60,7 +61,7 @@ export function TransactionModal({ trx, accountLabel, onClose, onReceipt, onReco
           </div>
           <div className="mt-5 flex gap-2">
             <KitButton variant="secondary" className="flex-1" onClick={() => onReceipt(trx)}><Download size={14}/> Receipt</KitButton>
-            <KitButton className="flex-1" onClick={onReconcile}>Reconcile <ArrowRight size={14}/></KitButton>
+            {onReconcile && <KitButton className="flex-1" onClick={onReconcile}>Reconcile <ArrowRight size={14}/></KitButton>}
           </div>
         </div>
       </div>

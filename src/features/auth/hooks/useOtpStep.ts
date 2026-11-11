@@ -21,10 +21,10 @@ export function useOtpStep() {
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (!draft) return
-    if (!isComplete) { toast.error('Enter the 6-digit code'); return }
+    if (!isComplete) { toast.error('Please enter a valid 6-digit OTP'); return }
     verify.mutate({ token: code, phone: draft.phone }, {
       onSuccess: () => login.mutate({ email: draft.email, password: draft.password }, {
-        onSuccess: () => { clearDraft(); toast.success('Phone number verified'); navigate(paths.signupBusiness, { replace: true }) },
+        onSuccess: () => { clearDraft(); toast.success('Account verified successfully!'); navigate(paths.signupBusiness, { replace: true }) },
         onError: error => { toast.error(errorMessage(error, 'Verified, but we could not sign you in. Please log in.')); navigate(paths.login, { replace: true }) },
       }),
       onError: error => toast.error(errorMessage(error, 'Invalid code. Please try again.')),
@@ -33,7 +33,7 @@ export function useOtpStep() {
 
   const onResend = () => {
     if (!draft) return
-    toast.success(`A new code is on its way to ${draft.phone}`)
+    toast.success('OTP resent successfully!')
     timer.restart()
   }
 

@@ -13,6 +13,8 @@ export const paths = {
   expenses: '/expenses',
   invoices: '/invoices',
   invoiceNew: '/invoices/new',
+  /** One invoice: `${paths.invoices}/:invoiceId` (the invoice number, URI-encoded). */
+  invoiceDetail: '/invoices/:invoiceId',
   /** Old Approvals page; redirects to the Approvals tab on Expenses. */
   approvals: '/approvals',
   expenseApprovals: '/expenses?tab=approvals',

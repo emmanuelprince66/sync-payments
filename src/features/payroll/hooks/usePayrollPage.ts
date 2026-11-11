@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { PAYROLL_RATES, usePayroll } from '@/api/payroll'
 import { useDisclosure } from '@/hooks/useDisclosure'
-import { useSampleApprovalsStore } from '@/stores/sample-approvals-store'
 
 export const PAYROLL_TABS = ['Overview', 'Employees', 'Pay runs', 'Taxes & filings'] as const
 export type PayrollTab = (typeof PAYROLL_TABS)[number]
@@ -11,8 +10,8 @@ export type PayrollTotals = { gross: number; employeeTaxes: number; employerTaxe
 
 export function usePayrollPage() {
   const payroll = usePayroll()
-  const approvals = useSampleApprovalsStore(state => state.items)
-  const addApproval = useSampleApprovalsStore(state => state.add)
+  // Payroll is sample data with no approvals endpoint, so a submitted run is only remembered for this visit.
+  const [submittedRunId, setSubmittedRunId] = useState('')
   const addEmployee = useDisclosure()
   const [tab, setTab] = useState<PayrollTab>('Overview')
 
@@ -25,11 +24,11 @@ export function usePayrollPage() {
     return { gross, employeeTaxes, employerTaxes: gross * PAYROLL_RATES.employerTax, deductions: employeeTaxes + benefits, net: gross - employeeTaxes - benefits, headcount: employees.length }
   }, [data])
 
-  const submitted = Boolean(data && approvals.some(item => item.id === data.run.id))
+  const submitted = Boolean(data && submittedRunId === data.run.id)
 
   const submitRun = () => {
     if (!data || submitted) return
-    addApproval({ id: data.run.id, title: `June payroll — ${totals.headcount} employees`, requester: data.run.requester, amount: totals.gross, category: 'Payroll', submitted: 'Just now', approver: data.run.approver, status: 'Pending', source: 'Expense' })
+    setSubmittedRunId(data.run.id)
     toast.success('Payroll submitted for approval.')
   }
 
