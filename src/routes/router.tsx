@@ -7,7 +7,7 @@ import { pages } from './pages'
 import { paths } from './paths'
 
 const { AuthPage, SelectBusinessPage, OverviewPage, TransactionsPage, BranchesPage, PaymentsPage, ExpensesPage, InvoicesPage, CreateInvoicePage, /* ReconciliationPage, (switched off for now) */ PayoutsPage, TerminalsPage, AccountsPage, PayrollPage, CompliancePage, KycPage } = pages
-const { CustomersPage, CustomerDetailPage, StorefrontPage, BnplPage } = pages
+const { CustomersPage, CustomerDetailPage, StorefrontPage /* , BnplPage (switched off) */ } = pages
 const { InvoiceDetailPage } = pages
 
 export const router = createBrowserRouter([
@@ -50,7 +50,8 @@ export const router = createBrowserRouter([
           { path: paths.customers, element: <CustomersPage/> },
           { path: paths.customerDetail, element: <CustomerDetailPage/> },
           { path: paths.storefront, element: <StorefrontPage/> },
-          { path: paths.bnpl, element: <BnplPage/> },
+          // Pay later is switched off for now; restore with its nav item.
+          // { path: paths.bnpl, element: <BnplPage/> },
         ],
       },
         ],

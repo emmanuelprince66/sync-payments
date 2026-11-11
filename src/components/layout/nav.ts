@@ -1,5 +1,5 @@
-// Hidden for now (restore with their nav items below): FileCheck2 (Reconciliation), Send (Payments).
-import { Contact, CreditCard, FileText, GitBranch, HandCoins, Landmark, LayoutDashboard, MonitorSmartphone, ReceiptText, ShieldCheck, Store, UsersRound, type LucideIcon } from 'lucide-react'
+// Hidden for now (restore with their nav items below): FileCheck2 (Reconciliation), Send (Payments), HandCoins (Pay later).
+import { Contact, CreditCard, FileText, GitBranch, Landmark, LayoutDashboard, MonitorSmartphone, ReceiptText, ShieldCheck, Store, UsersRound, type LucideIcon } from 'lucide-react'
 import { paths } from '@/routes/paths'
 
 export type NavId = 'overview' | 'transactions' | 'payments' | 'branches' | 'expenses' | 'invoices' | 'reconciliation' | 'terminals' | 'accounts' | 'payroll' | 'compliance' | 'customers' | 'storefront' | 'bnpl'
@@ -18,7 +18,8 @@ export const navItems: { id: NavId; label: string; icon: LucideIcon; to: string 
   { id: 'terminals', label: 'Terminals', icon: MonitorSmartphone, to: paths.terminals },
   { id: 'accounts', label: 'Accounts', icon: Landmark, to: paths.accounts },
   { id: 'storefront', label: 'Storefront', icon: Store, to: paths.storefront },
-  { id: 'bnpl', label: 'Pay later', icon: HandCoins, to: paths.bnpl },
+  // Pay later is switched off for now (route is commented out too); Akawopay stays in Storefront › Checkout options.
+  // { id: 'bnpl', label: 'Pay later', icon: HandCoins, to: paths.bnpl },
   { id: 'payroll', label: 'Payroll', icon: UsersRound, to: paths.payroll },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck, to: paths.compliance },
 ]
