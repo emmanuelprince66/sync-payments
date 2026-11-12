@@ -9,11 +9,11 @@ import type { RecordPaymentForm } from '../hooks/useRecordPaymentForm'
 
 const METHOD_OPTIONS = INVOICE_PAYMENT_METHODS.map(method => ({ value: method, label: method }))
 
-export function RecordPaymentModal({ model, invoiceId }: { model: RecordPaymentForm; invoiceId: string }) {
+export function RecordPaymentModal({ model, invoiceNumber }: { model: RecordPaymentForm; invoiceNumber: string }) {
   const money = useFormatMoney()
   const { symbol } = useBusinessCurrency()
   const { register, control, formState: { errors } } = model.form
-  return <KitModal open={model.open} onClose={model.close} title="Record payment" description={`${invoiceId} · ${money(model.balance)} due`} icon={<CircleDollarSign size={16}/>}
+  return <KitModal open={model.open} onClose={model.close} title="Record payment" description={`${invoiceNumber} · ${money(model.balance)} due`} icon={<CircleDollarSign size={16}/>}
     footer={<>
       <KitButton variant="secondary" onClick={model.close}>Cancel</KitButton>
       <KitButton type="submit" form="record-payment-form" loading={model.submitting}>{model.isFull ? 'Record full payment' : 'Record part payment'}</KitButton>

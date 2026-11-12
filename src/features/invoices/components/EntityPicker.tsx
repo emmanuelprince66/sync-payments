@@ -1,5 +1,5 @@
 import * as Popover from '@radix-ui/react-popover'
-import { Check, ChevronDown, Plus, Search } from 'lucide-react'
+import { Check, ChevronDown, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
@@ -14,6 +14,8 @@ type Props = {
   createLabel: string
   /** Label for the current value when it isn't among `options` (e.g. outside the latest server search). */
   selectedLabel?: string
+  /** Adds a remove button to each option (e.g. delete a saved item). */
+  onDelete?: (value: string) => void
   /** Server-side search: receives the typed text, and `options` are taken as already filtered. */
   onSearch?: (query: string) => void
   placeholder?: string
@@ -28,7 +30,7 @@ type Props = {
 }
 
 /** Searchable picker with a "+ Create new …" row, for contacts and items (Xero-style). */
-export function EntityPicker({ value, options, onChange, onCreate, createLabel, selectedLabel, onSearch, placeholder = '', note, icon, loading, invalid, triggerClassName, contentClassName, ...rest }: Props) {
+export function EntityPicker({ value, options, onChange, onCreate, onDelete, createLabel, selectedLabel, onSearch, placeholder = '', note, icon, loading, invalid, triggerClassName, contentClassName, ...rest }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
@@ -78,11 +80,16 @@ export function EntityPicker({ value, options, onChange, onCreate, createLabel, 
             {loading && <p className="px-3 py-3 text-center text-xs text-muted-foreground">Loading…</p>}
             {!loading && visible.map(option => {
               const active = option.value === value
-              return <button key={option.value} type="button" role="option" aria-selected={active} onClick={() => pick(option.value)}
-                className={cn('flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold outline-none', active ? 'bg-[#EEF6ED] font-extrabold text-[#2F6B3E]' : 'text-foreground hover:bg-[#F3F7F4] focus:bg-[#F3F7F4]')}>
+              const row = <button key={option.value} type="button" role="option" aria-selected={active} onClick={() => pick(option.value)}
+                className={cn('flex w-full min-w-0 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold outline-none', active ? 'bg-[#EEF6ED] font-extrabold text-[#2F6B3E]' : 'text-foreground hover:bg-[#F3F7F4] focus:bg-[#F3F7F4]')}>
                 <span className="min-w-0"><span className="block truncate">{option.label}</span>{option.hint && <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{option.hint}</span>}</span>
                 {active && <Check size={14} className="shrink-0"/>}
               </button>
+              if (!onDelete) return row
+              return <div key={option.value} className="flex items-center gap-1">
+                {row}
+                <button type="button" aria-label={`Delete ${option.label}`} onClick={() => onDelete(option.value)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-[#FDEAEA] hover:text-[#C72D34] focus:bg-[#FDEAEA] focus:text-[#C72D34]"><Trash2 size={13}/></button>
+              </div>
             })}
             {!loading && !visible.length && query.trim() && <p className="px-3 py-3 text-center text-xs text-muted-foreground">No matches</p>}
           </div>

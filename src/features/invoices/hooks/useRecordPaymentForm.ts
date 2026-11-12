@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
-import { invoiceBalance, useRecordInvoicePayment, type Invoice } from '@/api/invoices'
+import { invoiceBalance, invoiceErrorMessage, useRecordInvoicePayment, type Invoice } from '@/api/invoices'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { isoDaysFromNow } from '../dates'
 import { parseAmount, paymentSchema, type PaymentFormValues } from '../schemas'
@@ -36,11 +36,11 @@ export function useRecordPaymentForm(invoice: Invoice | undefined, userName: str
       try {
         await record.mutateAsync({ invoiceId: invoice.id, amount, date: values.date, method: values.method, note: values.note.trim(), recordedBy: userName })
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Couldn't record the payment.")
+        toast.error(invoiceErrorMessage(error, "Couldn't record the payment."))
         return
       }
       const left = Math.max(Math.round((balance - amount) * 100) / 100, 0)
-      toast.success(left <= 0 ? `${invoice.id} is now paid in full.` : `Part payment of ${money(amount)} recorded. ${money(left)} is still due.`)
+      toast.success(left <= 0 ? `${invoice.number} is now paid in full.` : `Part payment of ${money(amount)} recorded. ${money(left)} is still due.`)
       setOpen(false)
     }),
   }

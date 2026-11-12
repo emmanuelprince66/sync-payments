@@ -1,7 +1,9 @@
 import { Check, Eye, Save, Send } from 'lucide-react'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { KitButton } from '@/components/ui/PaymentKit'
-import { BackLink, SampleDataBadge } from '@/components/ui/misc'
+import { BackLink } from '@/components/ui/misc'
+import { CardSkeleton } from '@/components/ui/Skeleton'
+import { InvoiceAccessNotice } from './components/InvoiceAccessNotice'
 import { InvoiceDesignPicker } from './components/InvoiceDesignPicker'
 import { InvoiceHeaderFields } from './components/InvoiceHeaderFields'
 import { InvoiceLineTable, InvoiceTotals } from './components/InvoiceLineTable'
@@ -9,14 +11,29 @@ import { InvoicePreviewModal } from './components/InvoicePreviewModal'
 import { NewContactModal, NewItemModal } from './components/InvoiceQuickCreateModals'
 import { useInvoiceForm } from './hooks/useInvoiceForm'
 
+/** New invoice, and Edit draft (`/invoices/:invoiceId/edit`): drafts are the only invoices whose fields can change. */
 export default function CreateInvoicePage() {
   const model = useInvoiceForm()
   const busy = model.saving !== null
+  const title = model.editing ? `Edit ${model.number.value || 'draft'}` : 'New invoice'
+  const backLabel = model.editing ? 'Back to invoice' : 'Back to invoices'
+
+  if (model.loadingDraft) return <KitPage>
+    <div><BackLink label={backLabel} onClick={model.back}/><KitPageHeader title="Edit draft" subtitle="Loading the draft…"/></div>
+    <CardSkeleton lines={6}/>
+  </KitPage>
+
+  if (model.blocked) return <KitPage>
+    <div><BackLink label={backLabel} onClick={model.back}/><KitPageHeader title={title} subtitle="This invoice can't be edited"/></div>
+    <InvoiceAccessNotice forbidden={model.blocked.forbidden} message={model.blocked.message}/>
+  </KitPage>
 
   return <KitPage className="pb-0 md:pb-0">
     <div>
-      <BackLink label="Back to invoices" onClick={model.back}/>
-      <KitPageHeader title="New invoice" subtitle="Bill a customer in one of three designs. Save it as a draft, approve it, or save and share the PDF." badge={<SampleDataBadge/>}/>
+      <BackLink label={backLabel} onClick={model.back}/>
+      <KitPageHeader title={title} subtitle={model.editing
+        ? 'Change anything while it is a draft. Approving it locks the details.'
+        : 'Bill a customer in one of three designs. Save it as a draft, approve it, or save and send it.'}/>
     </div>
 
     <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">

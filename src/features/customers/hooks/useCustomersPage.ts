@@ -32,9 +32,10 @@ export function useCustomersPage() {
   const { totals, forCustomer } = invoices
   /** Invoice figures per row: total paid, and what's still owed ("At risk" when anything is). */
   const invoiceFigures = useCallback((customer: Customer) => {
+    if (invoices.unavailable) return { paid: '—', paidNote: 'Invoices unavailable', unpaid: '—', atRisk: false }
     const figures = forCustomer(customer)
     return { paid: money(figures.paid), paidNote: `${figures.paidCount} paid invoice${figures.paidCount === 1 ? '' : 's'}`, unpaid: money(figures.unpaid), atRisk: figures.atRisk }
-  }, [forCustomer, money])
+  }, [forCustomer, money, invoices.unavailable])
 
   return {
     searchInput,
@@ -47,8 +48,10 @@ export function useCustomersPage() {
     stats: summary && !invoices.isLoading
       ? [
           { label: 'Customers', value: summary.count.toLocaleString(), note: 'On your customer list' },
+          ...(invoices.unavailable ? [] : [
           { label: 'Unpaid invoices', value: money(totals.unpaid), note: totals.unpaidCount ? `Owed on ${totals.unpaidCount} invoice${totals.unpaidCount === 1 ? '' : 's'}${totals.overdueCount ? `, ${totals.overdueCount} overdue` : ''}` : 'Nothing owed', danger: totals.unpaid > 0 },
           { label: 'Invoices paid', value: money(totals.paid), note: `${totals.paidCount} invoice${totals.paidCount === 1 ? '' : 's'} paid in full` },
+          ]),
         ]
       : null,
     isLoading: query.isLoading,

@@ -38,6 +38,7 @@ export const router = createBrowserRouter([
           { path: paths.invoices, element: <InvoicesPage/> },
           { path: paths.invoiceNew, element: <CreateInvoicePage/> },
           { path: paths.invoiceDetail, element: <InvoiceDetailPage/> },
+          { path: paths.invoiceEdit, element: <CreateInvoicePage/> },
           { path: paths.approvals, element: <Navigate to={paths.expenseApprovals} replace/> },
           // Reconciliation is switched off for now; restore with its nav item and page loader.
           // { path: paths.reconciliation, element: <ReconciliationPage/> },

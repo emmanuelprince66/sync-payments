@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router'
-import { invoiceBalance, invoicePaymentState, useInvoice } from '@/api/invoices'
+import { generatePath, useLocation, useNavigate, useParams } from 'react-router'
+import { invoiceBalance, invoiceErrorMessage, invoicePaymentState, isEditable, isInvoiceForbidden, isOut, useInvoice } from '@/api/invoices'
 import { paths } from '@/routes/paths'
 import { documentFromInvoice } from '../document'
 import { useCurrentUserName } from './useCurrentUserName'
+import { useInvoiceActions } from './useInvoiceActions'
 import type { InvoiceCreatedState } from './useInvoiceForm'
 import { useInvoiceReminder } from './useInvoiceReminder'
 import { useInvoicePdf } from './useInvoicePdf'
@@ -22,6 +23,7 @@ export function useInvoiceDetail() {
   const pdf = useInvoicePdf(doc)
   const payment = useRecordPaymentForm(invoice, userName)
   const reminder = useInvoiceReminder(invoice, pdf, userName)
+  const actions = useInvoiceActions(invoice, userName)
 
   // Fresh from Create: offer the PDF straight away.
   const [justCreated, setJustCreated] = useState(() => Boolean((location.state as InvoiceCreatedState | null)?.created))
@@ -36,23 +38,31 @@ export function useInvoiceDetail() {
 
   const state = invoice ? invoicePaymentState(invoice) : 'Pending'
   const balance = invoice ? invoiceBalance(invoice) : 0
+  const status = invoice?.status
 
   return {
     invoiceId,
     invoice,
     doc,
     isLoading: query.isLoading,
-    notFound: query.isError,
+    forbidden: isInvoiceForbidden(query.error),
+    error: query.error ? invoiceErrorMessage(query.error, "We couldn't load this invoice.") : '',
     state,
     balance,
     paidPercent: invoice && invoice.amount > 0 ? Math.min(100, Math.round((invoice.amountPaid / invoice.amount) * 100)) : 0,
-    canRecordPayment: Boolean(invoice) && balance > 0,
-    canRemind: Boolean(invoice) && balance > 0 && state !== 'Draft',
+    canEdit: Boolean(invoice && isEditable(invoice)),
+    canApprove: status === 'Draft',
+    canMarkSent: status === 'Approved',
+    canRecordPayment: Boolean(invoice) && balance > 0 && status !== 'Draft' && status !== 'Void',
+    canRemind: Boolean(invoice && isOut(invoice)) && balance > 0,
+    canReverse: status !== 'Void',
     justCreated,
     dismissCreated: () => setJustCreated(false),
     pdf,
     payment,
     reminder,
+    actions,
+    edit: () => navigate(generatePath(paths.invoiceEdit, { invoiceId })),
     back: () => navigate(paths.invoices),
   }
 }

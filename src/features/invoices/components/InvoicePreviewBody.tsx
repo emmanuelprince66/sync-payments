@@ -59,10 +59,13 @@ export function DocumentTotals({ doc, boxed = false }: { doc: InvoiceDocumentMod
   </div>
 }
 
-/** A "PAID" stamp once nothing is owed. */
+/** A "PAID" stamp once nothing is owed, "VOID" on a voided invoice, "DRAFT" before it is approved. */
 export function PaidStamp({ doc }: { doc: InvoiceDocumentModel }) {
-  if (!(doc.amountPaid > 0 && doc.balance <= 0)) return null
-  return <span className="inline-block rotate-[-8deg] rounded-md px-3 py-1 text-[13px] font-black tracking-[.3em]" style={{ border: '2px solid #337D44', color: '#337D44' }}>PAID</span>
+  const stamp = doc.status === 'Void' ? { text: 'VOID', color: '#C72D34' }
+    : doc.status === 'Paid' || (doc.amountPaid > 0 && doc.balance <= 0) ? { text: 'PAID', color: '#337D44' }
+      : doc.status === 'Draft' ? { text: 'DRAFT', color: '#8A9A92' } : null
+  if (!stamp) return null
+  return <span className="inline-block rotate-[-8deg] rounded-md px-3 py-1 text-[13px] font-black tracking-[.3em]" style={{ border: `2px solid ${stamp.color}`, color: stamp.color }}>{stamp.text}</span>
 }
 
 export function DocumentLogo({ doc, size = 44, onDark = false }: { doc: InvoiceDocumentModel; size?: number; onDark?: boolean }) {
@@ -76,9 +79,29 @@ export function DocumentLogo({ doc, size = 44, onDark = false }: { doc: InvoiceD
   </span>
 }
 
+/** The business's phone and email, under its address. */
+export function ContactLine({ doc, color }: { doc: InvoiceDocumentModel; color?: string }) {
+  if (!doc.contactLine) return null
+  return <p className="mt-1 text-[12px]" style={{ color: color ?? MUTED }}>{doc.contactLine}</p>
+}
+
+/** Bank, account number and name the customer pays into. */
+export function PayToBlock({ doc, framed = false }: { doc: InvoiceDocumentModel; framed?: boolean }) {
+  if (!doc.payTo) return null
+  return <div data-pdf-block className={framed ? 'mt-8 grid grid-cols-3 gap-4 rounded-lg p-5' : 'grid grid-cols-3 gap-4'} style={framed ? { border: `1px solid ${RULE}` } : undefined}>
+    {[['Bank', doc.payTo.bank], ['Account number', doc.payTo.account], ['Account name', doc.payTo.name]].map(([label, value]) => <div key={label} className="min-w-0">
+      <p className="text-[10px] font-extrabold uppercase tracking-[.14em]" style={{ color: MUTED }}>{label}</p>
+      <p className="mt-1 break-words text-[13px] font-bold tabular-nums" style={{ color: INK }}>{value || '—'}</p>
+    </div>)}
+  </div>
+}
+
 export function DocumentFooter({ doc }: { doc: InvoiceDocumentModel }) {
-  return <div data-pdf-block className="mt-10 grid grid-cols-2 gap-6 pt-5 text-[11px] leading-5" style={{ borderTop: `1px solid ${RULE}`, color: MUTED }}>
+  return <div data-pdf-block className="mt-10 pt-5 text-[11px] leading-5" style={{ borderTop: `1px solid ${RULE}`, color: MUTED }}>
+    {doc.payTo && <div className="mb-5"><p className="mb-2 text-[11px] font-extrabold" style={{ color: INK }}>Pay into</p><PayToBlock doc={doc}/></div>}
+    <div className="grid grid-cols-2 gap-6">
     <p><span className="font-extrabold" style={{ color: INK }}>Payment</span><br/>Please use <b style={{ color: INK }}>{doc.number}</b> as your payment reference.</p>
     <p className="text-right"><span className="font-extrabold" style={{ color: INK }}>Thank you for your business</span><br/>{doc.legalName}</p>
+    </div>
   </div>
 }

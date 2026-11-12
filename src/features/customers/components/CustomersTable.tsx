@@ -16,7 +16,7 @@ export type CustomerInvoiceCells = { paid: string; paidNote: string; unpaid: str
 
 type Props = {
   customers: Customer[]
-  /** Invoice figures for a row (sample invoices until the endpoint exists). */
+  /** Invoice figures for a row (grouped from the business's invoice list). */
   invoiceFigures: (customer: Customer) => CustomerInvoiceCells
   loading: boolean
   emptyState: ReactNode

@@ -1,4 +1,4 @@
-import { invoiceBalance, type Invoice, type InvoiceDesign } from '@/api/invoices'
+import { invoiceBalance, type Invoice, type InvoiceDesign, type InvoiceStatus } from '@/api/invoices'
 
 /** Everything a printable invoice shows, from the Create form or a saved invoice. */
 export type InvoiceDocumentModel = {
@@ -20,6 +20,12 @@ export type InvoiceDocumentModel = {
   total: number
   amountPaid: number
   balance: number
+  /** Drives the PAID / VOID / DRAFT stamp. */
+  status: InvoiceStatus
+  /** Business phone · email under the address. Filled from the business record when left out. */
+  contactLine?: string
+  /** Where the customer pays. Filled from the business's account when left out; null hides it. */
+  payTo?: { bank: string; account: string; name: string } | null
 }
 
 export const documentFromInvoice = (invoice: Invoice): InvoiceDocumentModel => ({
@@ -31,7 +37,7 @@ export const documentFromInvoice = (invoice: Invoice): InvoiceDocumentModel => (
   party: invoice.client,
   partyEmail: invoice.clientEmail,
   partyPhone: invoice.clientPhone,
-  number: invoice.id,
+  number: invoice.number,
   reference: invoice.reference,
   issueDate: invoice.issued,
   dueDate: invoice.due,
@@ -41,6 +47,7 @@ export const documentFromInvoice = (invoice: Invoice): InvoiceDocumentModel => (
   total: invoice.amount,
   amountPaid: invoice.amountPaid,
   balance: invoiceBalance(invoice),
+  status: invoice.status,
 })
 
 /** "#529661" → "rgba(82,150,97,0.08)". Plain rgba keeps the PDF renderer happy. */

@@ -1,5 +1,5 @@
 import { CalendarClock, FileCheck2, FileText, FileWarning, Pencil, Sparkles, Trash2 } from 'lucide-react'
-import { KitEmpty, SampleStatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
+import { KitEmpty, StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
 import { KitPage } from '@/components/ui/KitPage'
 import { BackLink } from '@/components/ui/misc'
 import { KitButton } from '@/components/ui/PaymentKit'
@@ -54,7 +54,7 @@ export default function CustomerDetailPage() {
 
         {page.statsLoading
           ? <div className={statsGrid}>{statIcons.map((_, index) => <StatTileSkeleton key={index}/>)}</div>
-          : <div className={statsGrid}>{page.stats.map((stat, index) => <div key={stat.label} className={stat.danger ? dangerValue : undefined}><SampleStatTile label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/></div>)}</div>}
+          : <div className={statsGrid}>{page.stats.map((stat, index) => <div key={stat.label} className={stat.danger ? dangerValue : undefined}><StatTile label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/></div>)}</div>}
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
           <section className="rounded-xl border border-border bg-white p-5">

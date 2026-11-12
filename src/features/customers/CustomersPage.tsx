@@ -1,5 +1,5 @@
 import { FileCheck2, FileWarning, Plus, UsersRound } from 'lucide-react'
-import { KitEmpty, KitSearch, SampleStatTile, StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
+import { KitEmpty, KitSearch, StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { Pagination } from '@/components/ui/Pagination'
 import { KitButton } from '@/components/ui/PaymentKit'
@@ -37,8 +37,7 @@ export default function CustomersPage() {
     {page.stats
       ? <div className={statsGrid}>{page.stats.map((stat, index) => index === 0
         ? <StatTile key={stat.label} label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/>
-        // Invoices come from sample data until the invoices endpoint exists.
-        : <div key={stat.label} className={stat.danger ? dangerValue : undefined}><SampleStatTile label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/></div>)}</div>
+        : <div key={stat.label} className={stat.danger ? dangerValue : undefined}><StatTile label={stat.label} value={stat.value} note={stat.note} icon={statIcons[index]} tone={statTones[index]}/></div>)}</div>
       : page.isLoading && <SkeletonGroup label="Loading customer stats" className={statsGrid}>{statIcons.map((_, index) => <StatTileSkeleton key={index}/>)}</SkeletonGroup>}
 
     <section className="overflow-hidden rounded-xl border border-border bg-white">

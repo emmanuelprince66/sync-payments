@@ -2,7 +2,7 @@ import { TriangleAlert } from 'lucide-react'
 import type { InvoicePaymentState } from '@/api/invoices'
 import { cn } from '@/lib/cn'
 
-/** "At risk": the customer has a pending, part-paid or overdue invoice. */
+/** "At risk": the customer has an invoice with money still owed. */
 export function AtRiskChip({ className }: { className?: string }) {
   return <span className={cn('inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[#FDEAEA] px-2.5 py-1 text-[10px] font-extrabold text-[#C72D34]', className)}><TriangleAlert size={11}/>At risk</span>
 }
@@ -19,6 +19,8 @@ const stateTones: Record<InvoicePaymentState, string> = {
   'Part paid': 'bg-[#E7F1FC] text-[#1C6FA8]',
   Overdue: 'bg-[#FDEAEA] text-[#C72D34]',
   Draft: 'bg-muted text-muted-foreground',
+  Approved: 'bg-[#EEF3FB] text-[#3D5A99]',
+  Void: 'bg-muted text-muted-foreground line-through',
 }
 
 export function InvoiceStatePill({ value }: { value: InvoicePaymentState }) {

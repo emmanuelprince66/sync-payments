@@ -4,7 +4,8 @@ import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { longDate, ledgerDate } from '../dates'
 import { A4_HEIGHT_PX, A4_WIDTH_PX, documentNumber, tint, type InvoiceDocumentModel } from '../document'
 import { useFitScale } from '../hooks/useFitScale'
-import { DocumentFooter, DocumentLines, DocumentLogo, DocumentTotals, INK, MUTED, PaidStamp, RULE } from './InvoicePreviewBody'
+import { useLetterhead } from '../hooks/useLetterhead'
+import { ContactLine, DocumentFooter, DocumentLines, DocumentLogo, DocumentTotals, INK, MUTED, PaidStamp, PayToBlock, RULE } from './InvoicePreviewBody'
 
 type DesignProps = { doc: InvoiceDocumentModel }
 
@@ -28,6 +29,7 @@ function ClassicDesign({ doc }: DesignProps) {
         <DocumentLogo doc={doc}/>
         <p className="mt-4 text-[14px] font-extrabold" style={{ color: INK }}>{doc.legalName}</p>
         {doc.address && <p className="mt-1 max-w-[300px] whitespace-pre-line text-[12px] leading-5" style={{ color: MUTED }}>{doc.address}</p>}
+        <ContactLine doc={doc}/>
       </div>
       <div className="shrink-0 text-right">
         <p className="text-[34px] font-black tracking-[.18em]" style={{ color: INK }}>INVOICE</p>
@@ -62,6 +64,7 @@ function LedgerDesign({ doc }: DesignProps) {
         <DocumentLogo doc={doc} onDark size={40}/>
         <p className="mt-4 text-[14px] font-extrabold">{doc.legalName}</p>
         {doc.address && <p className="mt-1 max-w-[300px] whitespace-pre-line text-[12px] leading-5" style={{ color: 'rgba(255,255,255,.72)' }}>{doc.address}</p>}
+        <ContactLine doc={doc} color="rgba(255,255,255,.72)"/>
       </div>
       <div className="shrink-0 text-right">
         <p className="text-[11px] font-bold tracking-[.28em]" style={{ color: 'rgba(255,255,255,.7)' }}>DOCUMENT {documentNumber(doc.number)}</p>
@@ -101,6 +104,7 @@ function StudioDesign({ doc }: DesignProps) {
       <div className="min-w-0 text-right">
         <p className="text-[11px] font-extrabold uppercase tracking-[.22em]" style={{ color: INK }}>{doc.legalName}</p>
         {doc.address && <p className="mt-2 max-w-[300px] whitespace-pre-line text-[12px] leading-5" style={{ color: MUTED }}>{doc.address}</p>}
+        <ContactLine doc={doc}/>
       </div>
     </div>
     <p className="mt-14 text-[12px] font-extrabold uppercase tracking-[.3em]" style={{ color: doc.accent }}>Invoice</p>
@@ -115,6 +119,7 @@ function StudioDesign({ doc }: DesignProps) {
     </div>
     <div className="mt-8"><DocumentLines doc={doc} variant="studio"/></div>
     <DocumentTotals doc={doc}/>
+    <PayToBlock doc={doc} framed/>
     <div data-pdf-block className="mt-8 flex items-center justify-between gap-6 rounded-xl p-6" style={{ background: tint(doc.accent, 0.1) }}>
       <p className="max-w-[340px] text-[12px] leading-5" style={{ color: INK }}>Thank you for your business. Please use <b>{doc.number}</b> as your payment reference{doc.reference ? ` (${doc.reference})` : ''}.</p>
       <div className="shrink-0 text-right"><p className="text-[10px] uppercase tracking-[.16em]" style={{ color: MUTED }}>{doc.amountPaid > 0 ? 'Balance due' : 'Amount due'}</p><p className="text-[22px] font-black" style={{ color: doc.accent }}>{money(doc.amountPaid > 0 ? doc.balance : doc.total)}</p></div>
@@ -125,7 +130,10 @@ function StudioDesign({ doc }: DesignProps) {
 const designs = { Classic: ClassicDesign, Ledger: LedgerDesign, Studio: StudioDesign }
 
 /** The invoice at true A4 width (794 px): what the PDF is made from. */
-export function InvoiceDocument({ doc, ref }: { doc: InvoiceDocumentModel; ref?: Ref<HTMLDivElement> }) {
+export function InvoiceDocument({ doc: base, ref }: { doc: InvoiceDocumentModel; ref?: Ref<HTMLDivElement> }) {
+  // Business phone/email and the account to pay into come from the business record unless the doc sets them.
+  const letterhead = useLetterhead()
+  const doc = { ...base, contactLine: base.contactLine ?? letterhead.contactLine, payTo: base.payTo === undefined ? letterhead.payTo : base.payTo }
   const Design = designs[doc.design] ?? ClassicDesign
   return <div ref={ref} data-invoice-document className="bg-white font-sans antialiased" style={{ width: A4_WIDTH_PX, minHeight: A4_HEIGHT_PX, color: INK }}>
     <Design doc={doc}/>

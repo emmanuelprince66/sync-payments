@@ -1,29 +1,36 @@
 import { Check } from 'lucide-react'
+import { useMemo } from 'react'
 import type { InvoiceDesign } from '@/api/invoices'
 import { cn } from '@/lib/cn'
+import { useBusinessDataStore } from '@/stores/business-data-store'
 import { INVOICE_TEMPLATES } from '../constants'
+import { isoDaysFromNow } from '../dates'
+import type { InvoiceDocumentModel } from '../document'
+import { InvoicePreview } from './InvoicePreview'
 
-/** A miniature of each design, drawn in its own colour. */
+const SAMPLE_LINES = [
+  { description: 'Brand identity design', qty: 1, price: 180000, amount: 180000 },
+  { description: 'Social media templates', qty: 6, price: 15000, amount: 90000 },
+  { description: 'Printing and delivery', qty: 1, price: 25000, amount: 25000 },
+]
+
+/**
+ * A miniature of the real design, filled with this business's logo, name and
+ * address and a few sample lines, so the cards show what customers will get.
+ */
 export function DesignThumbnail({ name, accent }: { name: InvoiceDesign; accent: string }) {
-  if (name === 'Classic') return <div className="h-full bg-white p-2 shadow-sm">
-    <div className="h-1.5" style={{ background: accent }}/>
-    <div className="mt-2 flex justify-between"><div className="h-3 w-3 rounded-sm" style={{ background: accent }}/><div className="h-2 w-10 bg-primary"/></div>
-    <div className="mt-2 h-4 rounded-sm" style={{ background: `${accent}22` }}/>
-    <div className="mt-2 h-1.5" style={{ background: `${accent}22` }}/><div className="mt-1 h-px bg-border"/><div className="mt-1 h-px bg-border"/>
-  </div>
-  if (name === 'Ledger') return <div className="h-full bg-white shadow-sm">
-    <div className="flex h-7 items-center justify-between px-2" style={{ background: accent }}><div className="h-3 w-3 rounded-sm bg-white"/><div className="h-2 w-8 border border-white/70"/></div>
-    <div className="m-2 grid grid-cols-4 gap-1 border-y border-primary py-1"><i className="h-1 bg-primary/40"/><i className="h-1 bg-primary/30"/><i className="h-1 bg-primary/20"/><i className="h-1 bg-primary/40"/></div>
-    <div className="mx-2 h-px bg-primary"/><div className="mx-2 mt-1 h-px bg-border"/><div className="mx-2 mt-1 h-px bg-border"/>
-    <div className="ml-auto mr-2 mt-1.5 h-2.5 w-8 border border-primary"/>
-  </div>
-  return <div className="relative h-full bg-white pl-5 pr-2 shadow-sm">
-    <div className="absolute inset-y-0 left-0 w-2.5" style={{ background: accent }}/>
-    <div className="pt-2 text-[15px] font-black leading-none tracking-tighter">0042<span style={{ color: accent }}>.</span></div>
-    <div className="mt-2 h-1 w-12" style={{ background: `${accent}55` }}/>
-    <div className="mt-2 h-px w-full bg-border"/><div className="mt-1 h-1.5" style={{ background: `${accent}18` }}/>
-    <div className="mt-1.5 h-3 rounded-sm" style={{ background: `${accent}22` }}/>
-  </div>
+  const business = useBusinessDataStore(state => state.businessData)
+  const doc = useMemo<InvoiceDocumentModel>(() => {
+    const subtotal = SAMPLE_LINES.reduce((sum, line) => sum + line.amount, 0)
+    const tax = Math.round(subtotal * 0.075)
+    return {
+      design: name, accent, legalName: business?.name || 'Your business', address: business?.address || '', logoUrl: business?.logo || '',
+      party: 'Adaeze Okafor', partyEmail: 'adaeze@example.com', partyPhone: '', number: 'INV-0042', reference: '',
+      issueDate: isoDaysFromNow(0), dueDate: isoDaysFromNow(14),
+      lines: SAMPLE_LINES, subtotal, tax, total: subtotal + tax, amountPaid: 0, balance: subtotal + tax, status: 'Sent',
+    }
+  }, [name, accent, business])
+  return <div aria-hidden="true" className="pointer-events-none h-full w-full overflow-hidden"><InvoicePreview doc={doc} className=""/></div>
 }
 
 /** Choose one of the three invoice designs (a radio group of cards). */
@@ -36,7 +43,7 @@ export function InvoiceDesignPicker({ value, onChange, accent, compact = false }
         const selected = value === template.name
         return <button key={template.name} type="button" role="radio" aria-checked={selected} onClick={() => onChange(template.name)}
           className={cn('relative rounded-xl border p-2.5 text-left transition hover:border-secondary', selected ? 'border-secondary bg-accent/40 ring-2 ring-secondary/20' : 'border-border bg-white')}>
-          <div className={cn('overflow-hidden bg-[#E9ECE8] p-2', compact ? 'aspect-[1/1.1]' : 'aspect-[1.6/1]')}><DesignThumbnail name={template.name} accent={selected && accent ? accent : template.accent}/></div>
+          <div className={cn('overflow-hidden bg-[#E9ECE8] p-2', compact ? 'aspect-[1/1.1]' : 'aspect-[1.25/1]')}><DesignThumbnail name={template.name} accent={selected && accent ? accent : template.accent}/></div>
           <div className="mt-2 flex items-start justify-between gap-2">
             <div className="min-w-0"><p className="text-xs font-extrabold">{template.name}</p>{!compact && <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">{template.note}</p>}</div>
             {selected && <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-secondary text-white"><Check size={12}/></span>}

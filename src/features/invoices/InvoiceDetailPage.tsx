@@ -1,12 +1,13 @@
-import { BellRing, CheckCircle2, CircleDollarSign, Download, FileSearch, Share2, X } from 'lucide-react'
+import { BellRing, Check, CheckCircle2, CircleDollarSign, Download, FilePen, FileSearch, Send, Share2, X } from 'lucide-react'
 import { KitEmpty } from '@/components/ui/KitExtras'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { KitButton } from '@/components/ui/PaymentKit'
-import { BackLink, SampleDataBadge } from '@/components/ui/misc'
+import { BackLink } from '@/components/ui/misc'
 import { CardSkeleton } from '@/components/ui/Skeleton'
-import { InvoiceActivityCard, InvoiceAmountCard, InvoiceFactsCard, InvoicePaymentsCard } from './components/InvoiceDetailCards'
+import { InvoiceAccessNotice } from './components/InvoiceAccessNotice'
+import { InvoiceActivityCard, InvoiceAmountCard, InvoiceFactsCard, InvoicePaymentsCard, InvoicePublicLinkCard, ReversePaymentModal } from './components/InvoiceDetailCards'
 import { InvoicePdfSource, InvoicePreview } from './components/InvoicePreview'
-import { InvoiceStatusPill } from './components/InvoiceStatusPill'
+import { InvoiceStatusPill, ViewedTag } from './components/InvoiceStatusPill'
 import { RecordPaymentModal } from './components/RecordPaymentModal'
 import { SendReminderModal } from './components/SendReminderModal'
 import { useInvoiceDetail, type InvoiceDetailModel } from './hooks/useInvoiceDetail'
@@ -19,30 +20,43 @@ function PdfButtons({ model, compact = false }: { model: InvoiceDetailModel; com
   </>
 }
 
+/** Workflow actions for where the invoice stands: drafts edit and approve, approved ones go out, sent ones get paid and chased. */
+function WorkflowButtons({ model }: { model: InvoiceDetailModel }) {
+  const { actions } = model
+  return <>
+    {model.canEdit && <KitButton variant="secondary" onClick={model.edit}><FilePen size={14}/> Edit draft</KitButton>}
+    {model.canApprove && <KitButton loading={actions.moving === 'Approved'} disabled={actions.moving !== null} onClick={() => void actions.approve()}><Check size={14}/> Approve</KitButton>}
+    {model.canMarkSent && <KitButton loading={actions.moving === 'Sent'} disabled={actions.moving !== null} onClick={() => void actions.markSent()}><Send size={14}/> Mark as sent</KitButton>}
+    {model.canRemind && <KitButton variant="secondary" onClick={model.reminder.start}><BellRing size={14}/> Send reminder</KitButton>}
+    {model.canRecordPayment && <KitButton onClick={model.payment.start}><CircleDollarSign size={14}/> Record payment</KitButton>}
+  </>
+}
+
 export default function InvoiceDetailPage() {
   const model = useInvoiceDetail()
   const { invoice, doc } = model
 
   if (model.isLoading) return <KitPage>
-    <div><BackLink label="Back to invoices" onClick={model.back}/><KitPageHeader title={`Invoice ${model.invoiceId}`} subtitle="Loading invoice…" badge={<SampleDataBadge/>}/></div>
+    <div><BackLink label="Back to invoices" onClick={model.back}/><KitPageHeader title="Invoice" subtitle="Loading invoice…"/></div>
     <div className="grid gap-6 xl:grid-cols-2"><CardSkeleton lines={6}/><CardSkeleton lines={8}/></div>
   </KitPage>
 
   if (!invoice || !doc) return <KitPage>
-    <div><BackLink label="Back to invoices" onClick={model.back}/><KitPageHeader title="Invoice not found" subtitle={`We couldn't find ${model.invoiceId}.`} badge={<SampleDataBadge/>}/></div>
-    <KitEmpty icon={<FileSearch size={18}/>} title="This invoice isn't available" note="Sample invoices live in this browser tab only, so ones created before a refresh are gone." action={<KitButton onClick={model.back}>Back to invoices</KitButton>}/>
+    <div><BackLink label="Back to invoices" onClick={model.back}/><KitPageHeader title={model.forbidden ? 'Invoice' : 'Invoice not found'} subtitle={model.forbidden ? 'Access needed' : "We couldn't open this invoice."}/></div>
+    {model.forbidden
+      ? <InvoiceAccessNotice forbidden message={model.error}/>
+      : <section className="rounded-2xl border border-border bg-white"><KitEmpty icon={<FileSearch size={18}/>} title="This invoice isn't available" note={model.error || 'It may have been removed.'} action={<KitButton onClick={model.back}>Back to invoices</KitButton>}/></section>}
   </KitPage>
 
   return <KitPage>
     <div>
       <BackLink label="Back to invoices" onClick={model.back}/>
       <KitPageHeader
-        title={`Invoice ${invoice.id}`}
-        subtitle={`For ${invoice.client || 'a customer'} · created by ${invoice.createdBy}`}
-        badge={<><InvoiceStatusPill state={model.state}/><SampleDataBadge/></>}
+        title={`Invoice ${invoice.number}`}
+        subtitle={`For ${invoice.client || 'a customer'}${invoice.createdBy ? ` · created by ${invoice.createdBy}` : ''}`}
+        badge={<><InvoiceStatusPill state={model.state}/>{invoice.viewed && model.state !== 'Paid' && <ViewedTag/>}</>}
         actions={<div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
-          {model.canRemind && <KitButton variant="secondary" onClick={model.reminder.start}><BellRing size={14}/> Send reminder</KitButton>}
-          {model.canRecordPayment && <KitButton onClick={model.payment.start}><CircleDollarSign size={14}/> Record payment</KitButton>}
+          <WorkflowButtons model={model}/>
           <PdfButtons model={model} compact/>
         </div>}
       />
@@ -51,7 +65,7 @@ export default function InvoiceDetailPage() {
     {model.justCreated && <div role="status" className="flex flex-col gap-3 rounded-2xl border border-[#CFE6D3] bg-[#F1F8F2] p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-white"><CheckCircle2 size={16}/></span>
-        <div><p className="text-sm font-extrabold">{invoice.id} is saved</p><p className="mt-0.5 text-xs text-muted-foreground">Download the PDF or share it with {invoice.client || 'your customer'} now.</p></div>
+        <div><p className="text-sm font-extrabold">{invoice.number} is saved</p><p className="mt-0.5 text-xs text-muted-foreground">Download the PDF or share it with {invoice.client || 'your customer'} now.</p></div>
       </div>
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <PdfButtons model={model}/>
@@ -59,11 +73,17 @@ export default function InvoiceDetailPage() {
       </div>
     </div>}
 
+    {invoice.status === 'Draft' && !model.justCreated && <p role="note" className="rounded-2xl border border-dashed border-border bg-white px-4 py-3 text-xs text-muted-foreground">
+      This is a draft. You can still edit everything; once it's approved only its status can change.
+    </p>}
+
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
       <div className="flex min-w-0 flex-col gap-6">
         <InvoiceFactsCard invoice={invoice} overdue={model.state === 'Overdue'}/>
+        {invoice.publicUrl && <InvoicePublicLinkCard link={model.actions.publicLink} viewed={invoice.viewed}/>}
         <InvoiceAmountCard invoice={invoice} balance={model.balance} paidPercent={model.paidPercent}/>
-        <InvoicePaymentsCard invoice={invoice} action={model.canRecordPayment ? <button type="button" onClick={model.payment.start} className="text-[11px] font-extrabold text-secondary hover:underline">Record payment</button> : undefined}/>
+        <InvoicePaymentsCard invoice={invoice} onReverse={model.canReverse ? model.actions.reversal.ask : undefined}
+          action={model.canRecordPayment ? <button type="button" onClick={model.payment.start} className="text-[11px] font-extrabold text-secondary hover:underline">Record payment</button> : undefined}/>
         <InvoiceActivityCard invoice={invoice}/>
       </div>
       <section className="min-w-0 self-start overflow-hidden rounded-2xl border border-border bg-white xl:sticky xl:top-6">
@@ -75,8 +95,9 @@ export default function InvoiceDetailPage() {
       </section>
     </div>
 
-    <RecordPaymentModal model={model.payment} invoiceId={invoice.id}/>
-    <SendReminderModal model={model.reminder} invoiceId={invoice.id}/>
+    <RecordPaymentModal model={model.payment} invoiceNumber={invoice.number}/>
+    <SendReminderModal model={model.reminder} invoiceNumber={invoice.number}/>
+    <ReversePaymentModal model={model.actions.reversal}/>
     <InvoicePdfSource sourceRef={model.pdf.sourceRef} doc={doc}/>
   </KitPage>
 }

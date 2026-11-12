@@ -73,6 +73,7 @@ export function InvoiceLineTable({ model }: { model: InvoiceFormModel }) {
                     loading={model.items.loading}
                     onChange={value => { const item = model.items.list.find(entry => entry.id === value); if (item) model.applyItem(item, index) }}
                     onCreate={query => model.itemForm.start(index, query)}
+                    onDelete={model.items.remove}
                     createLabel="Create new item"
                     note={ITEM_NOTE}
                     triggerClassName="h-11 px-3 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-secondary/50"

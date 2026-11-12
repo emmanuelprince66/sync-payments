@@ -46,3 +46,14 @@ export const OPTIONAL_COLUMNS = [
   { id: 'taxAmount', label: 'Tax amount' },
 ] as const
 export type OptionalColumn = (typeof OPTIONAL_COLUMNS)[number]['id']
+
+/** The list endpoint's status filter (query param `status`). */
+export const INVOICE_STATUS_FILTERS = [
+  { value: '', label: 'All statuses' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'APPROVED', label: 'Approved' },
+  { value: 'SENT', label: 'Sent' },
+  { value: 'OVERDUE', label: 'Overdue' },
+  { value: 'PAID', label: 'Paid' },
+  { value: 'VOID', label: 'Void' },
+] as const

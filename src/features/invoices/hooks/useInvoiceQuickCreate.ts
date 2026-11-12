@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { useCreateCustomer, type Customer } from '@/api/customers'
-import { useCreateInvoiceItem, type InvoiceItem } from '@/api/invoices'
+import { invoiceErrorMessage, useCreateInvoiceItem, type InvoiceItem } from '@/api/invoices'
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, 'Contact name is required'),
@@ -55,7 +55,13 @@ export function useNewItemForm(onCreated: (item: InvoiceItem, row: number) => vo
     start: (forRow: number, name = '') => { form.reset({ code: name.toUpperCase().replace(/\s+/g, '-').slice(0, 30), name, description: '', price: '' }); setRow(forRow) },
     close: () => setRow(null),
     submit: form.handleSubmit(async values => {
-      const item = await create.mutateAsync({ ...values, price: Number(values.price) || 0 })
+      let item: InvoiceItem
+      try {
+        item = await create.mutateAsync({ ...values, price: Number(values.price) || 0 })
+      } catch (error) {
+        toast.error(invoiceErrorMessage(error, "Couldn't save the item."))
+        return
+      }
       toast.success(`${item.name} saved for reuse.`)
       if (row !== null) onCreated(item, row)
       setRow(null)

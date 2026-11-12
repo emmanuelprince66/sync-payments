@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { generatePath, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { CUSTOMER_TRANSACTION_TYPES, useCustomer, useCustomerTransactions, useDeleteCustomer, type CustomerTransactionType } from '@/api/customers'
@@ -7,7 +7,7 @@ import { formatShortDate } from '@/api/http'
 import { useDisclosure } from '@/hooks/useDisclosure'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { paths } from '@/routes/paths'
-import { useCustomerInvoices } from './useCustomerInvoices'
+import { useCustomerInvoiceDetail } from './useCustomerInvoices'
 
 const TRANSACTIONS_PAGE_SIZE = 10
 
@@ -25,13 +25,13 @@ export function useCustomerDetailPage() {
   const edit = useDisclosure()
   const confirmDelete = useDisclosure()
   const remove = useDeleteCustomer()
-  const invoiceStore = useCustomerInvoices()
+  const invoiceStore = useCustomerInvoiceDetail(customerId)
   const goBack = () => navigate(paths.customers)
 
   const data = detail.data
   const customer = data?.customer ?? null
   const address = customer?.address
-  const invoices = customer ? invoiceStore.forCustomer(customer) : null
+  const invoices = customer && !invoiceStore.unavailable ? invoiceStore.figures : null
   const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
   const dob = customer?.dateOfBirth ? (customer.dateOfBirth.length > 5 ? formatShortDate(`${customer.dateOfBirth.slice(0, 10)}T00:00:00`) : customer.dateOfBirth) : ''
 
@@ -45,20 +45,21 @@ export function useCustomerDetailPage() {
     segment: data?.segment ?? '',
     insight: data?.insight ?? '',
     statsLoading: invoiceStore.isLoading,
-    /** Invoice figures (sample invoices until the endpoint exists). */
+    /** Invoice figures: totals from invoices/customers/{id}/summary/, counts from the customer's invoice list. */
     stats: invoices
       ? [
           { label: 'Invoices paid', value: money(invoices.paid), note: `${plural(invoices.paidCount, 'invoice')} paid in full`, danger: false },
           { label: 'Unpaid', value: money(invoices.unpaid), note: invoices.unpaidCount ? `Owed on ${plural(invoices.unpaidCount, 'invoice')}` : 'Nothing owed', danger: invoices.unpaid > 0 },
           { label: 'Overdue', value: money(invoices.overdue), note: invoices.overdueCount ? `${plural(invoices.overdueCount, 'invoice')} past due` : 'Nothing overdue', danger: invoices.overdue > 0 },
-          { label: 'Invoices', value: invoices.invoices.length.toLocaleString(), note: 'Sent to this customer', danger: false },
+          { label: 'Invoices', value: invoices.count.toLocaleString(), note: 'Sent to this customer', danger: false },
         ]
       : [],
     atRisk: invoices?.atRisk ?? false,
     unpaid: money(invoices?.unpaid ?? 0),
     invoices: {
-      rows: (invoices?.invoices ?? []).map(invoice => ({
+      rows: invoiceStore.rows.map(invoice => ({
         id: invoice.id,
+        number: invoice.number,
         issued: formatShortDate(`${invoice.issued}T00:00:00`),
         due: formatShortDate(`${invoice.due}T00:00:00`),
         amount: money(invoice.amount),
@@ -66,7 +67,7 @@ export function useCustomerDetailPage() {
         state: invoice.state,
       })),
       isLoading: invoiceStore.isLoading,
-      open: (id: string) => navigate(paths.invoiceDetail.replace(':invoiceId', id)),
+      open: (id: string) => navigate(generatePath(paths.invoiceDetail, { invoiceId: id })),
       create: () => navigate(paths.invoiceNew),
     },
     details: customer

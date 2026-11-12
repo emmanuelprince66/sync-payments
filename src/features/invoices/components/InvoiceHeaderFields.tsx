@@ -1,4 +1,4 @@
-import { Bookmark, CircleDollarSign, Hash, UserRound } from 'lucide-react'
+import { CircleDollarSign, Hash, StickyNote, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useController } from 'react-hook-form'
 import { Link } from 'react-router'
@@ -70,17 +70,18 @@ export function InvoiceHeaderFields({ model }: { model: InvoiceFormModel }) {
     <DateField model={model} name="issueDate" label="Issue date" placeholder="Select a date"/>
     <DateField model={model} name="dueDate" label="Due date" placeholder="Select a date"/>
 
-    <HeaderField label="Invoice number" htmlFor="invoice-number" error={errors.number?.message}>
-      <label className={cn('flex items-center gap-2.5', boxClass, errors.number && invalidClass)}>
+    <HeaderField label="Invoice number">
+      <div className={cn('flex items-center gap-2.5', boxClass, 'bg-white')} title="Assigned by Sync360 when the invoice is saved">
         <Hash size={15} className="shrink-0 text-foreground/70"/>
-        <input id="invoice-number" autoComplete="off" {...register('number')} className="h-full w-full min-w-0 bg-transparent outline-none"/>
-      </label>
+        <span className="min-w-0 flex-1 truncate font-mono">{model.number.value || (model.number.loading ? 'Loading…' : 'Assigned on save')}</span>
+        {!model.editing && <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-[.08em] text-muted-foreground">Next</span>}
+      </div>
     </HeaderField>
 
-    <HeaderField label="Reference" htmlFor="invoice-reference">
-      <label className={cn('flex items-center gap-2.5', boxClass)}>
-        <Bookmark size={15} className="shrink-0 fill-current text-foreground/70"/>
-        <input id="invoice-reference" autoComplete="off" placeholder="e.g. PO number" {...register('reference')} className="h-full w-full min-w-0 bg-transparent outline-none placeholder:font-medium placeholder:text-muted-foreground"/>
+    <HeaderField label="Note" htmlFor="invoice-note" error={errors.note?.message}>
+      <label className={cn('flex items-center gap-2.5', boxClass, errors.note && invalidClass)}>
+        <StickyNote size={15} className="shrink-0 text-foreground/70"/>
+        <input id="invoice-note" autoComplete="off" placeholder="e.g. PO number or terms" {...register('note')} className="h-full w-full min-w-0 bg-transparent outline-none placeholder:font-medium placeholder:text-muted-foreground"/>
       </label>
     </HeaderField>
 

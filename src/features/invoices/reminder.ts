@@ -1,15 +1,16 @@
-/** Builds the reminder a business sends from its own WhatsApp or email (there is no messaging endpoint). */
+/** The reminder text for WhatsApp and the share sheet (email reminders are sent by the server). */
 
-export type ReminderFacts = { client: string; number: string; amountDue: string; dueDate: string; overdue: boolean; partPaid: boolean; business: string }
+export type ReminderFacts = { client: string; number: string; amountDue: string; dueDate: string; overdue: boolean; partPaid: boolean; business: string; publicUrl: string }
 
-export const reminderMessage = ({ client, number, amountDue, dueDate, overdue, partPaid, business }: ReminderFacts) => [
+export const reminderMessage = ({ client, number, amountDue, dueDate, overdue, partPaid, business, publicUrl }: ReminderFacts) => [
   `Hello ${client},`,
   '',
   overdue
     ? `This is a reminder that invoice ${number} was due on ${dueDate} and ${amountDue} is still outstanding.`
     : `This is a friendly reminder that invoice ${number} for ${amountDue} is due on ${dueDate}.`,
   partPaid ? 'Thank you for the part payment you have made so far.' : '',
-  `The invoice PDF is attached. Please use ${number} as your payment reference.`,
+  publicUrl ? `View and pay the invoice here: ${publicUrl}` : 'The invoice PDF is attached.',
+  `Please use ${number} as your payment reference.`,
   '',
   'Thank you,',
   business,
