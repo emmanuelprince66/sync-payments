@@ -21,7 +21,7 @@ export function useCategoriesManager(onClose: () => void) {
   return {
     loading: spend.isLoading || budgets.isLoading,
     rows: (spend.data ?? []).map(row => {
-      const budget = budgets.data?.find(item => item.categoryName === row.name) ?? null
+      const budget = budgets.data?.find(item => item.categoryId === row.id) ?? null
       return { id: row.id, name: row.name, spent: money(row.spent), count: row.count, budgetLabel: budget ? `${money(budget.total)} budget` : 'No budget' }
     }),
     categoryForm,

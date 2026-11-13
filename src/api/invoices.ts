@@ -1,12 +1,12 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData, type QueryClient } from '@tanstack/react-query'
 import { ApiError, apiRequest } from '@/lib/api-client'
 import { requireBusinessId, useCurrentBusinessId } from './business'
 import { apiFormRequest, asRecord, at, isLive, listFrom, num, str, type UnknownRecord } from './http'
 import {
-  INVOICE_DESIGNS, INVOICE_PAYMENT_METHODS, roundMoney,
-  type CustomerInvoiceSummary, type DocumentFlowItem, type Invoice, type InvoiceActivity, type InvoiceActivityType, type InvoiceClientSnapshot, type InvoiceDesign,
-  type InvoiceInput, type InvoiceItem, type InvoiceLineRecord, type InvoiceListParams, type InvoiceListResult, type InvoicePayment, type InvoicePaymentMethod,
-  type InvoiceReminderChannel, type InvoiceReminderResult, type InvoiceStatus, type InvoiceSummary, type InvoiceTaxMode,
+  INVOICE_DESIGNS, roundMoney,
+  type CustomerInvoiceSummaries, type CustomerInvoiceSummary, type DocumentFlowItem, type Invoice, type InvoiceActivity, type InvoiceActivityType, type InvoiceClientSnapshot,
+  type InvoiceDesign, type InvoiceInput, type InvoiceItem, type InvoiceItemInput, type InvoiceLineRecord, type InvoiceListParams, type InvoiceListResult, type InvoicePayment,
+  type InvoicePaymentMethod, type InvoiceReminderChannel, type InvoiceReminderResult, type InvoiceStatus, type InvoiceSummary, type InvoiceTaxMode,
 } from './invoice-model'
 import { queryKeys } from './query-keys'
 import * as mock from './sample/invoices'
@@ -14,19 +14,24 @@ import * as mock from './sample/invoices'
 export * from './invoice-model'
 
 /**
- * Invoices (base `invoices/`). Mock mode (VITE_AUTH_MODE=mock) keeps everything on the sample store.
+ * Invoices (base `invoices/`). Mock mode (VITE_AUTH_MODE=mock) keeps everything on the sample store,
+ * which answers analytics, summaries, reminders, saved items and next-number in the wire shapes below
+ * so the same mappers run in both modes.
  *  GET    invoices/business/{business_id}/?status&customer&search&start_date&end_date&page&limit
- *  POST   invoices/business/{business_id}/                 create (server computes totals, assigns the number, snapshots client + branding)
- *  GET    invoices/business/{business_id}/next-number/     { next_number } (preview only)
+ *           → { links: { next, previous }, total, limit, pages, results: [row] } (VOID excluded)
+ *  POST   invoices/business/{business_id}/                 JSON, or multipart with `logo` (then `line_items` is a JSON string).
+ *                                                           The server assigns `number` and `reference`; we never send them.
+ *  GET    invoices/business/{business_id}/next-number/     { next_number }
  *  GET    invoices/business/{business_id}/analytics/
- *  GET    invoices/business/{business_id}/saved-items/     POST to add, DELETE …/saved-items/{item_id}/
+ *  GET    invoices/business/{business_id}/customer-summaries/?customer_ids=a,b
+ *           → { results: [{ customer_id, total_paid, total_unpaid, overdue_amount, invoice_count }] }
+ *  GET    invoices/business/{business_id}/saved-items/     [{ id, description, default_price, default_tax_rate, account_code, created_at }]
+ *  POST   invoices/business/{business_id}/saved-items/     { description, default_price, default_tax_rate, account_code }; DELETE …/{item_id}/
  *  GET    invoices/{id}/                                   full detail
- *  PATCH  invoices/{id}/                                   any field while DRAFT; afterwards only { status: APPROVED → SENT }
+ *  PATCH  invoices/{id}/                                   any field (and `logo`, multipart) while DRAFT; afterwards only { status: APPROVED → SENT }
  *  POST   invoices/{id}/payments/                          { amount, date, method, note }; DELETE …/payments/{payment_id}/ soft-reverses
- *  POST   invoices/{id}/reminders/                         { channel: email | whatsapp | share } → { send_succeeded }
- *  POST   invoices/{id}/logo/                              multipart `logo`, draft only
+ *  POST   invoices/{id}/reminders/                         { channel } → { channel, public_url, send_attempted, send_succeeded, send_message }
  *  GET    invoices/customers/{customer_id}/summary/        { total_paid, total_unpaid, overdue_amount, invoice_count }
- * Response field names are read tolerantly; anything important that is missing is logged once in development.
  */
 
 export const INVOICES_PAGE_SIZE = 10
@@ -37,7 +42,7 @@ export const isInvoiceForbidden = (error: unknown) => error instanceof ApiError 
 
 const NO_ACCESS = "You don't have permission to do this with invoices. Ask the business owner to give you invoice access."
 
-/** First readable message in a DRF error body: `detail`, `message`, or the first field error. */
+/** First readable message in a DRF error body: the first field error. */
 const fieldErrorText = (data: unknown): string => {
   for (const value of Object.values(asRecord(data))) {
     if (typeof value === 'string' && value) return value
@@ -48,11 +53,11 @@ const fieldErrorText = (data: unknown): string => {
   return ''
 }
 
-/** A message people can act on: the backend's 403 wording for missing invoice rights, field errors for a rejected save. */
+/** A message people can act on: validation errors come back as HTTP 400 `{ message }`, the 403 wording for missing invoice rights. */
 export const invoiceErrorMessage = (error: unknown, fallback = 'Something went wrong. Please try again.') => {
   if (error instanceof ApiError) {
     const record = asRecord(error.data)
-    const own = str(record.detail) || str(record.message) || str(record.error)
+    const own = str(record.message) || str(record.detail) || str(record.error)
     if (error.status === 403) return own || NO_ACCESS
     if (error.status === 400) return own || fieldErrorText(error.data) || fallback
     return own || error.message || fallback
@@ -62,194 +67,187 @@ export const invoiceErrorMessage = (error: unknown, fallback = 'Something went w
 
 const retryUnlessDenied = (count: number, error: unknown) => !(error instanceof ApiError && [400, 403, 404].includes(error.status)) && count < 2
 
-// ─── Tolerant reading ───────────────────────────────────────────────────────
-
-const firstOf = (record: unknown, paths: string[]): unknown => {
-  for (const path of paths) {
-    const value = at(record, path)
-    if (value !== undefined && value !== null && value !== '') return value
-  }
-  return undefined
-}
+// ─── Reading ────────────────────────────────────────────────────────────────
 
 const warned = new Set<string>()
-/** First non-empty value at any of the paths; logs once in development when none is there. */
-const pick = (record: unknown, scope: string, ...paths: string[]): unknown => {
-  const value = firstOf(record, paths)
-  const key = `${scope}:${paths[0]}`
-  if (value === undefined && import.meta.env.DEV && !warned.has(key)) {
-    warned.add(key)
-    console.warn(`[invoices] ${scope} response has none of: ${paths.join(', ')}`)
+/** The value at `path`; logs once in development when a field the contract promises is missing. */
+const field = (record: unknown, scope: string, path: string): unknown => {
+  const value = at(record, path)
+  if ((value === undefined || value === null || value === '') && import.meta.env.DEV && !warned.has(`${scope}:${path}`)) {
+    warned.add(`${scope}:${path}`)
+    console.warn(`[invoices] ${scope} response has no ${path}`)
   }
   return value
 }
-/** Same, without the warning, for fields that are often legitimately empty. */
-const optional = (record: unknown, ...paths: string[]) => firstOf(record, paths)
 
-/** `{ success, data: {...} }` or the bare object. */
+/** The bare object, or `{ data: {...} }` if a response is ever wrapped. */
 const unwrap = (response: unknown): UnknownRecord => {
   const record = asRecord(response)
-  const data = record.data
-  return data && typeof data === 'object' && !Array.isArray(data) && !('line_items' in record) ? asRecord(data) : record
+  return 'data' in record && record.data && typeof record.data === 'object' && !Array.isArray(record.data) ? asRecord(record.data) : record
 }
 
-/** A person as a string, or { full_name | name | first_name + last_name | email }. */
-const personName = (value: unknown): string => {
-  if (typeof value === 'string' || typeof value === 'number') return str(value)
-  const record = asRecord(value)
-  return str(record.full_name) || str(record.name) || [str(record.first_name ?? record.firstname), str(record.last_name ?? record.lastname)].filter(Boolean).join(' ') || str(record.email)
-}
-
-const idOf = (value: unknown) => (typeof value === 'string' || typeof value === 'number' ? str(value) : str(asRecord(value).id))
 const day = (value: unknown) => str(value).slice(0, 10)
+const nullableNumber = (value: unknown) => (value === null || value === undefined || value === '' ? null : num(value))
 
 // ─── Wire values ────────────────────────────────────────────────────────────
 
 const STATUS_FROM_WIRE: Record<string, InvoiceStatus> = {
-  DRAFT: 'Draft', APPROVED: 'Approved', SENT: 'Sent', VIEWED: 'Viewed', PAID: 'Paid', OVERDUE: 'Overdue', VOID: 'Void', VOIDED: 'Void', PARTIALLY_PAID: 'Sent', PART_PAID: 'Sent',
+  DRAFT: 'Draft', APPROVED: 'Approved', SENT: 'Sent', VIEWED: 'Viewed', PAID: 'Paid', OVERDUE: 'Overdue', VOID: 'Void',
 }
 
-/** Choice values are sent upper-case like the status enum (DRAFT/APPROVED/SENT). */
-const designToWire = (design: InvoiceDesign) => design.toUpperCase()
+/** `design` is lowercase on the wire: classic / ledger / studio. */
+const designToWire = (design: InvoiceDesign) => design.toLowerCase()
 const designFromWire = (value: unknown): InvoiceDesign => INVOICE_DESIGNS.find(design => design.toLowerCase() === str(value).toLowerCase()) ?? 'Classic'
+
+/** `tax_mode`: EXCLUSIVE / INCLUSIVE / NONE. */
 const taxModeToWire = (mode: InvoiceTaxMode) => mode.toUpperCase()
 const taxModeFromWire = (value: unknown): InvoiceTaxMode => {
   const mode = str(value).toLowerCase()
   return mode === 'inclusive' || mode === 'none' ? mode : 'exclusive'
 }
-const methodToWire = (method: InvoicePaymentMethod) => method.toUpperCase().replace(/\s+/g, '_')
-const methodFromWire = (value: unknown): InvoicePaymentMethod => {
-  const wire = str(value).toUpperCase().replace(/[\s-]+/g, '_')
-  return INVOICE_PAYMENT_METHODS.find(method => methodToWire(method) === wire) ?? (wire === 'TRANSFER' ? 'Bank transfer' : 'Other')
-}
+
+/** Payment `method`: BANK_TRANSFER / CASH / CARD / POS / OTHER. */
+const METHOD_TO_WIRE: Record<InvoicePaymentMethod, string> = { 'Bank transfer': 'BANK_TRANSFER', Cash: 'CASH', Card: 'CARD', POS: 'POS', Other: 'OTHER' }
+const methodFromWire = (value: unknown): InvoicePaymentMethod =>
+  (Object.entries(METHOD_TO_WIRE) as [InvoicePaymentMethod, string][]).find(([, wire]) => wire === str(value).toUpperCase())?.[0] ?? 'Other'
 
 const ACTIVITY_FROM_WIRE: Record<string, InvoiceActivityType> = {
-  CREATED: 'created', UPDATED: 'updated', EDITED: 'updated', APPROVED: 'approved', SENT: 'sent', VIEWED: 'viewed', REMINDER_SENT: 'reminder', REMINDER: 'reminder',
-  PAYMENT_RECORDED: 'payment', PAYMENT: 'payment', PAYMENT_REVERSED: 'payment_reversed', PAID: 'paid', VOIDED: 'voided', VOID: 'voided',
+  CREATED: 'created', APPROVED: 'approved', SENT: 'sent', VIEWED: 'viewed', REMINDER_SENT: 'reminder',
+  PAYMENT_RECORDED: 'payment', PAYMENT_REVERSED: 'payment_reversed', PAID: 'paid', VOIDED: 'voided',
 }
 
 // ─── Mapping ────────────────────────────────────────────────────────────────
 
 const mapLine = (value: unknown): InvoiceLineRecord => {
   const record = asRecord(value)
-  const qty = num(optional(record, 'quantity', 'qty'))
-  const price = num(optional(record, 'unit_price', 'price'))
-  const discount = num(record.discount_percent ?? record.discount)
+  const qty = num(record.quantity)
+  const price = num(record.unit_price)
+  const discount = num(record.discount_percent)
   return {
-    description: str(optional(record, 'description', 'name')),
+    description: str(record.description),
     qty,
     price,
     discount,
     taxRate: num(record.tax_rate),
-    account: str(record.account_code ?? record.account),
-    itemId: idOf(record.item_id ?? record.item ?? record.saved_item),
-    amount: num(optional(record, 'amount', 'line_total', 'total', 'net_amount') ?? roundMoney(qty * price * (1 - discount / 100))),
-    tax: num(optional(record, 'tax_amount', 'tax', 'tax_total')),
+    account: str(record.account_code),
+    itemId: str(record.item_id),
+    amount: record.line_amount == null ? roundMoney(qty * price * (1 - discount / 100)) : num(record.line_amount),
+    tax: num(record.line_tax),
   }
 }
 
+/** Lines in `sort_order`. */
+const mapLines = (value: unknown) => listFrom(value, [])
+  .map((entry, index) => ({ entry, order: asRecord(entry).sort_order == null ? index : num(asRecord(entry).sort_order) }))
+  .sort((a, b) => a.order - b.order)
+  .map(({ entry }) => mapLine(entry))
+
 const mapPayment = (value: unknown, index: number): InvoicePayment => {
   const record = asRecord(value)
-  const reversedAt = str(optional(record, 'reversed_at', 'deleted_at'))
   return {
-    id: str(pick(record, 'payment', 'id', 'uuid')) || `payment-${index}`,
+    id: str(field(record, 'payment', 'id')) || `payment-${index}`,
     amount: num(record.amount),
-    date: day(optional(record, 'date', 'payment_date', 'paid_at', 'created_at')),
-    method: methodFromWire(record.method ?? record.payment_method),
-    note: str(record.note ?? record.notes),
-    recordedBy: personName(optional(record, 'recorded_by_name', 'recorded_by', 'created_by_name', 'created_by')),
-    recordedAt: str(optional(record, 'created_at', 'recorded_at', 'date')),
-    reversed: record.is_reversed === true || record.reversed === true || Boolean(reversedAt) || str(record.status).toUpperCase() === 'REVERSED',
-    reversedAt,
+    date: day(record.date),
+    method: methodFromWire(record.method),
+    note: str(record.note),
+    recordedBy: str(record.recorded_by_name),
+    recordedAt: str(record.created_at),
+    reversed: record.is_reversed === true,
+    reversedAt: str(record.reversed_at),
+    reversedBy: str(record.reversed_by_name),
   }
 }
 
 const naira = (value: unknown) => `₦${num(value).toLocaleString()}`
+const CHANNEL_NAME: Record<string, string> = { email: 'email', whatsapp: 'WhatsApp', share: 'the share sheet' }
 
-const defaultActivityMessage = (type: InvoiceActivityType, meta: UnknownRecord, client: string) => {
+/** Reminder wording from `context.channel / send_attempted / send_succeeded / send_message`. */
+const reminderText = (context: UnknownRecord) => {
+  const channel = str(context.channel).toLowerCase()
+  const reason = str(context.send_message)
+  if (channel === 'share') return 'Reminder shared from device'
+  if (context.send_succeeded === true) return channel === 'email' ? 'Reminder emailed' : `Reminder sent via ${CHANNEL_NAME[channel] ?? channel}`
+  if (channel === 'whatsapp' && context.send_attempted !== true) return 'WhatsApp reminder opened on device'
+  if (context.send_succeeded === false) return `Reminder ${channel === 'email' ? 'email' : `via ${CHANNEL_NAME[channel] ?? channel}`} failed${reason ? `: ${reason}` : ''}`
+  return channel ? `Reminder via ${CHANNEL_NAME[channel] ?? channel}` : 'Reminder sent'
+}
+
+const activityText = (type: InvoiceActivityType, context: UnknownRecord, client: string) => {
   switch (type) {
     case 'created': return 'Invoice created'
-    case 'updated': return 'Invoice edited'
+    case 'updated': return 'Invoice updated'
     case 'approved': return 'Approved'
     case 'sent': return client ? `Sent to ${client}` : 'Marked as sent'
     case 'viewed': return client ? `Viewed by ${client}` : 'Viewed by the customer'
-    case 'reminder': {
-      const channel = str(meta.channel).toLowerCase()
-      return channel === 'share' ? 'Reminder shared from device' : channel ? `Reminder sent via ${channel === 'whatsapp' ? 'WhatsApp' : 'email'}` : 'Reminder sent'
-    }
-    case 'payment': return meta.amount ? `Payment of ${naira(meta.amount)} recorded` : 'Payment recorded'
-    case 'payment_reversed': return meta.amount ? `Payment of ${naira(meta.amount)} reversed` : 'Payment reversed'
-    case 'paid': return 'Marked as paid in full'
+    case 'reminder': return reminderText(context)
+    case 'payment': return context.amount != null ? `Payment of ${naira(context.amount)} recorded` : 'Payment recorded'
+    case 'payment_reversed': return context.amount != null ? `Payment of ${naira(context.amount)} reversed` : 'Payment reversed'
+    case 'paid': return 'Paid in full'
     case 'voided': return 'Invoice voided'
   }
 }
 
 const mapActivity = (client: string) => (value: unknown, index: number): InvoiceActivity => {
   const record = asRecord(value)
-  const wire = str(pick(record, 'activity', 'type', 'action', 'event', 'activity_type')).toUpperCase()
-  const type = ACTIVITY_FROM_WIRE[wire] ?? 'updated'
-  const meta = asRecord(record.metadata ?? record.meta ?? record.data)
+  const type = ACTIVITY_FROM_WIRE[str(field(record, 'activity', 'action')).toUpperCase()] ?? 'updated'
   return {
     id: str(record.id) || `activity-${index}`,
     type,
-    message: str(optional(record, 'message', 'description', 'note')) || defaultActivityMessage(type, meta, client),
-    by: personName(optional(record, 'actor_name', 'actor', 'performed_by', 'user', 'by', 'created_by')) || (type === 'viewed' ? client : ''),
-    at: str(pick(record, 'activity', 'created_at', 'timestamp', 'at', 'date')),
+    message: activityText(type, asRecord(record.context), client),
+    by: str(record.performed_by_name) || (type === 'viewed' ? client : ''),
+    at: str(field(record, 'activity', 'created_at')),
   }
 }
 
 /** A list row or a full detail. Rows have no lines, payments or activity; those stay empty until the detail loads. */
 export const mapInvoice = (value: unknown): Invoice => {
   const record = unwrap(value)
-  const client = asRecord(optional(record, 'client_details', 'client', 'client_snapshot', 'customer_details', 'customer'))
-  const clientName = str(pick(record, 'invoice', 'client_name', 'customer_name', 'client_details.name', 'client.name', 'customer.name'))
+  const client = str(field(record, 'invoice', 'client_name'))
   const payments = listFrom(record.payments, []).map(mapPayment)
-  const activity = listFrom(optional(record, 'activity_log', 'activity', 'activities', 'logs'), []).map(mapActivity(clientName))
-  const amount = num(pick(record, 'invoice', 'total', 'total_amount', 'amount'))
-  const paidFromPayments = roundMoney(payments.filter(payment => !payment.reversed).reduce((sum, payment) => sum + payment.amount, 0))
-  const amountPaid = num(optional(record, 'amount_paid', 'paid_amount', 'total_paid') ?? paidFromPayments)
-  const balance = num(optional(record, 'balance', 'balance_due', 'amount_due') ?? Math.max(amount - amountPaid, 0))
-  const wireStatus = str(pick(record, 'invoice', 'status')).toUpperCase()
-  const viewed = wireStatus === 'VIEWED' || record.is_viewed === true || record.viewed === true || Boolean(record.viewed_at) || activity.some(entry => entry.type === 'viewed')
+  const amount = num(field(record, 'invoice', 'total'))
+  const amountPaid = num(field(record, 'invoice', 'amount_paid'))
+  const viewedAt = str(record.viewed_at)
+  const wireStatus = str(field(record, 'invoice', 'status')).toUpperCase()
+  const viewed = wireStatus === 'VIEWED' || Boolean(viewedAt)
   const mapped = STATUS_FROM_WIRE[wireStatus] ?? 'Draft'
-  const status: InvoiceStatus = mapped === 'Sent' && viewed ? 'Viewed' : mapped
 
   return {
-    id: str(pick(record, 'invoice', 'id', 'uuid')),
-    number: str(pick(record, 'invoice', 'number', 'invoice_number')),
+    id: str(field(record, 'invoice', 'id')),
+    number: str(field(record, 'invoice', 'number')),
     reference: str(record.reference),
-    client: clientName,
-    clientId: idOf(optional(record, 'customer_id', 'customer', 'client_id', 'client_details.id')),
-    clientEmail: str(optional(record, 'client_email', 'customer_email') ?? client.email),
-    clientPhone: str(optional(record, 'client_phone', 'customer_phone') ?? client.phone),
-    clientAddress: str(optional(record, 'client_address') ?? client.address),
+    client,
+    clientId: str(record.customer),
+    clientEmail: str(record.client_email),
+    clientPhone: str(record.client_phone),
     amount,
-    subtotal: num(optional(record, 'subtotal', 'sub_total') ?? amount),
-    tax: num(optional(record, 'tax_total', 'tax', 'tax_amount')),
+    subtotal: record.subtotal == null ? amount : num(record.subtotal),
+    tax: num(record.tax_total),
     amountPaid,
-    balance,
-    issued: day(pick(record, 'invoice', 'issue_date', 'issued_at', 'date')),
-    due: day(pick(record, 'invoice', 'due_date', 'due_at')),
-    status,
+    balance: record.balance == null ? Math.max(roundMoney(amount - amountPaid), 0) : num(record.balance),
+    issued: day(field(record, 'invoice', 'issue_date')),
+    due: day(field(record, 'invoice', 'due_date')),
+    status: mapped === 'Sent' && viewed ? 'Viewed' : mapped,
     viewed,
+    viewedAt,
     taxMode: taxModeFromWire(record.tax_mode),
     design: designFromWire(record.design),
     branding: {
-      accent: str(optional(record, 'brand_color', 'branding.brand_color', 'branding.color')) || '#529661',
-      legalName: str(optional(record, 'legal_name', 'branding.legal_name', 'business_name')),
-      address: str(optional(record, 'billing_address', 'branding.billing_address', 'branding.address')),
-      logoUrl: str(optional(record, 'logo_url', 'branding.logo_url', 'logo')),
+      accent: str(record.brand_color) || '#529661',
+      legalName: str(record.legal_name),
+      address: str(record.billing_address),
+      logoUrl: str(record.logo_url),
     },
-    note: str(record.note ?? record.notes),
-    lines: listFrom(optional(record, 'line_items', 'items', 'lines'), []).map(mapLine),
+    note: str(record.note),
+    lines: mapLines(record.line_items),
     payments,
-    activity,
-    publicUrl: str(optional(record, 'public_url', 'public_link', 'share_url')),
-    createdBy: personName(optional(record, 'created_by_name', 'created_by')),
+    activity: listFrom(record.activity_log, []).map(mapActivity(client)),
+    publicUrl: str(record.public_url),
+    createdBy: str(record.created_by_name),
     createdAt: str(record.created_at),
   }
 }
 
+/** JSON body for create / edit. `number` and `reference` are the server's. */
 const toBody = (input: InvoiceInput) => ({
   customer: input.customerId,
   issue_date: input.issueDate,
@@ -260,95 +258,101 @@ const toBody = (input: InvoiceInput) => ({
   legal_name: input.legalName,
   billing_address: input.address,
   note: input.note,
-  line_items: input.lines.map(row => ({
+  line_items: input.lines.map((row, index) => ({
     description: row.description,
     quantity: row.qty,
     unit_price: row.price,
     discount_percent: row.discount,
     tax_rate: row.taxRate,
     account_code: row.account,
+    sort_order: index,
     ...(row.itemId ? { item_id: row.itemId } : {}),
   })),
 })
 
+/** Multipart version for when a logo goes along: `line_items` is sent as a JSON string. */
+const toForm = (body: UnknownRecord, logo: File) => {
+  const form = new FormData()
+  for (const [key, value] of Object.entries(body)) {
+    if (value === undefined || value === null) continue
+    form.append(key, key === 'line_items' ? JSON.stringify(value) : String(value))
+  }
+  form.append('logo', logo)
+  return form
+}
+
+const writeInvoice = (path: string, method: 'POST' | 'PATCH', body: UnknownRecord, logo: File | null) =>
+  logo ? apiFormRequest<unknown>(path, method, toForm(body, logo)) : apiRequest<unknown>(path, { method, body })
+
 const mapItem = (value: unknown): InvoiceItem => {
   const record = unwrap(value)
   return {
-    id: str(pick(record, 'saved item', 'id', 'uuid')),
-    code: str(optional(record, 'code', 'item_code', 'sku')),
-    name: str(pick(record, 'saved item', 'name', 'title', 'description')),
-    description: str(record.description),
-    price: num(optional(record, 'unit_price', 'price', 'rate')),
+    id: str(field(record, 'saved item', 'id')),
+    description: str(field(record, 'saved item', 'description')),
+    price: num(record.default_price),
+    taxRate: num(record.default_tax_rate),
+    account: str(record.account_code),
+    createdAt: str(record.created_at),
+  }
+}
+
+const mapCustomerSummary = (record: unknown): CustomerInvoiceSummary => ({
+  totalPaid: num(field(record, 'customer summary', 'total_paid')),
+  totalUnpaid: num(field(record, 'customer summary', 'total_unpaid')),
+  overdue: num(field(record, 'customer summary', 'overdue_amount')),
+  invoiceCount: num(field(record, 'customer summary', 'invoice_count')),
+})
+
+const mapReminder = (channel: InvoiceReminderChannel, value: unknown): InvoiceReminderResult => {
+  const record = unwrap(value)
+  const wireChannel = str(record.channel).toLowerCase()
+  return {
+    channel: wireChannel === 'email' || wireChannel === 'whatsapp' || wireChannel === 'share' ? wireChannel : channel,
+    publicUrl: str(record.public_url),
+    sendAttempted: record.send_attempted === true,
+    sendSucceeded: typeof record.send_succeeded === 'boolean' ? record.send_succeeded : null,
+    message: str(record.send_message),
   }
 }
 
 // ─── Analytics ──────────────────────────────────────────────────────────────
 
-type StatusFigure = { count: number; amount: number | null }
-
-/** counts_by_status as { SENT: 4 }, { SENT: { count, amount } } or [{ status, count, amount }]. */
-const statusFigures = (value: unknown): Record<string, StatusFigure> => {
-  const figures: Record<string, StatusFigure> = {}
-  const read = (status: string, entry: unknown) => {
-    const record = asRecord(entry)
-    const amount = optional(record, 'amount', 'total', 'total_amount', 'balance')
-    figures[status.toUpperCase()] = typeof entry === 'number' || typeof entry === 'string' ? { count: num(entry), amount: null } : { count: num(record.count), amount: amount === undefined ? null : num(amount) }
-  }
-  if (Array.isArray(value)) value.forEach(entry => read(str(asRecord(entry).status), entry))
-  else Object.entries(asRecord(value)).forEach(([status, entry]) => read(status, entry))
-  return figures
-}
-
 const monthLabel = (value: unknown) => {
   const text = str(value)
   const date = /^\d{4}-\d{2}/.test(text) ? new Date(`${text.slice(0, 7)}-01T00:00:00`) : null
-  return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { month: 'short' }) : text.slice(0, 3)
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { month: 'short' }) : text
 }
 
-const percentText = (value: unknown, suffix: string) => {
-  if (value === undefined) return ''
-  if (typeof value === 'string' && value.includes('%')) return `${value} ${suffix}`
-  const n = num(value)
-  return `${n > 0 ? '+' : ''}${Math.round(n * 10) / 10}% ${suffix}`
-}
+const oneDecimal = (value: number) => Math.round(value * 10) / 10
 
+/** Exact keys: paid_this_month, change_from_last_month_pct, average_days_to_pay, collection_rate_pct, expected_cash, counts_by_status, monthly_sent_vs_paid. */
 const mapAnalytics = (response: unknown): InvoiceSummary => {
   const root = unwrap(response)
-  const counts = statusFigures(pick(root, 'analytics', 'counts_by_status', 'status_counts', 'counts', 'by_status'))
-  const figure = (...statuses: string[]): StatusFigure => statuses.reduce<StatusFigure>((total, status) => {
-    const entry = counts[status]
-    return { count: total.count + (entry?.count ?? 0), amount: entry?.amount == null ? total.amount : (total.amount ?? 0) + entry.amount }
-  }, { count: 0, amount: null })
-  const open = figure('APPROVED', 'SENT', 'VIEWED', 'OVERDUE')
-  const overdue = figure('OVERDUE')
-  const expectedCash = num(pick(root, 'analytics', 'expected_cash', 'expected_cash_amount', 'expected'))
-  const rate = num(pick(root, 'analytics', 'collection_rate', 'collection_rate_percent'))
-  const days = pick(root, 'analytics', 'average_days_to_pay', 'avg_days_to_pay', 'average_paid_days')
-  const months = listFrom(pick(root, 'analytics', 'monthly', 'months', 'sent_vs_paid', 'six_months', 'trend', 'chart'), []).map(entry => {
-    const record = asRecord(entry)
-    return {
-      month: monthLabel(optional(record, 'label', 'month', 'period')),
-      sent: num(optional(record, 'sent', 'sent_amount', 'invoiced', 'total_sent')),
-      paid: num(optional(record, 'paid', 'paid_amount', 'collected', 'total_paid')),
-    }
-  })
+  const counts = asRecord(field(root, 'analytics', 'counts_by_status'))
+  const count = (...statuses: string[]) => statuses.reduce((total, status) => total + num(counts[status]), 0)
+  const change = nullableNumber(root.change_from_last_month_pct)
+  const days = nullableNumber(root.average_days_to_pay)
+  const rate = nullableNumber(root.collection_rate_pct)
   const flow: DocumentFlowItem[] = [
-    { label: 'Drafts', ...figure('DRAFT'), color: '#9AABA3' },
-    { label: 'Sent, awaiting payment', ...open, color: '#D99A24' },
-    { label: 'Paid', ...figure('PAID'), color: '#1D261C' },
-    { label: 'Overdue', ...overdue, color: '#C72D34' },
+    { label: 'Drafts', count: count('DRAFT'), amount: null, color: '#9AABA3' },
+    { label: 'Approved, not sent', count: count('APPROVED'), amount: null, color: '#6E8B7B' },
+    { label: 'Sent, awaiting payment', count: count('SENT', 'VIEWED'), amount: null, color: '#D99A24' },
+    { label: 'Overdue', count: count('OVERDUE'), amount: null, color: '#C72D34' },
+    { label: 'Paid', count: count('PAID'), amount: null, color: '#1D261C' },
+    { label: 'Void', count: count('VOID'), amount: null, color: '#C3CCC7' },
   ]
   return {
-    outstanding: num(optional(root, 'outstanding', 'outstanding_amount', 'total_outstanding') ?? open.amount ?? expectedCash),
-    outstandingCount: num(optional(root, 'outstanding_count') ?? open.count),
-    overdue: num(optional(root, 'overdue_amount', 'overdue_total') ?? overdue.amount ?? 0),
-    overdueCount: num(optional(root, 'overdue_count') ?? overdue.count),
-    paidThisMonth: num(pick(root, 'analytics', 'paid_this_month', 'paid_this_month_amount', 'paid_month')),
-    paidChange: percentText(optional(root, 'paid_change_percent', 'percent_change', 'paid_this_month_change', 'change_percent', 'paid_change'), 'from last month'),
-    averagePaidDays: days === undefined ? '—' : `${Math.round(num(days) * 10) / 10} days`,
-    collectionRate: `${Math.round(rate > 0 && rate <= 1 ? rate * 100 : rate)}%`,
-    expectedCash,
-    months,
+    outstandingCount: count('APPROVED', 'SENT', 'VIEWED', 'OVERDUE'),
+    overdueCount: count('OVERDUE'),
+    paidThisMonth: num(field(root, 'analytics', 'paid_this_month')),
+    paidChange: change === null ? '—' : `${change > 0 ? '+' : ''}${oneDecimal(change)}% from last month`,
+    averagePaidDays: days === null ? '—' : `${oneDecimal(days)} days`,
+    collectionRate: rate === null ? '—' : `${oneDecimal(rate)}%`,
+    expectedCash: num(field(root, 'analytics', 'expected_cash')),
+    months: listFrom(field(root, 'analytics', 'monthly_sent_vs_paid'), []).map(entry => {
+      const record = asRecord(entry)
+      return { month: monthLabel(record.month), sent: num(record.sent), paid: num(record.paid) }
+    }),
     flow,
   }
 }
@@ -356,7 +360,6 @@ const mapAnalytics = (response: unknown): InvoiceSummary => {
 // ─── Services ───────────────────────────────────────────────────────────────
 
 const base = () => `invoices/business/${requireBusinessId()}`
-const allParams = (page: number, limit: number): InvoiceListParams => ({ page, limit, search: '', status: '', customer: '', startDate: '', endDate: '' })
 
 const listInvoices = async (params: InvoiceListParams): Promise<InvoiceListResult> => {
   if (!isLive()) return mock.mockListInvoices(params)
@@ -366,10 +369,10 @@ const listInvoices = async (params: InvoiceListParams): Promise<InvoiceListResul
   if (params.customer) query.set('customer', params.customer)
   if (params.startDate) query.set('start_date', params.startDate)
   if (params.endDate) query.set('end_date', params.endDate)
-  const response = await apiRequest<unknown>(`${base()}/?${query.toString()}`)
-  const invoices = listFrom(response, ['results.data', 'results', 'data.results', 'data']).map(mapInvoice)
-  const total = num(optional(response, 'total', 'count', 'results.total', 'data.total')) || invoices.length
-  const pages = num(optional(response, 'pages', 'total_pages', 'data.pages')) || Math.ceil(total / params.limit)
+  const response = asRecord(await apiRequest<unknown>(`${base()}/?${query.toString()}`))
+  const invoices = listFrom(field(response, 'invoice list', 'results'), []).map(mapInvoice)
+  const total = num(response.total) || invoices.length
+  const pages = num(response.pages) || Math.ceil(total / params.limit)
   return { invoices, total, pages: Math.max(1, pages) }
 }
 
@@ -378,22 +381,20 @@ export const fetchInvoicesForExport = async (filters: Omit<InvoiceListParams, 'p
 
 const getInvoice = async (id: string) => (isLive() ? mapInvoice(await apiRequest<unknown>(`invoices/${id}/`)) : mock.mockGetInvoice(id))
 
-const getAnalytics = async () => (isLive() ? mapAnalytics(await apiRequest<unknown>(`${base()}/analytics/`)) : mock.mockInvoiceAnalytics())
+const getAnalytics = async () => mapAnalytics(isLive() ? await apiRequest<unknown>(`${base()}/analytics/`) : await mock.mockInvoiceAnalytics())
 
-const getNextNumber = async () => {
-  if (!isLive()) return mock.mockNextInvoiceNumber()
-  return str(pick(unwrap(await apiRequest<unknown>(`${base()}/next-number/`)), 'next-number', 'next_number', 'number'))
-}
+const getNextNumber = async () => str(field(unwrap(isLive() ? await apiRequest<unknown>(`${base()}/next-number/`) : await mock.mockNextInvoiceNumber()), 'next-number', 'next_number'))
 
-const getCustomerSummary = async (customerId: string): Promise<CustomerInvoiceSummary> => {
-  if (!isLive()) return mock.mockCustomerSummary(customerId)
-  const root = unwrap(await apiRequest<unknown>(`invoices/customers/${customerId}/summary/`))
-  return {
-    totalPaid: num(pick(root, 'customer summary', 'total_paid')),
-    totalUnpaid: num(pick(root, 'customer summary', 'total_unpaid')),
-    overdue: num(pick(root, 'customer summary', 'overdue_amount', 'overdue')),
-    invoiceCount: num(pick(root, 'customer summary', 'invoice_count', 'count')),
-  }
+const getCustomerSummary = async (customerId: string) =>
+  mapCustomerSummary(unwrap(isLive() ? await apiRequest<unknown>(`invoices/customers/${customerId}/summary/`) : await mock.mockCustomerSummary(customerId)))
+
+const getCustomerSummaries = async (customerIds: string[]): Promise<CustomerInvoiceSummaries> => {
+  const response = isLive()
+    ? await apiRequest<unknown>(`${base()}/customer-summaries/?customer_ids=${customerIds.map(encodeURIComponent).join(',')}`)
+    : await mock.mockCustomerSummaries(customerIds)
+  const summaries: CustomerInvoiceSummaries = {}
+  for (const row of listFrom(field(response, 'customer summaries', 'results'), [])) summaries[str(asRecord(row).customer_id)] = mapCustomerSummary(row)
+  return summaries
 }
 
 type Step = 'Approved' | 'Sent'
@@ -401,20 +402,10 @@ type Step = 'Approved' | 'Sent'
 const patchStatus = (id: string, status: Step, by: string) =>
   isLive() ? apiRequest<unknown>(`invoices/${id}/`, { method: 'PATCH', body: { status: status.toUpperCase() } }) : mock.mockSetInvoiceStatus(id, status, by)
 
-/** Drafts move Draft → Approved → Sent, one PATCH per step. */
-const advance = async (id: string, from: InvoiceStatus, to: 'Draft' | Step, by: string) => {
+/** An edited draft moves Draft → Approved → Sent, one PATCH per step. */
+const advance = async (id: string, to: 'Draft' | Step, by: string) => {
   const steps: Step[] = to === 'Sent' ? ['Approved', 'Sent'] : to === 'Approved' ? ['Approved'] : []
-  for (const step of steps) {
-    if (from === 'Approved' && step === 'Approved') continue
-    await patchStatus(id, step, by)
-  }
-}
-
-const uploadLogo = (id: string, logo: { file: File; dataUrl: string }) => {
-  if (!isLive()) return mock.mockUploadInvoiceLogo(id, logo.dataUrl)
-  const form = new FormData()
-  form.append('logo', logo.file)
-  return apiFormRequest<unknown>(`invoices/${id}/logo/`, 'POST', form)
+  for (const step of steps) await patchStatus(id, step, by)
 }
 
 export type SaveInvoiceInput = {
@@ -423,48 +414,41 @@ export type SaveInvoiceInput = {
   input: InvoiceInput
   status: 'Draft' | Step
   client: InvoiceClientSnapshot
-  /** A newly picked logo; uploaded while the invoice is still a draft. */
+  /** A newly picked logo; sent with the create / edit itself (multipart). */
   logo: { file: File; dataUrl: string } | null
   by: string
 }
-/** `warning` is set when the invoice saved but a later step (logo, approve, send) was refused. */
+/** `warning` is set when an edited draft saved but moving it on (approve, send) was refused. */
 export type SaveInvoiceResult = { invoice: Invoice; warning: string }
 
 /**
- * Create or edit. Without a logo a new invoice is created straight in its status; with one it is
- * created as a draft, the logo uploaded (drafts only), then moved on. Edits PATCH the fields first.
+ * New invoices are created in one call, straight in their status, logo included. Edits PATCH the
+ * draft's fields (logo included), then move it on.
  */
 const saveInvoice = async ({ id, input, status, client, logo, by }: SaveInvoiceInput): Promise<SaveInvoiceResult> => {
-  let invoiceId = id ?? ''
-  let from: InvoiceStatus = 'Draft'
-  const direct = !id && !logo && isLive()
-  if (id) {
-    if (isLive()) await apiRequest<unknown>(`invoices/${id}/`, { method: 'PATCH', body: toBody(input) })
-    else await mock.mockUpdateInvoice(id, { input, client, logoUrl: '', by })
-  } else if (isLive()) {
-    const created = mapInvoice(await apiRequest<unknown>(`${base()}/`, { method: 'POST', body: { ...toBody(input), status: (direct ? status : 'Draft').toUpperCase() } }))
-    invoiceId = created.id
-    if (direct) from = status
-  } else {
-    invoiceId = (await mock.mockCreateInvoice({ input, client, logoUrl: '', by })).id
+  if (!id) {
+    if (!isLive()) return { invoice: await mock.mockCreateInvoice({ input, client, logoUrl: logo?.dataUrl ?? '', by, status }), warning: '' }
+    const created = mapInvoice(await writeInvoice(`${base()}/`, 'POST', { ...toBody(input), status: status.toUpperCase() }, logo?.file ?? null))
+    if (!created.id) throw new Error("The invoice was saved but the server didn't return its id. Refresh the invoice list.")
+    return { invoice: created.lines.length ? created : await getInvoice(created.id), warning: '' }
   }
-  if (!invoiceId) throw new Error("The invoice was saved but the server didn't return its id. Refresh the invoice list.")
 
+  if (isLive()) await writeInvoice(`invoices/${id}/`, 'PATCH', toBody(input), logo?.file ?? null)
+  else await mock.mockUpdateInvoice(id, { input, client, logoUrl: logo?.dataUrl ?? '', by })
   let warning = ''
   try {
-    if (logo) await uploadLogo(invoiceId, logo)
-    if (from !== status) await advance(invoiceId, from, status, by)
+    await advance(id, status, by)
   } catch (error) {
-    warning = invoiceErrorMessage(error, "Some changes after saving didn't go through.")
+    warning = invoiceErrorMessage(error, "The draft saved, but it couldn't be moved on.")
   }
-  return { invoice: await getInvoice(invoiceId), warning }
+  return { invoice: await getInvoice(id), warning }
 }
 
 export type RecordInvoicePaymentInput = mock.MockPaymentInput
 
 const recordPayment = async (input: RecordInvoicePaymentInput) => {
   if (!isLive()) return mock.mockRecordPayment(input)
-  await apiRequest<unknown>(`invoices/${input.invoiceId}/payments/`, { method: 'POST', body: { amount: input.amount, date: input.date, method: methodToWire(input.method), note: input.note } })
+  await apiRequest<unknown>(`invoices/${input.invoiceId}/payments/`, { method: 'POST', body: { amount: input.amount, date: input.date, method: METHOD_TO_WIRE[input.method], note: input.note } })
   return getInvoice(input.invoiceId)
 }
 
@@ -480,24 +464,18 @@ const setStatus = async ({ id, status, by }: { id: string; status: Step; by: str
 }
 
 const sendReminder = async (input: { invoiceId: string; channel: InvoiceReminderChannel; by: string }): Promise<InvoiceReminderResult & { invoice: Invoice }> => {
-  if (!isLive()) {
-    const result = await mock.mockSendReminder(input)
-    return { ...result, invoice: await mock.mockGetInvoice(input.invoiceId) }
-  }
-  const response = unwrap(await apiRequest<unknown>(`invoices/${input.invoiceId}/reminders/`, { method: 'POST', body: { channel: input.channel } }))
-  return {
-    sendSucceeded: input.channel === 'share' || optional(response, 'send_succeeded', 'sent') === true,
-    message: str(optional(response, 'send_error', 'error', 'message', 'detail')),
-    invoice: await getInvoice(input.invoiceId),
-  }
+  const response = isLive()
+    ? await apiRequest<unknown>(`invoices/${input.invoiceId}/reminders/`, { method: 'POST', body: { channel: input.channel } })
+    : await mock.mockSendReminder(input)
+  return { ...mapReminder(input.channel, response), invoice: await getInvoice(input.invoiceId) }
 }
 
-const getItems = async () => (isLive() ? listFrom(await apiRequest<unknown>(`${base()}/saved-items/`), ['results.data', 'results', 'data']).map(mapItem) : mock.mockInvoiceItems())
+const getItems = async () => listFrom(isLive() ? await apiRequest<unknown>(`${base()}/saved-items/`) : await mock.mockInvoiceItems(), ['results']).map(mapItem)
 
-const createItem = async (input: Omit<InvoiceItem, 'id'>): Promise<InvoiceItem> => {
-  if (!isLive()) return mock.mockCreateInvoiceItem(input)
-  const created = mapItem(await apiRequest<unknown>(`${base()}/saved-items/`, { method: 'POST', body: { code: input.code, name: input.name, description: input.description, unit_price: input.price } }))
-  return { id: created.id, code: created.code || input.code, name: created.name || input.name, description: created.description || input.description, price: created.price || input.price }
+const createItem = async (input: InvoiceItemInput): Promise<InvoiceItem> => {
+  const body = { description: input.description, default_price: input.price, default_tax_rate: input.taxRate, account_code: input.account }
+  const created = mapItem(isLive() ? await apiRequest<unknown>(`${base()}/saved-items/`, { method: 'POST', body }) : await mock.mockCreateInvoiceItem(body))
+  return { ...input, ...created, description: created.description || input.description }
 }
 
 const deleteItem = async (id: string) => (isLive() ? apiRequest<unknown>(`${base()}/saved-items/${id}/`, { method: 'DELETE' }) : mock.mockDeleteInvoiceItem(id))
@@ -519,35 +497,13 @@ const useBusinessScope = () => {
 
 /** Server-paged, filtered invoice list. */
 export const useInvoices = ({ enabled = true, ...filters }: Partial<InvoiceListParams> & { enabled?: boolean } = {}) => {
-  const params: InvoiceListParams = { ...allParams(1, INVOICES_PAGE_SIZE), ...filters }
+  const params: InvoiceListParams = { page: 1, limit: INVOICES_PAGE_SIZE, search: '', status: '', customer: '', startDate: '', endDate: '', ...filters }
   const { scope, ready } = useBusinessScope()
   return useQuery({
     queryKey: [...queryKeys.invoices, 'list', scope, params],
     queryFn: () => listInvoices(params),
     enabled: enabled && ready,
     placeholderData: keepPreviousData,
-    retry: retryUnlessDenied,
-  })
-}
-
-const ALL_PAGE_SIZE = 200
-const ALL_MAX_PAGES = 5
-
-/**
- * Every invoice (up to 1,000), for per-customer figures on the Customers list: one paged
- * walk of the list endpoint instead of a summary request per customer row.
- */
-export const useAllInvoices = () => {
-  const { scope, ready } = useBusinessScope()
-  return useQuery({
-    queryKey: [...queryKeys.invoices, 'all', scope],
-    queryFn: async () => {
-      const first = await listInvoices(allParams(1, ALL_PAGE_SIZE))
-      const more = await Promise.all(Array.from({ length: Math.min(first.pages, ALL_MAX_PAGES) - 1 }, (_, index) => listInvoices(allParams(index + 2, ALL_PAGE_SIZE))))
-      return { invoices: [...first.invoices, ...more.flatMap(page => page.invoices)], complete: first.pages <= ALL_MAX_PAGES }
-    },
-    enabled: ready,
-    staleTime: 60_000,
     retry: retryUnlessDenied,
   })
 }
@@ -566,12 +522,26 @@ export const useNextInvoiceNumber = (enabled = true) => {
   return useQuery({ queryKey: [...queryKeys.invoices, 'next-number', scope], queryFn: getNextNumber, enabled: enabled && ready, retry: retryUnlessDenied })
 }
 
+/** One customer's totals, for the customer detail page. */
 export const useCustomerInvoiceSummary = (customerId: string | undefined) => useQuery({
   queryKey: [...queryKeys.invoices, 'customer-summary', customerId],
   queryFn: () => getCustomerSummary(customerId as string),
   enabled: Boolean(customerId),
   retry: retryUnlessDenied,
 })
+
+/** Totals for a page of customers in one request (the Customers list). */
+export const useCustomerInvoiceSummaries = (customerIds: string[]) => {
+  const { scope, ready } = useBusinessScope()
+  const ids = [...new Set(customerIds.filter(Boolean))].sort()
+  return useQuery({
+    queryKey: [...queryKeys.invoices, 'customer-summaries', scope, ids],
+    queryFn: () => getCustomerSummaries(ids),
+    enabled: ready && ids.length > 0,
+    staleTime: 60_000,
+    retry: retryUnlessDenied,
+  })
+}
 
 /** Writes the fresh invoice into its detail cache and refreshes everything derived from it. */
 const useInvoiceMutation = <Input, Output>(mutationFn: (input: Input) => Promise<Output>, invoiceOf: (output: Output) => Invoice) => {

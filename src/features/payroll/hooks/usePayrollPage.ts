@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { PAYROLL_RATES, usePayroll } from '@/api/payroll'
 import { useDisclosure } from '@/hooks/useDisclosure'
 
@@ -10,8 +9,6 @@ export type PayrollTotals = { gross: number; employeeTaxes: number; employerTaxe
 
 export function usePayrollPage() {
   const payroll = usePayroll()
-  // Payroll is sample data with no approvals endpoint, so a submitted run is only remembered for this visit.
-  const [submittedRunId, setSubmittedRunId] = useState('')
   const addEmployee = useDisclosure()
   const [tab, setTab] = useState<PayrollTab>('Overview')
 
@@ -24,13 +21,6 @@ export function usePayrollPage() {
     return { gross, employeeTaxes, employerTaxes: gross * PAYROLL_RATES.employerTax, deductions: employeeTaxes + benefits, net: gross - employeeTaxes - benefits, headcount: employees.length }
   }, [data])
 
-  const submitted = Boolean(data && submittedRunId === data.run.id)
-
-  const submitRun = () => {
-    if (!data || submitted) return
-    setSubmittedRunId(data.run.id)
-    toast.success('Payroll submitted for approval.')
-  }
-
-  return { data, totals, tab, setTab, submitted, submitRun, addEmployee, openPayRun: () => setTab('Pay runs') }
+  // Payroll is sample data: there is no pay-run or payroll-approval endpoint, so a run can't be submitted anywhere.
+  return { data, totals, tab, setTab, addEmployee, openPayRun: () => setTab('Pay runs') }
 }

@@ -36,9 +36,13 @@ export function ApprovalDecisionModal({ decision }: { decision: ApprovalDecision
       <div className="my-5 rounded-2xl bg-[#F8FAF8] p-5 text-center">
         <p className="text-[10px] text-muted-foreground">Amount requested</p>
         <p className="mt-2 text-3xl font-extrabold [overflow-wrap:anywhere]">{money(item.amount)}</p>
-        {/* The wallet is debited for amount + charges, so the approver sees the real cost. */}
-        {item.charges > 0 && <p className="mt-2 text-[10px] text-muted-foreground">{money(item.charges)} bank charge · <b className="text-foreground">{money(item.amount + item.charges)}</b> leaves the wallet</p>}
       </div>
+      {/* The API's own figures: the account is debited amount + charges + stamp duty, so the approver sees the real cost. */}
+      {item.fees && <div className="-mt-2 mb-5 flex flex-col gap-2 rounded-xl border border-border p-4 text-xs">
+        <div className="flex justify-between gap-3"><span className="text-muted-foreground">Charges</span><span className="font-bold">{money(item.fees.charges)}</span></div>
+        <div className="flex justify-between gap-3"><span className="text-muted-foreground">Stamp duty</span><span className="font-bold">{money(item.fees.stampDuty)}</span></div>
+        <div className="flex justify-between gap-3 border-t border-border pt-2"><span className="font-extrabold">Total debit</span><span className="font-extrabold">{money(item.fees.totalDebit)}</span></div>
+      </div>}
 
       {decision.mode === 'review' && <>
         <div className={cn('mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5 text-[10px]', status.className)}>

@@ -1,4 +1,4 @@
-/** Settings home: the transaction PIN, plus (owner only) expense rules and approval rights from Expenses. */
+/** Settings home: the transaction PIN, plus (owner and admins) expense rules and approval rights from Expenses. */
 export const RULES_SECTIONS = [
   { value: 'pin', label: 'Transaction PIN' },
   { value: 'expense-rules', label: 'Expense rules' },

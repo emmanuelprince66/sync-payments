@@ -24,12 +24,13 @@ const DESCRIPTIONS: Record<RulesSection, string> = {
 /** Account rules: the transaction PIN, expense rules and approval rights. */
 export function AccountRulesModal({ open, section, onSectionChange, onClose }: { open: boolean; section: RulesSection; onSectionChange: (section: RulesSection) => void; onClose: () => void }) {
   const pin = usePinManager(onClose)
-  const { isOwner } = useExpensePermissions()
-  const current: RulesSection = isOwner ? section : 'pin'
+  // Expense rules and approval rights are for the owner and admins; everyone else only sees their PIN.
+  const { isAdmin } = useExpensePermissions()
+  const current: RulesSection = isAdmin ? section : 'pin'
   const footer = (submit: () => void, label: string) => <div className="flex justify-end pt-1"><KitButton onClick={submit} loading={pin.busy}>{label}</KitButton></div>
 
   return <KitModal open={open} onClose={pin.close} title="Account rules" description={DESCRIPTIONS[current]} icon={<KeyRound size={16}/>} panelClassName="max-w-lg"
-    subheader={isOwner && <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1"><KitFilterPills value={current} options={RULES_SECTIONS} onChange={onSectionChange}/></div>}>
+    subheader={isAdmin && <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1"><KitFilterPills value={current} options={RULES_SECTIONS} onChange={onSectionChange}/></div>}>
     {current === 'expense-rules' && <ExpenseRulesSection/>}
     {current === 'approval-rights' && <ApprovalRightsSection/>}
     {current === 'pin' && <>

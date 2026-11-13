@@ -8,4 +8,3 @@ export const SAMPLE_BULK_ROWS: BulkRow[] = [
 ]
 
 export const BULK_CSV_HEADER = ['Name', 'Account number', 'Bank', 'Amount', 'Reference']
-export const BULK_FEE_PER_ROW = 50

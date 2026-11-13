@@ -40,13 +40,13 @@ const data: PayrollData = {
   calendar: [
     { date: 'Jun 16', title: 'Period opened', done: true },
     { date: 'Jun 24', title: 'Changes due', done: true },
-    { date: 'Jun 26', title: 'Approval due', done: false },
+    { date: 'Jun 26', title: 'Final review', done: false },
     { date: 'Jun 28', title: 'Payday', done: false },
   ],
   tasks: [
     { task: 'Review Avery’s overtime', due: 'Needs attention', tab: 'Employees' },
     { task: 'Confirm tax liability', due: 'Due Jun 26', tab: 'Pay runs' },
-    { task: 'Approve direct deposits', due: 'Due Jun 26', tab: 'Pay runs' },
+    { task: 'Review direct deposits', due: 'Due Jun 26', tab: 'Pay runs' },
   ],
   liabilities: [
     { name: 'Federal withholding', amount: 8240, due: 'Jul 15' },

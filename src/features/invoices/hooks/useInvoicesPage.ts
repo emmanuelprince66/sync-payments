@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useState } from 'react'
 import { generatePath, useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -13,6 +14,7 @@ import { INVOICE_STATUS_FILTERS } from '../constants'
 
 /** Invoices: summary cards and chart (analytics endpoint), server-side search, status, dates and pages. */
 export function useInvoicesPage() {
+  const { canCreateInvoices } = usePermissions()
   const navigate = useNavigate()
 
   const [template, setTemplate] = useState<InvoiceDesign>('Classic')
@@ -48,6 +50,8 @@ export function useInvoicesPage() {
     totalPages: invoices.data?.pages ?? 1,
     setCurrentPage,
     setSearch: (value: string) => { setSearch(value); setCurrentPage(1) },
+    /** lib/access-map createInvoices (invoices:create). */
+    canCreate: canCreateInvoices,
     openForm: () => navigate(paths.invoiceNew, { state: { template } }),
     chooseTemplate: (name: InvoiceDesign) => { setTemplate(name); navigate(paths.invoiceNew, { state: { template: name } }) },
     viewInvoice: (invoice: Invoice) => navigate(generatePath(paths.invoiceDetail, { invoiceId: invoice.id })),

@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { HelpCircle, LogOut, MoreHorizontal, Settings, ShieldCheck, Shuffle, X, type LucideIcon } from 'lucide-react'
 import { useRef, type CSSProperties } from 'react'
 import { NavLink } from 'react-router'
@@ -58,6 +59,7 @@ function AccountBlock({ model }: { model: SidebarModel }) {
 export function Sidebar() {
   const model = useSidebar()
   const { open, close } = useMobileSidebar()
+  const { canOpen } = usePermissions()
   const { verification } = model
   const drawerRef = useRef<HTMLElement>(null)
   // On large screens the sidebar is always there, so this only ever dismisses the drawer.
@@ -78,7 +80,7 @@ export function Sidebar() {
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
         <p className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-muted-foreground">Workspace</p>
         <nav className="flex flex-col gap-1" aria-label="Main">
-          {navItems.map(({ id, label, icon: Icon, to }) => <NavLink
+          {navItems.filter(item => canOpen(item.to)).map(({ id, label, icon: Icon, to }) => <NavLink
             key={id}
             to={to}
             end={to === paths.overview}

@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useEffect, useMemo, useState } from 'react'
 import { generatePath, useLocation, useNavigate, useParams } from 'react-router'
 import { invoiceBalance, invoiceErrorMessage, invoicePaymentState, isEditable, isInvoiceForbidden, isOut, useInvoice } from '@/api/invoices'
@@ -12,6 +13,7 @@ import { useRecordPaymentForm } from './useRecordPaymentForm'
 
 /** Everything the invoice detail ("View more") page shows and does. */
 export function useInvoiceDetail() {
+  const can = usePermissions()
   const navigate = useNavigate()
   const location = useLocation()
   const { invoiceId = '' } = useParams()
@@ -50,11 +52,12 @@ export function useInvoiceDetail() {
     state,
     balance,
     paidPercent: invoice && invoice.amount > 0 ? Math.min(100, Math.round((invoice.amountPaid / invoice.amount) * 100)) : 0,
-    canEdit: Boolean(invoice && isEditable(invoice)),
-    canApprove: status === 'Draft',
-    canMarkSent: status === 'Approved',
-    canRecordPayment: Boolean(invoice) && balance > 0 && status !== 'Draft' && status !== 'Void',
-    canRemind: Boolean(invoice && isOut(invoice)) && balance > 0,
+    // lib/access-map: invoices:edit for edit / approve / record payment, invoices:send for sending and reminders.
+    canEdit: Boolean(invoice && isEditable(invoice)) && can.canEditInvoices,
+    canApprove: status === 'Draft' && can.canEditInvoices,
+    canMarkSent: status === 'Approved' && can.canSendInvoices,
+    canRecordPayment: Boolean(invoice) && balance > 0 && status !== 'Draft' && status !== 'Void' && can.canEditInvoices,
+    canRemind: Boolean(invoice && isOut(invoice)) && balance > 0 && can.canSendInvoices,
     canReverse: status !== 'Void',
     justCreated,
     dismissCreated: () => setJustCreated(false),

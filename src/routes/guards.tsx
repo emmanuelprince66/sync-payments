@@ -1,6 +1,8 @@
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
+import { toast } from 'sonner'
 import { useCurrentBusinessId } from '@/api/business'
+import { usePermissions } from '@/hooks/usePermissions'
 import { AppLoader } from '@/components/ui/AppLoader'
 import { useBusinessStore } from '@/stores/business-store'
 import { useIsAuthenticated } from '@/stores/auth-store'
@@ -37,4 +39,21 @@ export function RequireBusiness() {
   if (!businessId) return <><AppLoader/><Navigate to={paths.selectBusiness} replace state={{ from: location.pathname }}/></>
   if (isResolving) return <AppLoader label="Loading your business"/>
   return <Suspense fallback={<AppLoader/>}><Outlet/></Suspense>
+}
+
+/** Sends a user without access back to Overview, saying why (one toast, even under StrictMode). */
+function Blocked() {
+  useEffect(() => { toast.error('You don’t have access to that page', { id: 'route-blocked', description: 'Ask your business owner or an admin for access.' }) }, [])
+  return <Navigate to={paths.overview} replace/>
+}
+
+/**
+ * Pages decided by the login's permissions (sink's middleware: pageAllowed, then role rules). The route
+ * → area table is lib/access-map.ts PAGE_AREAS; Overview has no area, so a refused page lands there.
+ */
+export function RequirePage() {
+  const { canOpen } = usePermissions()
+  const { pathname } = useLocation()
+  if (!canOpen(pathname)) return <Blocked/>
+  return <Outlet/>
 }

@@ -89,7 +89,7 @@ export function InvoicePaymentsCard({ invoice, action, onReverse }: { invoice: I
             <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl', payment.reversed ? 'bg-muted text-muted-foreground' : 'bg-[#E8F5EA] text-secondary')}>{payment.reversed ? <Undo2 size={15}/> : <Wallet size={15}/>}</span>
             <div className="min-w-0">
               <p className="text-xs font-extrabold">{payment.method}{payment.reversed && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[.08em] text-muted-foreground">Reversed</span>}</p>
-              <p className="mt-0.5 text-[10px] text-muted-foreground">Paid {longDate(payment.date)}{payment.recordedBy && ` · recorded by ${payment.recordedBy}`}{payment.reversed && payment.reversedAt && ` · reversed ${dateTime(payment.reversedAt)}`}</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">Paid {longDate(payment.date)}{payment.recordedBy && ` · recorded by ${payment.recordedBy}`}{payment.reversed && payment.reversedAt && ` · reversed ${dateTime(payment.reversedAt)}${payment.reversedBy ? ` by ${payment.reversedBy}` : ''}`}</p>
               {payment.note && <p className="mt-1 break-words text-[11px] text-foreground/80">{payment.note}</p>}
             </div>
           </div>

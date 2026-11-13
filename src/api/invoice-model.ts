@@ -16,8 +16,11 @@ export type InvoicePaymentMethod = (typeof INVOICE_PAYMENT_METHODS)[number]
 
 export type InvoiceTaxMode = 'exclusive' | 'inclusive' | 'none'
 
-/** A saved product or service, reusable across invoice lines. */
-export type InvoiceItem = { id: string; code: string; name: string; description: string; price: number }
+/** A saved product or service, reusable across invoice lines. The description is its name. */
+export type InvoiceItem = { id: string; description: string; price: number; taxRate: number; account: string; createdAt: string }
+
+/** Fields a saved item is created with (`description` required). */
+export type InvoiceItemInput = Omit<InvoiceItem, 'id' | 'createdAt'>
 
 /** One line as saved: `amount` is qty × price less discount, `tax` the tax on it. */
 export type InvoiceLineRecord = {
@@ -45,6 +48,7 @@ export type InvoicePayment = {
   /** Reversed payments stay in the history but no longer count toward the amount paid. */
   reversed: boolean
   reversedAt: string
+  reversedBy: string
 }
 
 export type InvoiceActivityType = 'created' | 'updated' | 'approved' | 'sent' | 'viewed' | 'reminder' | 'payment' | 'payment_reversed' | 'paid' | 'voided'
@@ -64,7 +68,6 @@ export type Invoice = {
   clientId: string
   clientEmail: string
   clientPhone: string
-  clientAddress: string
   /** Total, tax included. */
   amount: number
   subtotal: number
@@ -76,8 +79,10 @@ export type Invoice = {
   issued: string
   due: string
   status: InvoiceStatus
-  /** The customer opened the public link. */
+  /** The customer opened the public link (`viewed_at` set, or status VIEWED on list rows). */
   viewed: boolean
+  /** ISO timestamp of the first view; empty when not viewed or on list rows. */
+  viewedAt: string
   taxMode: InvoiceTaxMode
   design: InvoiceDesign
   branding: InvoiceBranding
@@ -95,15 +100,17 @@ export type Invoice = {
 export type InvoiceAnalyticsMonth = { month: string; sent: number; paid: number }
 export type DocumentFlowItem = { label: string; count: number; amount: number | null; color: string }
 
+/** From GET …/analytics/. Text figures read "—" when the server sends null. */
 export type InvoiceSummary = {
-  outstanding: number
+  /** Invoices not yet paid, by count (APPROVED + SENT + VIEWED + OVERDUE). */
   outstandingCount: number
-  overdue: number
   overdueCount: number
   paidThisMonth: number
+  /** "+16% from last month", or "—" when there is nothing to compare with. */
   paidChange: string
   averagePaidDays: string
   collectionRate: string
+  /** Balance still expected on open invoices. */
   expectedCash: number
   /** Last six months, sent vs paid amounts. */
   months: InvoiceAnalyticsMonth[]
@@ -112,6 +119,8 @@ export type InvoiceSummary = {
 
 /** What a customer has paid and still owes across their invoices. */
 export type CustomerInvoiceSummary = { totalPaid: number; totalUnpaid: number; overdue: number; invoiceCount: number }
+/** Bulk summaries keyed by customer id. */
+export type CustomerInvoiceSummaries = Record<string, CustomerInvoiceSummary>
 
 /** Fields a draft is created or edited with. Totals are worked out by the server. */
 export type InvoiceInput = {
@@ -131,7 +140,8 @@ export type InvoiceInput = {
 export type InvoiceClientSnapshot = { name: string; email: string; phone: string }
 
 export type InvoiceReminderChannel = 'email' | 'whatsapp' | 'share'
-export type InvoiceReminderResult = { sendSucceeded: boolean; message: string }
+/** `sendSucceeded` is null for share (nothing is sent by the server); `message` explains a failure. */
+export type InvoiceReminderResult = { channel: InvoiceReminderChannel; publicUrl: string; sendAttempted: boolean; sendSucceeded: boolean | null; message: string }
 
 export type InvoiceListParams = { page: number; limit: number; search: string; status: string; customer: string; startDate: string; endDate: string }
 export type InvoiceListResult = { invoices: Invoice[]; total: number; pages: number }

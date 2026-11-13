@@ -23,6 +23,16 @@ function CloseButton({ onClose, light }: { onClose: () => void; light?: boolean 
   return <button type="button" aria-label="Close" onClick={onClose} className={cn('rounded-lg p-2', light ? 'text-white/70 hover:bg-white/10' : 'text-muted-foreground hover:bg-muted')}><X size={17}/></button>
 }
 
+/** Which account the money leaves, number in full: an expense account's number is what staff look for. */
+function FromAccount({ flow }: { flow: TransferFlow }) {
+  if (!flow.fromAccount) return null
+  const { name, bank, number, isExpense } = flow.fromAccount
+  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-[#F8FAF8] px-3 py-2.5">
+    <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">{isExpense ? 'Paying from expense account' : 'Paying from'}</p><p className="mt-0.5 truncate text-xs font-extrabold">{name}</p></div>
+    <p className="shrink-0 text-right text-[11px] text-muted-foreground">{bank}<br/><b className="font-mono text-xs tracking-wider text-foreground">{number || '—'}</b></p>
+  </div>
+}
+
 function ErrorNote({ children }: { children: ReactNode }) {
   return <p role="alert" className="rounded-lg bg-[#FDEAEA] px-3 py-2.5 text-[11px] font-bold text-[#C72D34]">{children}</p>
 }
@@ -44,6 +54,7 @@ function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => vo
       <div className="mt-6 flex flex-col gap-5">
         {flow.recent.options.length > 0 && <KitSelect label="Recent recipient" placeholder="Search someone you've paid before..." options={flow.recent.options} value={flow.recent.value} onChange={event => flow.recent.applyKey(event.target.value)}/>}
         {flow.accounts.length > 1 && <KitSelect label="Pay from" value={flow.fromBankId} options={flow.accounts} onChange={event => flow.setFromBank(event.target.value)} error={flow.errors.fromBankId?.message}/>}
+        <FromAccount flow={flow}/>
         <KitSelect label="Recipient Bank" placeholder={flow.bank.loading ? 'Loading banks…' : 'Search for a bank...'} options={flow.bank.options} value={flow.bank.value} onChange={event => flow.setBankCode(event.target.value)} error={flow.errors.bankCode?.message}/>
         <KitField label="Account Number" inputMode="numeric" placeholder="1234567890" value={flow.accountNumber} onChange={event => flow.setAccountNumber(event.target.value)} error={flow.errors.accountNumber?.message}/>
         <div>
@@ -84,17 +95,18 @@ function ConfirmTransfer({ flow, onClose }: { flow: TransferFlow; onClose: () =>
       <ModalTitle className="text-xl font-extrabold">Confirm Transfer</ModalTitle>
       <p className="mt-2 text-xs leading-5 text-muted-foreground">Please verify the transaction details and enter your PIN to complete the transfer.</p>
       <div className="mt-6 flex flex-col gap-3 rounded-xl border border-border bg-[#F8FAF8] p-4">
-        {flow.accounts.length > 1 && <ConfirmRow label="From:" value={flow.fromLabel}/>}
+        {flow.fromAccount && <ConfirmRow label="From:" value={`${flow.fromAccount.name} · ${flow.fromAccount.number}`}/>}
         <ConfirmRow label="Bank Name:" value={flow.bank.name}/>
         <ConfirmRow label="Account Number:" value={flow.accountNumber}/>
         <ConfirmRow label="Account Name:" value={flow.beneficiary?.name || 'N/A'}/>
         <ConfirmRow label="Amount:" value={flow.amount} tone="green"/>
-        <ConfirmRow label="System Charges:" value={flow.fee}/>
+        <ConfirmRow label="Charges:" value={flow.charges}/>
         {flow.stampDuty && <ConfirmRow label="Stamp Duty:" value={flow.stampDuty}/>}
         <div className="border-t border-border pt-3"><ConfirmRow label="Total:" value={flow.total} strong tone="green"/></div>
         {flow.categoryName && <ConfirmRow label="Category:" value={flow.categoryName}/>}
         {flow.narration && <div className="border-t border-border pt-3"><ConfirmRow label="Narration:" value={flow.narration}/></div>}
       </div>
+      {flow.feesAreEstimate && <p className="mt-3 text-[11px] text-muted-foreground">The charges are an estimate and are confirmed when the payout runs.</p>}
       <p className="mt-6 text-xs font-semibold text-foreground/75">Enter 4-digit PIN</p>
       <div className="mx-auto max-w-[260px] [&>div]:mt-3 [&>div]:justify-center"><OtpInput value={flow.pin} onChange={flow.setPin} length={4}/></div>
       {flow.error && <div className="mt-4"><ErrorNote>{flow.error}</ErrorNote></div>}
@@ -106,8 +118,8 @@ function ConfirmTransfer({ flow, onClose }: { flow: TransferFlow; onClose: () =>
   </>
 }
 
-function TransferDialog({ onClose }: { onClose: () => void }) {
-  const flow = useTransferFlow()
+function TransferDialog({ bankId, onClose }: { bankId?: string; onClose: () => void }) {
+  const flow = useTransferFlow({ bankId })
   // After a direct transfer the receipt takes over; closing it finishes the flow.
   if (flow.receipt) return <ReceiptModal receipt={flow.receipt} onClose={() => { flow.closeReceipt(); onClose() }}/>
 
@@ -124,7 +136,7 @@ function TransferDialog({ onClose }: { onClose: () => void }) {
   return <Modal open onClose={flow.submitting ? () => undefined : onClose} title={flow.canInitiate ? undefined : 'Transfer funds'} overlayClassName="bg-primary/40 p-4 backdrop-blur-sm" panelClassName={panel}>{body}</Modal>
 }
 
-/** Mounts the flow only while open, so its banks/beneficiaries load on demand and every open starts clean. */
-export function TransferModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  return open ? <TransferDialog onClose={onClose}/> : null
+/** Mounts the flow only while open, so its banks/beneficiaries load on demand and every open starts clean. Pass bankId to pay from a given account. */
+export function TransferModal({ open, bankId, onClose }: { open: boolean; bankId?: string; onClose: () => void }) {
+  return open ? <TransferDialog bankId={bankId} onClose={onClose}/> : null
 }

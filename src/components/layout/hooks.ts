@@ -18,7 +18,7 @@ const resolveUserName = (user: AuthUser | null | undefined) => {
   return user?.fullName || user?.name || user?.email?.split('@')[0] || ''
 }
 
-const ROLE_LABELS: Record<string, string> = { OWNER: 'Owner', 'ADMIN-ATTENDANT': 'Admin', ATTENDANT: 'Attendant', PHARMACIST: 'Pharmacist', ACCOUNTANT: 'Accountant', 'INVENTORY-MANAGER': 'Inventory manager', 'PRODUCTION-MANAGER': 'Production manager' }
+const ROLE_LABELS: Record<string, string> = { OWNER: 'Owner', 'ADMIN-ATTENDANT': 'Super admin', MANAGER: 'Super admin', ATTENDANT: 'Attendant', PHARMACIST: 'Pharmacist', ACCOUNTANT: 'Accountant', 'INVENTORY-MANAGER': 'Inventory manager', 'PRODUCTION-MANAGER': 'Production manager' }
 
 /** Open state for the phone/tablet slide-in sidebar. */
 export function useMobileSidebar() {

@@ -17,7 +17,7 @@ export function Topbar() {
           <span className="hidden sm:inline">Welcome back{bar.firstName && ', '}</span>
           {bar.firstName ? <span className="text-secondary">{bar.firstName}</span> : <span className="sm:hidden">Welcome back</span>}
         </p>
-        {bar.verification && <button type="button" onClick={bar.goToKyc} className={cn('shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[9px] font-extrabold sm:px-2 sm:text-[10px]', bar.verification.ok ? 'bg-accent text-secondary' : 'bg-[#FFF6E4] text-[#A76700]')}>{bar.verification.text}</button>}
+        {bar.verification && <button type="button" onClick={bar.goToKyc} className={cn('shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-extrabold sm:px-2 sm:text-[11px]', bar.verification.ok ? 'bg-accent text-secondary' : 'bg-[#FFF6E4] text-[#A76700]')}>{bar.verification.text}</button>}
       </div>
       <p className="hidden truncate text-[11px] font-semibold text-muted-foreground sm:block">{bar.businessName ? `Managing ${bar.businessName}` : 'Dashboard overview'} · {bar.date}</p>
     </div>

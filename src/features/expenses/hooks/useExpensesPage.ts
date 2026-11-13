@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useBudgets, useCategorySpend, useExpensePermissions, useExpenses, useExpenseSettings, useExpenseTransactions, useSpendByUser, type Expense } from '@/api/expenses'
-import { useBusinessBanks, useWalletAccount } from '@/api/transactions'
+import { useWalletAccount } from '@/api/transactions'
 import { fromExpense } from '../approval-items'
 import { useApprovalDecision } from './useApprovalDecision'
 import { downloadCsv } from '@/features/transactions/format'
@@ -26,7 +26,6 @@ export function useExpensesPage() {
   const location = useLocation()
   const money = useFormatMoney()
   const permissions = useExpensePermissions()
-  const banks = useBusinessBanks()
   const decision = useApprovalDecision()
 
   // A draft from Invoices opens the form once; clearing history state keeps a refresh from reopening it.
@@ -82,11 +81,11 @@ export function useExpensesPage() {
     return rows.slice(0, 6).map((row, index) => ({ ...row, percent: total ? Math.round((row.spent / total) * 100) : 0, color: PALETTE[index % PALETTE.length], spentLabel: money(row.spent) }))
   }, [categorySpend.data, money])
 
+  // spent / pct_used come with each budget from the backend.
   const budgetRows = useMemo(() => (budgets.data ?? []).slice(0, 4).map(budget => {
-    const used = categorySpend.data?.find(row => row.name === budget.categoryName)?.spent ?? 0
-    const percent = budget.total ? Math.round((used / budget.total) * 100) : 0
-    return { id: budget.id, label: budget.categoryName, amount: `${money(used)} of ${money(budget.total)}`, percent: Math.min(percent, 100), over: percent >= 100 }
-  }), [budgets.data, categorySpend.data, money])
+    const percent = Math.round(budget.pctUsed)
+    return { id: budget.id, label: budget.categoryName, amount: `${money(budget.spent)} of ${money(budget.total)}`, percent: Math.min(percent, 100), over: percent >= 100 }
+  }), [budgets.data, money])
 
   const pendingRow = stat.awaiting.find(row => row.canApprove) ?? null
   const justApproved = justApprovedId ? (transactions.data ?? []).find(row => row.id === justApprovedId) ?? null : null
@@ -127,7 +126,6 @@ export function useExpensesPage() {
       setJustApprovedId(pendingRow.id)
       decision.open(fromExpense(pendingRow))
     },
-    scheduleTransfer: () => navigate(paths.payments, { state: { bankId: banks.banks.find(bank => bank.isExpenses)?.id } }),
     audit,
 
     filters: {
@@ -164,8 +162,6 @@ export function useExpensesPage() {
     /** A pending logged expense is signed off with a PIN or rejected with a reason (sink: TransactionDetailsModal). */
     review: (expense: Expense) => { setViewing(null); decision.open(fromExpense(expense)) },
     categoriesModal,
-    /** Expense rules live in Settings (Accounts › Account rules), next to the transaction PIN. */
-    openRules: () => navigate(`${paths.accounts}?action=rules&section=expense-rules`),
 
     createInvoice: (expense: Expense) => navigate(paths.invoiceNew, { state: { draft: { client: '', amount: expense.amount, note: `Reimbursement for ${expense.name} · ${expense.reference}` } } }),
     exportCsv: () => {

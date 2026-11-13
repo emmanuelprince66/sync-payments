@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Outlet } from 'react-router'
 import { PageLoader } from '@/components/ui/misc'
+import { usePermissionsSync } from '@/hooks/usePermissionsSync'
 import { usePreloadAppShell } from '@/routes/usePreloadAppShell'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
@@ -9,6 +10,8 @@ import { Topbar } from './Topbar'
 export function AppLayout() {
   // Users who arrive already signed in skip the login page, so warm the other pages here too.
   usePreloadAppShell()
+  // Picks up permission changes the owner makes (sink: PermissionsSync).
+  usePermissionsSync()
   return <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground">
     <Sidebar/>
     <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">

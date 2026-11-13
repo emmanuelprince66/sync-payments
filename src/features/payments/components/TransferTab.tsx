@@ -17,6 +17,7 @@ function Details({ flow }: { flow: TransferFlow }) {
       {flow.accounts.length === 0 && <option value="">{flow.accountsLoading ? 'Loading accounts…' : 'No accounts yet'}</option>}
       {flow.accounts.map(account => <option key={account.value} value={account.value}>{account.label}</option>)}
     </KitSelect>
+    {flow.fromAccount && <p className="-mt-3 text-[11px] text-muted-foreground">{flow.fromAccount.isExpense ? 'Expense account' : 'Account'} number <b className="font-mono tracking-wider text-foreground">{flow.fromAccount.number || '—'}</b> · {flow.fromAccount.bank}</p>}
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
       <KitSelect label="Bank" value={flow.bank.value} onChange={event => flow.setBankCode(event.target.value)} error={flow.errors.bankCode?.message}>
         <option value="">{flow.bank.loading ? 'Loading banks…' : 'Select a bank'}</option>
@@ -47,7 +48,7 @@ function Details({ flow }: { flow: TransferFlow }) {
 }
 
 function Review({ flow }: { flow: TransferFlow }) {
-  const rows = [['From', flow.fromLabel], ['Reference', flow.narration || '—'], ...(flow.categoryName ? [['Category', flow.categoryName]] : []), ['Fee', flow.fee], ...(flow.stampDuty ? [['Stamp duty', flow.stampDuty]] : []), ['Total', flow.total], ['Approval', flow.isExpenseAccount ? 'Per your approval rules' : 'Your transaction PIN']]
+  const rows = [['From', flow.fromAccount ? `${flow.fromAccount.name} · ${flow.fromAccount.number}` : flow.fromLabel], ['Reference', flow.narration || '—'], ...(flow.categoryName ? [['Category', flow.categoryName]] : []), ['Charges', flow.charges], ...(flow.stampDuty ? [['Stamp duty', flow.stampDuty]] : []), ['Total', flow.total], ['Approval', flow.isExpenseAccount ? 'Per your approval rules' : 'Your transaction PIN']]
   return <div className="p-6">
     <p className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground">Review transfer</p>
     <p className="mt-3 text-3xl font-extrabold [overflow-wrap:anywhere]">{flow.amount}</p>
@@ -55,6 +56,7 @@ function Review({ flow }: { flow: TransferFlow }) {
     <div className="mt-6 divide-y divide-border rounded-lg border border-border px-4">
       {rows.map(([label, value]) => <div key={label} className="flex justify-between gap-3 py-3 text-[10px]"><span className="shrink-0 text-muted-foreground">{label}</span><span className="text-right font-extrabold [overflow-wrap:anywhere]">{value}</span></div>)}
     </div>
+    {flow.feesAreEstimate && <p className="mt-2 text-[10px] text-muted-foreground">The charges are an estimate and are confirmed when the payout runs.</p>}
     <p className="mt-6 text-center text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Enter transaction PIN</p>
     <div className="mx-auto max-w-[260px] [&>div]:mt-3"><OtpInput value={flow.pin} onChange={flow.setPin} length={4}/></div>
     {flow.error && <p role="alert" className="mt-4 rounded-lg bg-[#FDEAEA] px-3 py-2 text-[10px] font-bold text-[#C72D34]">{flow.error}</p>}

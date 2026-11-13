@@ -46,10 +46,10 @@ export default function CustomerDetailPage() {
               <p className="mt-1 truncate text-sm text-muted-foreground">{[customer.code, page.tier && `${page.tier} tier`, page.segment].filter(Boolean).join(' · ') || customer.phone}</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <KitButton variant="secondary" onClick={page.confirmDelete.open}><Trash2 size={14}/> Delete</KitButton>
-            <KitButton onClick={page.edit.open}><Pencil size={14}/> Edit</KitButton>
-          </div>
+          {(page.can.edit || page.can.delete) && <div className="grid grid-cols-2 gap-2 sm:flex">
+            {page.can.delete && <KitButton variant="secondary" onClick={page.confirmDelete.open}><Trash2 size={14}/> Delete</KitButton>}
+            {page.can.edit && <KitButton onClick={page.edit.open}><Pencil size={14}/> Edit</KitButton>}
+          </div>}
         </div>
 
         {page.statsLoading

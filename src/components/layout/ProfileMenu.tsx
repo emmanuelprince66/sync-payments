@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { ChevronDown, HelpCircle, LogOut, ShieldCheck, Shuffle, type LucideIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { useDismiss } from '@/hooks/useDismiss'
@@ -18,6 +19,7 @@ function Item({ icon: Icon, label, onClick, badge, danger }: { icon: LucideIcon;
 
 /** Profile dropdown in the top bar: who is signed in, KYC with tier, switch business, help, sign out. */
 export function ProfileMenu() {
+  const { canManageSetup } = usePermissions()
   const bar = useTopbar()
   const rootRef = useRef<HTMLDivElement>(null)
   useDismiss(rootRef, bar.menuOpen, bar.closeMenu)
@@ -42,7 +44,7 @@ export function ProfileMenu() {
         </div>
       </div>
       <div className="mt-1 flex flex-col gap-0.5 py-1">
-        <Item icon={ShieldCheck} label="KYC verification" onClick={bar.goToKyc} badge={bar.kycBadge}/>
+        {canManageSetup && <Item icon={ShieldCheck} label="KYC verification" onClick={bar.goToKyc} badge={bar.kycBadge}/>}
         <Item icon={Shuffle} label="Switch business" onClick={bar.switchBusiness}/>
         <Item icon={HelpCircle} label="Help & support" onClick={bar.openHelp}/>
       </div>

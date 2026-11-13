@@ -6,7 +6,8 @@ const loaders = {
   selectBusiness: () => import('@/features/business/SelectBusinessPage'),
   overview: () => import('@/features/overview/OverviewPage'),
   transactions: () => import('@/features/transactions/TransactionsPage'),
-  branches: () => import('@/features/branches/BranchesPage'),
+  // Branches and Storefront are switched off for now (see router.tsx).
+  // branches: () => import('@/features/branches/BranchesPage'),
   payments: () => import('@/features/payments/PaymentsPage'),
   expenses: () => import('@/features/expenses/ExpensesPage'),
   invoices: () => import('@/features/invoices/InvoicesPage'),
@@ -22,7 +23,7 @@ const loaders = {
   kyc: () => import('@/features/kyc/KycPage'),
   customers: () => import('@/features/customers/CustomersPage'),
   customerDetail: () => import('@/features/customers/CustomerDetailPage'),
-  storefront: () => import('@/features/storefront/StorefrontPage'),
+  // storefront: () => import('@/features/storefront/StorefrontPage'),
   bnpl: () => import('@/features/bnpl/BnplPage'),
 }
 
@@ -31,7 +32,7 @@ export const pages = {
   SelectBusinessPage: lazy(loaders.selectBusiness),
   OverviewPage: lazy(loaders.overview),
   TransactionsPage: lazy(loaders.transactions),
-  BranchesPage: lazy(loaders.branches),
+  // BranchesPage: lazy(loaders.branches),
   PaymentsPage: lazy(loaders.payments),
   ExpensesPage: lazy(loaders.expenses),
   InvoicesPage: lazy(loaders.invoices),
@@ -46,7 +47,7 @@ export const pages = {
   KycPage: lazy(loaders.kyc),
   CustomersPage: lazy(loaders.customers),
   CustomerDetailPage: lazy(loaders.customerDetail),
-  StorefrontPage: lazy(loaders.storefront),
+  // StorefrontPage: lazy(loaders.storefront),
   BnplPage: lazy(loaders.bnpl),
 }
 

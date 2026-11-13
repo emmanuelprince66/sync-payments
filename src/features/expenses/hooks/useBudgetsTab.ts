@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useBudgets, useCategorySpend, useExpensePermissions, type Budget } from '@/api/expenses'
-import { useExpenseCategories } from '@/api/transactions'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 
 /** Share of a budget used before it is flagged as running low. */
@@ -9,36 +8,34 @@ export const NEAR_LIMIT = 80
 export type BudgetHealth = 'over' | 'near' | 'ok'
 
 export type BudgetRow = Budget & {
-  categoryId: string
-  spent: number
-  remaining: number
   percent: number
   health: BudgetHealth
 }
 
+const THIS_YEAR = new Date().getFullYear()
+export const BUDGET_YEARS = [THIS_YEAR - 1, THIS_YEAR, THIS_YEAR + 1]
+
 /**
- * Budgets per expense category (sink: expenses/budgets + the "Categories & Budgets" cards).
- * Budget records carry only category_name, so spend and the category id are matched by name, as sink does.
+ * Budgets per expense category for one year (sink: expenses/budgets + the "Categories & Budgets" cards).
+ * GET expenses/business/{id}/budgets/?year= already carries category_id, spent, remaining and pct_used, so those are
+ * used as they come; category spend is only read to find categories that have spend but no budget (joined by id).
  */
 export function useBudgetsTab() {
   const money = useFormatMoney()
   const { isOwner, canLog } = useExpensePermissions()
-  const budgets = useBudgets()
+  const [year, setYear] = useState(THIS_YEAR)
+  const budgets = useBudgets(year)
   const spend = useCategorySpend()
-  const categories = useExpenseCategories()
   const [search, setSearch] = useState('')
   const [editing, setEditing] = useState<BudgetRow | null>(null)
   const [creating, setCreating] = useState(false)
   const [preset, setPreset] = useState('')
 
   const rows = useMemo<BudgetRow[]>(() => (budgets.data ?? []).map(budget => {
-    const category = spend.data?.find(row => row.name === budget.categoryName)
-    const spent = category?.spent ?? 0
-    const percent = budget.total > 0 ? Math.round((spent / budget.total) * 100) : 0
-    const categoryId = categories.data?.find(row => row.name === budget.categoryName)?.id ?? category?.id ?? ''
+    const percent = Math.round(budget.pctUsed)
     const health: BudgetHealth = percent >= 100 ? 'over' : percent >= NEAR_LIMIT ? 'near' : 'ok'
-    return { ...budget, categoryId, spent, remaining: budget.total - spent, percent, health }
-  }).sort((a, b) => b.percent - a.percent), [budgets.data, spend.data, categories.data])
+    return { ...budget, percent, health }
+  }).sort((a, b) => b.percent - a.percent), [budgets.data])
 
   const term = search.trim().toLowerCase()
   const visible = term ? rows.filter(row => row.categoryName.toLowerCase().includes(term)) : rows
@@ -46,8 +43,8 @@ export function useBudgetsTab() {
   const spent = rows.reduce((sum, row) => sum + row.spent, 0)
   const over = rows.filter(row => row.health === 'over')
   const near = rows.filter(row => row.health === 'near')
-  // Categories that have spend but nothing to measure it against.
-  const unbudgeted = (spend.data ?? []).filter(row => row.spent > 0 && !rows.some(budget => budget.categoryName === row.name))
+  // Categories that have spend this year but nothing to measure it against (category spend is this year's).
+  const unbudgeted = year === THIS_YEAR ? (spend.data ?? []).filter(row => row.spent > 0 && !rows.some(budget => budget.categoryId === row.id)) : []
 
   return {
     loading: (budgets.isLoading && !budgets.data) || (spend.isLoading && !spend.data),
@@ -56,6 +53,9 @@ export function useBudgetsTab() {
     money,
     rows: visible,
     count: rows.length,
+    year,
+    years: BUDGET_YEARS,
+    setYear,
     search,
     setSearch,
     summary: {
@@ -69,7 +69,7 @@ export function useBudgetsTab() {
       ...over.map(row => ({ id: row.id, tone: 'over' as const, text: `${row.categoryName} is over budget by ${money(row.spent - row.total)} (${row.percent}% used).` })),
       ...near.map(row => ({ id: row.id, tone: 'near' as const, text: `${row.categoryName} has used ${row.percent}% of its budget. ${money(row.remaining)} left.` })),
     ],
-    unbudgeted: unbudgeted.map(row => ({ id: categories.data?.find(category => category.name === row.name)?.id ?? row.id, name: row.name, spent: money(row.spent) })),
+    unbudgeted: unbudgeted.map(row => ({ id: row.id, name: row.name, spent: money(row.spent) })),
     modal: {
       open: creating || Boolean(editing),
       budget: editing,

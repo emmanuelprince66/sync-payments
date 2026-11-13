@@ -55,5 +55,4 @@ export const INVOICE_STATUS_FILTERS = [
   { value: 'SENT', label: 'Sent' },
   { value: 'OVERDUE', label: 'Overdue' },
   { value: 'PAID', label: 'Paid' },
-  { value: 'VOID', label: 'Void' },
 ] as const

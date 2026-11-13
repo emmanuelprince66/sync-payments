@@ -2,6 +2,8 @@ import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } f
 import { useEffect, useMemo } from 'react'
 import { apiRequest, mockDelay } from '@/lib/api-client'
 import { isoDay } from '@/lib/format'
+import { ACCESS } from '@/lib/access-map'
+import { allows } from '@/lib/sink-permissions'
 import { useAuthStore } from '@/stores/auth-store'
 import { useSelectedBankStore } from '@/stores/selected-bank-store'
 import { fetchBankList } from './banks'
@@ -24,21 +26,19 @@ import { walletSummaryOptions } from './wallet'
 
 export const TRANSACTIONS_PAGE_SIZE = 20
 
-/** sink's transfer fee: 10 up to 5,000, 25 up to 50,000, 50 above. */
-export const transferCharge = (amount: number | string) => {
-  const value = Number(amount)
-  if (!amount || !value) return 0
-  if (value <= 5000) return 10
-  if (value <= 50000) return 25
-  return 50
-}
-
 // ─── Permissions (sink: user-store `can`, owners can do everything) ─────────
 
 export type WalletPermission = 'manage_bank_details' | 'can_initiate_expense_transfer' | 'view_transactions'
 
-export const useCan = (permission: WalletPermission) =>
-  useAuthStore(state => state.user?.role === 'OWNER' || !state.user?.role || state.user?.permissions?.[permission] === true)
+/**
+ * sink's `can(flag)`: owners can do everything; the login's checklist decides when it has one (FLAG_TO_MATRIX),
+ * else the flag; a login with no permissions at all falls back to sink's role rules (lib/access-map.ts).
+ */
+export const useCan = (permission: WalletPermission) => {
+  const user = useAuthStore(state => state.user)
+  const area = permission === 'view_transactions' ? ACCESS.transactions : permission === 'manage_bank_details' ? ACCESS.manageWallet : ACCESS.transfer
+  return allows(area, { role: user?.role, permissions: user?.permissions })
+}
 
 export const useIsOwner = () => useAuthStore(state => state.user?.role === 'OWNER' || !state.user?.role)
 
@@ -46,7 +46,8 @@ export const useIsOwner = () => useAuthStore(state => state.user?.role === 'OWNE
 
 export type PaymentBank = BusinessBank & { isExpenses: boolean }
 
-const MOCK_BANKS: PaymentBank[] = [
+/** Mutable so a sub-account created in mock mode shows up like a real one would. */
+let MOCK_BANKS: PaymentBank[] = [
   { id: 'mock-bank', bank_name: 'VFD Microfinance Bank', account_number: '0048921067', account_name: 'General operating', is_sub: false, isExpenses: false },
   { id: 'mock-bank-expense', bank_name: 'VFD Microfinance Bank', account_number: '0048928210', account_name: 'Expense account', is_sub: true, isExpenses: true },
   { id: 'mock-bank-payroll', bank_name: 'VFD Microfinance Bank', account_number: '0048921098', account_name: 'Payroll account', is_sub: true, isExpenses: false },
@@ -65,12 +66,14 @@ export const useBusinessBanks = () => {
   const { data: business, isLoading } = useCurrentBusiness()
   const selectedBankId = useSelectedBankStore(state => state.selectedBankId)
   const setSelectedBankId = useSelectedBankStore(state => state.setSelectedBankId)
+  // Mock mode only: read through the query cache so a sub-account created there appears after invalidation.
+  const { data: mockBanks } = useQuery({ queryKey: [...queryKeys.business, 'mock-banks'], queryFn: () => [...MOCK_BANKS], enabled: !isLive(), initialData: MOCK_BANKS })
 
   const banks = useMemo<PaymentBank[]>(() => {
-    if (!isLive()) return MOCK_BANKS
+    if (!isLive()) return mockBanks
     const raw = listFrom(business?.raw.banks, [])
     return (business?.banks ?? []).map((bank, index) => ({ ...bank, isExpenses: asRecord(raw[index]).is_expenses === true }))
-  }, [business])
+  }, [business, mockBanks])
   const primaryBank = useMemo(() => banks.find(bank => bank.is_sub !== true) ?? banks[0] ?? null, [banks])
   const selectedBank = useMemo(() => (isOwner ? banks.find(bank => bank.id === selectedBankId) ?? primaryBank : primaryBank), [banks, selectedBankId, primaryBank, isOwner])
 
@@ -308,14 +311,33 @@ export const extractTransactionId = (response: unknown) =>
 
 // ─── Sub-account ────────────────────────────────────────────────────────────
 
-const createSubAccount = async ({ businessId, previousAccount, branch, isExpenses }: { businessId: string; previousAccount: string; branch: string; isExpenses?: boolean }) => {
-  if (!isLive()) return mockDelay(null, 700)
-  return apiRequest<unknown>(`wallet/create_sub_account/${businessId}/`, { method: 'POST', body: { previous_account: previousAccount, branch, ...(isExpenses ? { is_expenses: true } : {}) } })
+/** The account the backend opened. Any field may be blank if the response doesn't carry it. */
+export type CreatedSubAccount = { accountNumber: string; accountName: string; bankName: string }
+
+const createdFrom = (response: unknown): CreatedSubAccount => {
+  const root = asRecord(response)
+  const row = asRecord(root.data && typeof root.data === 'object' ? root.data : root)
+  return { accountNumber: str(row.account_number), accountName: str(row.account_name), bankName: str(row.bank_name) }
+}
+
+const createSubAccount = async ({ businessId, previousAccount, branch, isExpenses }: { businessId: string; previousAccount: string; branch: string; isExpenses?: boolean }): Promise<CreatedSubAccount> => {
+  if (!isLive()) {
+    const accountNumber = `00489${String(Date.now()).slice(-5)}`
+    const accountName = `Kemi Store-${branch}`
+    MOCK_BANKS = [...MOCK_BANKS, { id: `mock-bank-${Date.now()}`, bank_name: 'VFD Microfinance Bank', account_number: accountNumber, account_name: accountName, is_sub: true, isExpenses: Boolean(isExpenses) }]
+    return mockDelay({ accountNumber, accountName, bankName: 'VFD Microfinance Bank' }, 700)
+  }
+  // previous_account is the funding account's NUMBER, not its id (sink: create-sub-account).
+  return createdFrom(await apiRequest<unknown>(`wallet/create_sub_account/${businessId}/`, { method: 'POST', body: { previous_account: previousAccount, branch, ...(isExpenses ? { is_expenses: true } : {}) } }))
 }
 
 export const useCreateSubAccount = () => {
   const queryClient = useQueryClient()
-  return useMutation({ mutationFn: createSubAccount, onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.business }) })
+  // The new account is on the business payload (and the cached business list), so both go stale (sink does the same).
+  return useMutation({
+    mutationFn: createSubAccount,
+    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: queryKeys.business }), queryClient.invalidateQueries({ queryKey: queryKeys.businesses })]),
+  })
 }
 
 // ─── Mock (VITE_AUTH_MODE=mock only): the design's sample rows ──────────────

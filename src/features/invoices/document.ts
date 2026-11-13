@@ -59,6 +59,23 @@ export const tint = (hex: string, alpha: number) => {
   return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`
 }
 
+/** The colour mixed into white, as plain hex: "#529661", 0.07 → "#F3F8F4". A soft brand wash the PDF renderer draws exactly. */
+export const wash = (hex: string, amount: number) => {
+  const clean = hex.replace('#', '')
+  const full = clean.length === 3 ? clean.split('').map(char => char + char).join('') : clean.padEnd(6, '0').slice(0, 6)
+  const value = Number.parseInt(full, 16)
+  if (Number.isNaN(value)) return '#F6F7F4'
+  const channel = (shift: number) => Math.round(255 - (255 - ((value >> shift) & 255)) * amount).toString(16).padStart(2, '0')
+  return `#${channel(16)}${channel(8)}${channel(0)}`.toUpperCase()
+}
+
+/** Perceived lightness below ~30%: "#1D261C" is dark, "#529661" is not. */
+export const isDark = (hex: string) => {
+  const value = Number.parseInt(hex.replace('#', '').padEnd(6, '0').slice(0, 6), 16)
+  if (Number.isNaN(value)) return false
+  return (0.299 * ((value >> 16) & 255) + 0.587 * ((value >> 8) & 255) + 0.114 * (value & 255)) / 255 < 0.3
+}
+
 /** "INV-0042" → "0042". */
 export const documentNumber = (number: string) => number.replace(/^\D+/, '') || number
 

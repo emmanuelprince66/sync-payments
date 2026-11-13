@@ -29,6 +29,9 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptDetails | n
         <Row label="Beneficiary" value={receipt.beneficiaryName}/>
         <Row label="Account number" value={receipt.beneficiaryAccount}/>
         <Row label="Bank" value={receipt.beneficiaryBank}/>
+        {receipt.charges !== undefined && <Row label="Charges" value={money(receipt.charges)}/>}
+        {Boolean(receipt.stampDuty) && <Row label="Stamp duty" value={money(receipt.stampDuty ?? 0)}/>}
+        {receipt.totalDebit !== undefined && receipt.totalDebit > 0 && <Row label="Total debit" value={money(receipt.totalDebit)}/>}
         {receipt.narration && <Row label="Narration" value={receipt.narration}/>}
         <Row label="Transaction ID" value={receipt.transactionId}/>
       </div>

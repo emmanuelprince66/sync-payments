@@ -17,7 +17,7 @@ export default function InvoicesPage() {
     <KitPageHeader
       title="Invoices"
       subtitle="Create, send, and automatically reconcile client invoices."
-      actions={!page.forbidden && <KitButton onClick={page.openForm}><Plus size={14}/> Create invoice</KitButton>}
+      actions={!page.forbidden && page.canCreate && <KitButton onClick={page.openForm}><Plus size={14}/> Create invoice</KitButton>}
     />
     {page.error && !page.rows.length && !page.isLoading
       ? <InvoiceAccessNotice forbidden={page.forbidden} message={page.error} onRetry={page.retry}/>

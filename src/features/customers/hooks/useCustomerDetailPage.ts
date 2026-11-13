@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useState } from 'react'
 import { generatePath, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -35,7 +36,10 @@ export function useCustomerDetailPage() {
   const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
   const dob = customer?.dateOfBirth ? (customer.dateOfBirth.length > 5 ? formatShortDate(`${customer.dateOfBirth.slice(0, 10)}T00:00:00`) : customer.dateOfBirth) : ''
 
+  const permissions = usePermissions()
   return {
+    /** sink Customers / Contact: customers:create, customers:edit (fallback everyone), customers:delete (fallback admins). */
+    can: { add: permissions.canAddCustomers, edit: permissions.canEditCustomers, delete: permissions.canDeleteCustomers },
     goBack,
     isLoading: detail.isLoading,
     isError: detail.isError,

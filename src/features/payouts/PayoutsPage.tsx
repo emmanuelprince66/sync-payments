@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { Send } from 'lucide-react'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { KitButton } from '@/components/ui/PaymentKit'
@@ -9,14 +10,15 @@ import { usePayoutsPage } from './hooks/usePayoutsPage'
 
 export default function PayoutsPage() {
   const page = usePayoutsPage()
+  const { canWalletTransfer } = usePermissions()
   return <KitPage>
     <KitPageHeader
       title="Payouts"
       subtitle="Transfer money out of your wallet to any bank account."
-      actions={<KitButton onClick={page.transfer.open}><Send size={14}/> New transfer</KitButton>}
+      actions={canWalletTransfer && <KitButton onClick={page.transfer.open}><Send size={14}/> New transfer</KitButton>}
     />
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
-      <TransferBalanceCard balance={page.balance} sent={page.sent} sentNote={page.sentNote} loading={page.activityLoading} onTransfer={page.transfer.open}/>
+      <TransferBalanceCard balance={page.balance} sent={page.sent} sentNote={page.sentNote} loading={page.activityLoading} onTransfer={canWalletTransfer ? page.transfer.open : undefined}/>
       <RecentTransfers rows={page.recent} loading={page.activityLoading} money={page.money}/>
     </div>
     <PayoutActivity dateRange={page.dateRange} onDateRange={page.setDateRange} chart={page.chart} isEmpty={page.isEmpty} isLoading={page.activityLoading} isError={page.activityError} hasBank={page.hasBank} onExport={page.exportCsv}/>

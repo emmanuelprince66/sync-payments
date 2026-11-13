@@ -11,6 +11,7 @@ import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { greeting, isoDay } from '@/lib/format'
 import { paths } from '@/routes/paths'
 import { useDisclosure } from '@/hooks/useDisclosure'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useAuthStore } from '@/stores/auth-store'
 // Reconciliation is switched off for now; restore with the card in OverviewPage.
 // import { SAMPLE_RECONCILIATION } from '../sample'
@@ -52,6 +53,7 @@ export function useOverviewPage() {
   const navigate = useNavigate()
   const user = useAuthStore(state => state.user)
   const banks = useBusinessBanks()
+  const permissions = usePermissions()
   const range = useDateRangeFilter({ initial: () => lastDays(7) })
   const money = useFormatMoney()
   const { symbol } = useBusinessCurrency()
@@ -92,10 +94,12 @@ export function useOverviewPage() {
   const now = new Date()
 
   return {
+    /** lib/access-map: transactions (stats, chart, recent), manageWallet (balance card), any transfer right. */
+    can: { viewTransactions: permissions.canViewTransactions, manageWallet: permissions.canManageWallet, transfer: permissions.canOpenPayments },
     loading: banks.loading || (account.isLoading && !data),
     date: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
     greeting: `${greeting(now)}${user?.firstname ? `, ${user.firstname}` : ''}`,
-    needsKyc: banks.needsKyc,
+    needsKyc: banks.needsKyc && permissions.canManageSetup,
     goToKyc: () => navigate(paths.kyc),
     account: selected || wallet
       ? { accountNumber: wallet?.accountNumber || selected?.account_number || '', bankName: wallet?.bankName || selected?.bank_name || '', accountName: accountLabel, balance: wallet?.balance ?? 0 }

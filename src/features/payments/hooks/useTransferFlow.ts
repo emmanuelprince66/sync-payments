@@ -4,26 +4,38 @@ import { useForm, useWatch } from 'react-hook-form'
 import { useLocation } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
-import { estimateExpenseCharges, useInitiateTransfer } from '@/api/expenses'
-import { extractTransactionId, transferCharge, useBeneficiaryEnquiry, useBusinessBanks, useCan, useExpenseCategories, useRecentBeneficiaries, useTransfer, useTransferBanks, useWalletBalances, type RecentBeneficiary } from '@/api/transactions'
+import { useInitiateTransfer, type InitiatedTransfer } from '@/api/expenses'
+import { extractTransactionId, useBeneficiaryEnquiry, useBusinessBanks, useExpenseCategories, useRecentBeneficiaries, useTransfer, useTransferBanks, useWalletBalances, type RecentBeneficiary } from '@/api/transactions'
 import { maskAccount } from '@/features/transactions/format'
 import type { ReceiptDetails } from '@/features/transactions/types'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
+import { usePermissions } from '@/hooks/usePermissions'
+import { expenseTransferFees, walletTransferFees } from '@/lib/transfer-fees'
 import { TRANSFER_DETAIL_FIELDS, transferSchema, type TransferValues } from '../schemas'
 
 /**
  * Two-step transfer, as in sink-inventory: (1) account, beneficiary bank + 10-digit number with an
- * automatic name enquiry, amount, narration; (2) review with the fee and the 4-digit PIN.
+ * automatic name enquiry, amount, narration; (2) review with the charges, stamp duty and the 4-digit PIN.
+ * The review previews the fees (lib/transfer-fees): sink's wallet table for wallet/transfer, and sink's expense
+ * estimate (plus the stamp duty the expense route returns) for an expense account, labelled as an estimate.
+ * Once a transfer is answered, its own figures are shown.
+ * Who may pay from what (sink): wallet accounts need manage_bank_details and can_initiate_expense_transfer;
+ * an expense account needs can_initiate_expense_transfer.
  * Main and sub-accounts pay through wallet/transfer; an expense account goes through the expense
  * transfer route, where the backend either releases it or holds it for approval.
  */
-export function useTransferFlow() {
+export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
   const location = useLocation()
   const banks = useBusinessBanks()
-  const canInitiate = useCan('can_initiate_expense_transfer')
+  const { canWalletTransfer, canTransferExpenses } = usePermissions()
+  /** The accounts this login may pay from. */
+  const payable = useMemo(() => banks.banks.filter(bank => (bank.isExpenses ? canTransferExpenses : canWalletTransfer)), [banks.banks, canTransferExpenses, canWalletTransfer])
+  const allowedId = (id: string | null | undefined) => (id && payable.some(bank => bank.id === id) ? id : '')
   const money = useFormatMoney()
   const balances = useWalletBalances(banks.banks)
-  const stateBank = (location.state as { bankId?: string } | null)?.bankId
+  // An explicit account (e.g. Transfer on an expense account) wins over one passed through navigation state.
+  const stateBank = allowedId(bankId ?? (location.state as { bankId?: string } | null)?.bankId) || undefined
+  const defaultBank = allowedId(banks.selectedBankId) || payable[0]?.id || ''
 
   const [step, setStep] = useState<1 | 2>(1)
   const [submittedForApproval, setSubmittedForApproval] = useState(false)
@@ -32,11 +44,11 @@ export function useTransferFlow() {
 
   const form = useForm<TransferValues>({
     resolver: zodResolver(transferSchema),
-    defaultValues: { fromBankId: stateBank ?? banks.selectedBankId ?? '', bankCode: '', accountNumber: '', amount: '', categoryId: '', narration: '', pin: '' },
+    defaultValues: { fromBankId: stateBank ?? defaultBank, bankCode: '', accountNumber: '', amount: '', categoryId: '', narration: '', pin: '' },
   })
   const [watchedFrom, bankCode, accountNumber, amount, categoryId, narration, pin] = useWatch({ control: form.control, name: ['fromBankId', 'bankCode', 'accountNumber', 'amount', 'categoryId', 'narration', 'pin'] })
   // The form may mount before the business has loaded; fall back to the selected account until one is picked.
-  const fromBankId = watchedFrom || stateBank || banks.selectedBankId || ''
+  const fromBankId = allowedId(watchedFrom) || stateBank || defaultBank
 
   const bankList = useTransferBanks()
   const categories = useExpenseCategories()
@@ -49,9 +61,7 @@ export function useTransferFlow() {
   const bankName = bankOptions.find(option => option.value === bankCode)?.label ?? ''
   const fromBank = banks.banks.find(bank => bank.id === fromBankId) ?? null
   const isExpenseAccount = fromBank?.isExpenses === true
-  const fee = isExpenseAccount ? estimateExpenseCharges(Number(amount)) : transferCharge(amount)
-  // sink's ConfirmTransfer: wallet transfers above 10,000 carry a 50 stamp duty.
-  const stampDuty = !isExpenseAccount && Number(amount) > 10000 ? 50 : 0
+  const fees = isExpenseAccount ? expenseTransferFees(amount) : walletTransferFees(amount)
   const availableBalance = balances.balances[fromBankId] ?? 0
   const beneficiary = enquiry.data ?? null
   const fromLabel = fromBank ? `${fromBank.account_name || 'Account'} ${maskAccount(fromBank.account_number)}` : 'Select an account'
@@ -82,10 +92,12 @@ export function useTransferFlow() {
     setStep(1)
   }
 
-  const finishDirect = (response: unknown) => {
+  const finishDirect = (response: unknown, answered?: InitiatedTransfer) => {
     const amountValue = Number(amount)
     toast.success('Transfer successful')
-    setReceipt({ amount: amountValue, senderName: fromBank?.account_name, beneficiaryName: beneficiary?.name, beneficiaryAccount: accountNumber, beneficiaryBank: bankName, narration, transactionId: extractTransactionId(response), date: new Date().toISOString(), status: 'Completed' })
+    // The expense route answers with its charges / stamp_duty / total_debit; the wallet route doesn't, so it keeps the preview.
+    const charged = answered?.hasFees ? { charges: answered.charges, stampDuty: answered.stampDuty, totalDebit: answered.totalDebit } : fees
+    setReceipt({ amount: amountValue, ...charged, senderName: fromBank?.account_name, beneficiaryName: beneficiary?.name, beneficiaryAccount: accountNumber, beneficiaryBank: bankName, narration, transactionId: extractTransactionId(response) || answered?.reference, date: new Date().toISOString(), status: 'Completed' })
     reset()
   }
 
@@ -98,7 +110,7 @@ export function useTransferFlow() {
       if (!banks.businessId) return
       initiate.mutate({ businessId: banks.businessId, amount: Number(amount), accountNumber, bankCode, categoryId: categoryId || undefined, narration: narration || undefined, pin }, {
         onSuccess: result => {
-          if (result.status === 'SUCCESS') { finishDirect(result); return }
+          if (result.status === 'SUCCESS') { finishDirect(result, result); return }
           setSubmittedForApproval(true)
           toast.success('Payment submitted for approval')
           reset()
@@ -107,20 +119,25 @@ export function useTransferFlow() {
       })
       return
     }
-    transfer.mutate({ bankId: fromBankId, pin, ref: beneficiary?.ref ?? '', amount, narration, categoryId: categoryId || undefined }, { onSuccess: finishDirect, onError })
+    transfer.mutate({ bankId: fromBankId, pin, ref: beneficiary?.ref ?? '', amount, narration, categoryId: categoryId || undefined }, { onSuccess: response => finishDirect(response), onError })
   }
 
   return {
-    canInitiate,
+    /** Some account this login may pay from (lib/access-map: transfer, expenseTransfer). */
+    canInitiate: payable.length > 0 || (banks.loading && (canWalletTransfer || canTransferExpenses)),
+    /** Expense payouts show sink's estimate; the backend confirms the figures when the payout runs. */
+    feesAreEstimate: isExpenseAccount,
     needsKyc: banks.needsKyc,
     step,
     register: form.register,
     errors: form.formState.errors,
-    accounts: banks.banks.map(bank => ({ value: bank.id, label: `${bank.account_name || 'Account'} ${maskAccount(bank.account_number)} — ${money(balances.balances[bank.id] ?? 0)}` })),
+    accounts: payable.map(bank => ({ value: bank.id, label: `${bank.account_name || 'Account'} ${maskAccount(bank.account_number)} — ${money(balances.balances[bank.id] ?? 0)}` })),
     accountsLoading: banks.loading,
     fromBankId,
     setFromBank: (id: string) => form.setValue('fromBankId', id, { shouldValidate: true }),
     fromLabel,
+    /** The paying account in full, so an expense account's number is visible where money leaves it. */
+    fromAccount: fromBank ? { name: fromBank.account_name || 'Account', bank: fromBank.bank_name || 'Bank', number: fromBank.account_number ?? '', isExpense: isExpenseAccount } : null,
     available: money(availableBalance),
     availableLoading: balances.loading,
     isExpenseAccount,
@@ -142,9 +159,9 @@ export function useTransferFlow() {
     },
     categories: (categories.data ?? []).map(category => ({ value: category.id, label: category.name })),
     amount: money(Number(amount) || 0),
-    fee: money(fee),
-    stampDuty: stampDuty ? money(stampDuty) : '',
-    total: money((Number(amount) || 0) + fee + stampDuty),
+    charges: money(fees.charges),
+    stampDuty: fees.stampDuty ? money(fees.stampDuty) : '',
+    total: money(fees.totalDebit || Number(amount) || 0),
     categoryName: categories.data?.find(category => category.id === categoryId)?.name ?? '',
     narration,
     pin,

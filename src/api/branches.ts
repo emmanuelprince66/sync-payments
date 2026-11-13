@@ -138,7 +138,7 @@ export const useCreateBranch = () => {
   const queryClient = useQueryClient()
   const subAccount = useCreateSubAccount()
   return useMutation({
-    mutationFn: ({ previousAccount, branch }: CreateBranchInput) => (isLive() ? subAccount.mutateAsync({ businessId: requireBusinessId(), previousAccount, branch }) : addMockBranch(branch)),
+    mutationFn: ({ previousAccount, branch }: CreateBranchInput): Promise<unknown> => (isLive() ? subAccount.mutateAsync({ businessId: requireBusinessId(), previousAccount, branch }) : addMockBranch(branch)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.branches }),
   })
 }

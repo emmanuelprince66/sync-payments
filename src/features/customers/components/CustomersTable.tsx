@@ -16,13 +16,14 @@ export type CustomerInvoiceCells = { paid: string; paidNote: string; unpaid: str
 
 type Props = {
   customers: Customer[]
-  /** Invoice figures for a row (grouped from the business's invoice list). */
+  /** Invoice figures for a row (from the bulk customer-summaries endpoint). */
   invoiceFigures: (customer: Customer) => CustomerInvoiceCells
   loading: boolean
   emptyState: ReactNode
   onOpen: (customer: Customer) => void
-  onEdit: (customer: Customer) => void
-  onDelete: (customer: Customer) => void
+  /** Left out when the login may not edit / delete customers (lib/access-map). */
+  onEdit?: (customer: Customer) => void
+  onDelete?: (customer: Customer) => void
 }
 
 export function CustomerAvatar({ name, className }: { name: string; className?: string }) {
@@ -31,8 +32,8 @@ export function CustomerAvatar({ name, className }: { name: string; className?: 
 
 function Actions({ customer, onEdit, onDelete }: { customer: Customer; onEdit: Props['onEdit']; onDelete: Props['onDelete'] }) {
   return <div className="relative z-10 flex justify-end gap-1">
-    <button type="button" aria-label={`Edit ${customer.name}`} onClick={() => onEdit(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-secondary"><Pencil size={14}/></button>
-    <button type="button" aria-label={`Delete ${customer.name}`} onClick={() => onDelete(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-[#FDEAEA] hover:text-[#C72D34]"><Trash2 size={14}/></button>
+    {onEdit && <button type="button" aria-label={`Edit ${customer.name}`} onClick={() => onEdit(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-secondary"><Pencil size={14}/></button>}
+    {onDelete && <button type="button" aria-label={`Delete ${customer.name}`} onClick={() => onDelete(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-[#FDEAEA] hover:text-[#C72D34]"><Trash2 size={14}/></button>}
   </div>
 }
 

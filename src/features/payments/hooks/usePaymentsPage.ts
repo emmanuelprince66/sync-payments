@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useBusinessBanks, useRecentBeneficiaries } from '@/api/transactions'
+import { usePermissions } from '@/hooks/usePermissions'
 import { paths } from '@/routes/paths'
 import { useTransferFlow } from './useTransferFlow'
 
@@ -14,8 +15,11 @@ export function usePaymentsPage() {
   const beneficiaries = useRecentBeneficiaries(banks.selectedBankId, 50)
   const [tab, setTab] = useState<PaymentTab>('Transfer')
   const [kycDismissed, setKycDismissed] = useState(false)
+  const { canWalletTransfer, canManageSetup } = usePermissions()
 
   return {
+    /** Bulk payments are wallet transfers (manage_bank_details + can_initiate_expense_transfer). */
+    tabs: PAYMENT_TABS.filter(item => item !== 'Bulk payments' || canWalletTransfer),
     tab,
     setTab,
     flow,
@@ -26,6 +30,6 @@ export function usePaymentsPage() {
       addNew: () => { flow.cancel(); setTab('Transfer') },
       payAgain: (row: Parameters<typeof flow.recent.apply>[0]) => { flow.recent.apply(row); setTab('Transfer') },
     },
-    kyc: { open: flow.needsKyc && !kycDismissed, dismiss: () => setKycDismissed(true), verify: () => navigate(paths.kyc) },
+    kyc: { open: flow.needsKyc && canManageSetup && !kycDismissed, dismiss: () => setKycDismissed(true), verify: () => navigate(paths.kyc) },
   }
 }

@@ -4,9 +4,10 @@ import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { useApprovalRights as useRightsQuery, useExpensePermissions, useSaveApprovalRights, useTeamMembers, type TeamMember } from '@/api/expenses'
+import { useAuthStore } from '@/stores/auth-store'
 import { rightsSchema, type RightsValues } from '../schemas'
 
-const ROLE_LABELS: Record<string, string> = { OWNER: 'Owner', 'ADMIN-ATTENDANT': 'Admin', ATTENDANT: 'Attendant', ACCOUNTANT: 'Accountant', MANAGER: 'Manager', PHARMACIST: 'Pharmacist', 'INVENTORY-MANAGER': 'Inventory manager', 'PRODUCTION-MANAGER': 'Production manager' }
+const ROLE_LABELS: Record<string, string> = { OWNER: 'Owner', 'ADMIN-ATTENDANT': 'Super admin', ATTENDANT: 'Attendant', ACCOUNTANT: 'Accountant', MANAGER: 'Manager', PHARMACIST: 'Pharmacist', 'INVENTORY-MANAGER': 'Inventory manager', 'PRODUCTION-MANAGER': 'Production manager' }
 export const roleLabel = (role: string) => ROLE_LABELS[role] ?? (role ? role.replace(/[-_]/g, ' ').toLowerCase() : 'Staff')
 
 const EMPTY: RightsValues = { canLog: false, canInitiate: false, canApprove: false, maxTransfer: '', dailyTransfer: '', dailyCount: '', maxApproval: '' }
@@ -17,10 +18,12 @@ type Flag = 'canLog' | 'canInitiate' | 'canApprove'
  * Who on the team may log, request and approve expense payouts, and their caps (sink: StaffExpensePermissions):
  * list business/list_attendants/{business_id}/, then GET/PATCH business/attendant_permissions/{attendant_id}/.
  * The approval cap doesn't stop someone approving: anything above it escalates to the owner.
+ * The owner and admins manage this; nobody edits their own rights or the owner's.
  */
 export function useApprovalRights(active: boolean) {
-  const { isOwner } = useExpensePermissions()
-  const team = useTeamMembers(active && isOwner)
+  const { isAdmin } = useExpensePermissions()
+  const myEmail = useAuthStore(state => state.user?.email?.toLowerCase() ?? '')
+  const team = useTeamMembers(active && isAdmin)
   const [member, setMember] = useState<TeamMember | null>(null)
   const rights = useRightsQuery(member?.id ?? '')
   const save = useSaveApprovalRights()
@@ -29,11 +32,11 @@ export function useApprovalRights(active: boolean) {
   const flags = useWatch({ control: form.control, name: ['canLog', 'canInitiate', 'canApprove'] })
 
   return {
-    isOwner,
+    isAdmin,
     teamLoading: team.isLoading && !team.data,
     teamError: team.isError,
     retryTeam: () => team.refetch(),
-    team: (team.data ?? []).filter(person => person.role !== 'OWNER').map(person => ({ ...person, roleLabel: roleLabel(person.role) })),
+    team: (team.data ?? []).filter(person => person.role !== 'OWNER' && (!myEmail || person.email.toLowerCase() !== myEmail)).map(person => ({ ...person, roleLabel: roleLabel(person.role) })),
     member,
     memberRole: roleLabel(rights.data?.role || member?.role || ''),
     open: (person: TeamMember) => { form.reset(EMPTY); setMember(person) },

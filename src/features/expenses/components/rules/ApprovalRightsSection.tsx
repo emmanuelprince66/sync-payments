@@ -20,7 +20,7 @@ export function ApprovalRightsSection() {
   const { symbol } = useBusinessCurrency()
   const { register } = rights.form
 
-  if (!rights.isOwner) return <p className="rounded-xl bg-[#F8FAF8] p-4 text-xs text-muted-foreground">Only the business owner can change approval rights.</p>
+  if (!rights.isAdmin) return <p className="rounded-xl bg-[#F8FAF8] p-4 text-xs text-muted-foreground">Only the business owner or an admin can change approval rights.</p>
 
   if (!rights.member) {
     return <div>

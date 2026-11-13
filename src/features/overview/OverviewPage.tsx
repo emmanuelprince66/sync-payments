@@ -20,7 +20,7 @@ export default function OverviewPage() {
   return <KitPage>
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
       <div className="min-w-0"><p className="text-xs font-bold text-secondary">{page.date}</p><h1 className="mt-1 text-2xl font-extrabold tracking-[-0.035em] text-foreground md:text-[28px]">{page.greeting}</h1><p className="mt-1 text-sm text-muted-foreground">Here is how your payments are moving.</p></div>
-      <div className="flex flex-wrap gap-2"><DateRangeFilter value={page.range.value} onChange={page.range.set} placeholder="All dates" className="w-full sm:w-auto"/><KitButton variant="secondary" onClick={page.statement}><Download size={14}/> Statement</KitButton><KitButton onClick={page.transfer.open}><Send size={14}/> Transfer</KitButton></div>
+      <div className="flex flex-wrap gap-2"><DateRangeFilter value={page.range.value} onChange={page.range.set} placeholder="All dates" className="w-full sm:w-auto"/>{page.can.viewTransactions && <KitButton variant="secondary" onClick={page.statement}><Download size={14}/> Statement</KitButton>}{page.can.transfer && <KitButton onClick={page.transfer.open}><Send size={14}/> Transfer</KitButton>}</div>
     </div>
 
     {page.needsKyc && <button type="button" onClick={page.goToKyc} className="flex w-full items-center gap-3 rounded-xl border border-[#E7D7AE] bg-[#FFF9EC] p-4 text-left">
@@ -29,8 +29,8 @@ export default function OverviewPage() {
       <ArrowRight size={14} className="shrink-0 text-[#A76700]"/>
     </button>}
 
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,.7fr)]">
-      <AccountCard account={page.account} loading={page.loading}/>
+    {page.can.viewTransactions && <div className={page.can.manageWallet ? 'grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,.7fr)]' : 'grid grid-cols-[minmax(0,1fr)] gap-5'}>
+      {page.can.manageWallet && <AccountCard account={page.account} loading={page.loading}/>}
       <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4">
         {page.loading
           ? Array.from({ length: 4 }, (_, index) => <StatTileSkeleton key={index}/>)
@@ -41,9 +41,9 @@ export default function OverviewPage() {
             <StatTile label="Transferred out" value={page.stats.paidOut} note={page.stats.paidOutNote} icon={ArrowUpRight}/>
           </>}
       </div>
-    </div>
+    </div>}
 
-    <FlowCard page={page}/>
+    {page.can.viewTransactions && <FlowCard page={page}/>}
     {/* Reconciliation is switched off for now. To restore: put FlowCard back in this grid with the card below.
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,.85fr)]">
       <FlowCard page={page}/>
@@ -59,10 +59,10 @@ export default function OverviewPage() {
     </div>
     */}
 
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_8px_24px_rgba(29,38,28,.035)]">
+    {page.can.viewTransactions && <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_8px_24px_rgba(29,38,28,.035)]">
       <div className="flex items-center justify-between gap-3 px-5 py-4"><div className="min-w-0"><h2 className="text-sm font-extrabold text-foreground">Recent transactions</h2><p className="mt-1 text-[11px] text-muted-foreground">Latest activity across all payment channels</p></div><button type="button" onClick={page.goToTransactions} className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold text-secondary hover:underline">View all <ArrowRight size={13}/></button></div>
       <TransactionTable rows={page.recent} loading={page.loading} accountLabel={page.accountLabel} onSelect={page.details.open}/>
-    </section>
+    </section>}
 
     <TransactionDialogs details={page.details} accountLabel={page.accountLabel}/>
     <TransferModal open={page.transfer.isOpen} onClose={page.transfer.close}/>

@@ -24,14 +24,14 @@ export default function CustomersPage() {
     ? <KitEmpty title="We couldn’t load your customers" note="Check your connection and try again." action={<KitButton variant="secondary" onClick={page.retry}>Try again</KitButton>}/>
     : page.isFiltered
       ? <KitEmpty icon={<UsersRound size={18}/>} title="No customers match" note="Try another name, phone number or status."/>
-      : <KitEmpty icon={<UsersRound size={18}/>} title="No customers yet" note="Add the people you sell to, so you can see their history and send them invoices." action={<KitButton onClick={page.openAdd}><Plus size={14}/> Add customer</KitButton>}/>
+      : <KitEmpty icon={<UsersRound size={18}/>} title="No customers yet" note="Add the people you sell to, so you can see their history and send them invoices." action={page.can.add && <KitButton onClick={page.openAdd}><Plus size={14}/> Add customer</KitButton>}/>
 
   return <KitPage>
     <KitPageHeader
       eyebrow="Relationships"
       title="Customers"
       subtitle="Everyone you sell to, with what they've paid and what they still owe on invoices."
-      actions={<KitButton onClick={page.openAdd} className="self-start md:self-auto"><Plus size={14}/> Add customer</KitButton>}
+      actions={page.can.add && <KitButton onClick={page.openAdd} className="self-start md:self-auto"><Plus size={14}/> Add customer</KitButton>}
     />
 
     {page.stats
@@ -46,7 +46,7 @@ export default function CustomersPage() {
         <Select aria-label="Filter by status" options={page.statusOptions} value={page.status || 'all'} onValueChange={page.setStatus} className="w-full sm:w-[180px]" boxClassName="h-10 border-border px-3 text-xs font-bold text-foreground"/>
       </div>
       <div className={cn('transition-opacity', page.isFetching && 'opacity-60')}>
-        <CustomersTable customers={page.customers} invoiceFigures={page.invoiceFigures} loading={page.isLoading} emptyState={emptyState} onOpen={page.openCustomer} onEdit={page.openEdit} onDelete={page.askDelete}/>
+        <CustomersTable customers={page.customers} invoiceFigures={page.invoiceFigures} loading={page.isLoading} emptyState={emptyState} onOpen={page.openCustomer} onEdit={page.can.edit ? page.openEdit : undefined} onDelete={page.can.delete ? page.askDelete : undefined}/>
       </div>
       {!page.isLoading && page.customers.length > 0 && <Pagination currentPage={page.page} totalPages={page.totalPages} onPageChange={page.setPage} pageSize={page.pageSize} onPageSizeChange={page.setPageSize}/>}
     </section>

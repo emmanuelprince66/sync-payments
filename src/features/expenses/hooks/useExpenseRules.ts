@@ -10,10 +10,10 @@ const shown = (value: string | number | undefined) => (value === undefined || va
 
 /**
  * The business's expense ceilings and approval policy (sink: settings/expense-governance):
- * GET/PATCH expenses/settings/{business_id}/. Owner-writable; 0 means "not enforced", not "blocked".
+ * GET/PATCH expenses/settings/{business_id}/. The owner and admins edit them; 0 means "not enforced", not "blocked".
  */
 export function useExpenseRules() {
-  const { isOwner } = useExpensePermissions()
+  const { isAdmin } = useExpensePermissions()
   const { businessId } = useBusinessBanks()
   const settings = useExpenseSettings()
   const save = useSaveExpenseSettings()
@@ -27,7 +27,7 @@ export function useExpenseRules() {
   const requireApproval = useWatch({ control: form.control, name: 'requireApprovalForAll' })
 
   return {
-    isOwner,
+    isAdmin,
     loading: settings.isLoading && !settings.data,
     form,
     errors: form.formState.errors,

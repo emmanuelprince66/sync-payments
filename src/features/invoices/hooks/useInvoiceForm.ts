@@ -147,13 +147,16 @@ export function useInvoiceForm() {
 
   const applyItem = (item: InvoiceItem, row: number) => {
     const current = form.getValues(`lines.${row}`)
-    form.setValue(`lines.${row}`, { ...current, itemId: item.id, description: item.description || item.name, price: String(item.price), qty: current.qty || '1' }, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })
+    form.setValue(`lines.${row}`, {
+      ...current, itemId: item.id, description: item.description, price: String(item.price), qty: current.qty || '1',
+      taxRate: taxRateOf(item.taxRate), account: item.account || current.account,
+    }, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })
   }
 
   const contactForm = useNewContactForm(created => pickContact({ id: created.id, name: created.name, email: created.email, phone: created.phone }))
   const itemForm = useNewItemForm(applyItem)
 
-  // Preview: the printable invoice in the chosen design. A picked logo is uploaded with the draft (POST invoices/{id}/logo/).
+  // Preview: the printable invoice in the chosen design. A picked logo goes with the save itself (multipart `logo`).
   const [previewing, setPreviewing] = useState(false)
   const [logo, setLogo] = useState<{ file: File; dataUrl: string } | null>(null)
   const pendingLogo = useRef<File | null>(null)
@@ -162,7 +165,7 @@ export function useInvoiceForm() {
   const logoUrl = logo?.dataUrl || savedLogo || business?.logo || ''
 
   const number = editing ? draft?.number ?? '' : nextNumber.data ?? ''
-  const lineDescription = (line: InvoiceLine) => line.description || itemList.find(item => item.id === line.itemId)?.name || 'Item'
+  const lineDescription = (line: InvoiceLine) => line.description || itemList.find(item => item.id === line.itemId)?.description || 'Item'
   const doc: InvoiceDocumentModel = {
     design: values.design,
     accent: values.accent,
@@ -258,7 +261,7 @@ export function useInvoiceForm() {
       remove: (id: string) => {
         const item = itemList.find(entry => entry.id === id)
         deleteItem.mutate(id, {
-          onSuccess: () => toast.success(`${item?.name ?? 'Item'} removed from saved items.`),
+          onSuccess: () => toast.success(`${item?.description ?? 'Item'} removed from saved items.`),
           onError: error => toast.error(invoiceErrorMessage(error, "Couldn't delete the item.")),
         })
       },

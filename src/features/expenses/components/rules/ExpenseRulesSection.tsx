@@ -13,11 +13,11 @@ export function ExpenseRulesSection() {
   const { symbol } = useBusinessCurrency()
   const { register } = rules.form
 
-  if (!rules.isOwner) return <p className="rounded-xl bg-[#F8FAF8] p-4 text-xs text-muted-foreground">Only the business owner can change expense rules.</p>
+  if (!rules.isAdmin) return <p className="rounded-xl bg-[#F8FAF8] p-4 text-xs text-muted-foreground">Only the business owner or an admin can change expense rules.</p>
   if (rules.loading) return <div className="flex flex-col gap-4">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-11"/>)}</div>
 
   return <form onSubmit={rules.submit} noValidate className="flex flex-col gap-5">
-    <p className="flex items-start gap-2 rounded-xl border border-secondary/25 bg-accent p-3 text-[10px] text-muted-foreground"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-secondary"/>Leave a limit at <b className="text-foreground">0</b> to not enforce it. Zero means unlimited here, not blocked.</p>
+    <p className="flex items-start gap-2 rounded-xl border border-secondary/25 bg-accent p-3 text-[10px] text-muted-foreground"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-secondary"/><span>Leave a limit at <b className="text-foreground">0</b> to not enforce it. Zero means unlimited here, not blocked.</span></p>
 
     <div>
       <p className="text-xs font-extrabold">Spending limits</p>

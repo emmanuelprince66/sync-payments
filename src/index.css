@@ -25,6 +25,19 @@
     transition: background-color 9999s ease-out 0s;
   }
 }
+/*
+ * Readability: the design's tiny fixed sizes (text-[8px]…text-[13px]) read ~1.5px larger app-wide, without
+ * editing every component. Unlayered on purpose, so these win over the matching Tailwind utility.
+ * Left alone: elements that also set a breakpoint size (sm:text-[…], which this would otherwise override) and
+ * the printed pay card, which copies a fixed 595px design. text-xs / text-sm are bumped in styles/theme.css.
+ */
+.text-\[8px\]:not([class*='sm:text-[']):not(#pay-card-print *) { font-size: 9.5px; }
+.text-\[9px\]:not([class*='sm:text-[']):not(#pay-card-print *) { font-size: 10.5px; }
+.text-\[10px\]:not([class*='sm:text-[']):not(#pay-card-print *) { font-size: 11.5px; }
+.text-\[11px\]:not([class*='sm:text-[']):not(#pay-card-print *) { font-size: 12.5px; }
+.text-\[12px\]:not([class*='sm:text-[']):not(#pay-card-print *) { font-size: 13px; }
+.text-\[13px\]:not([class*='sm:text-[']):not(#pay-card-print *) { font-size: 14px; }
+
 /* Horizontal swipe rows on phones. */
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }

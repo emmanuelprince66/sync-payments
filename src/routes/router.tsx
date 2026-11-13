@@ -2,12 +2,12 @@ import { Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AppLoader } from '@/components/ui/AppLoader'
-import { GuestOnly, RequireAuth, RequireBusiness } from './guards'
+import { GuestOnly, RequireAuth, RequireBusiness, RequirePage } from './guards'
 import { pages } from './pages'
 import { paths } from './paths'
 
-const { AuthPage, SelectBusinessPage, OverviewPage, TransactionsPage, BranchesPage, PaymentsPage, ExpensesPage, InvoicesPage, CreateInvoicePage, /* ReconciliationPage, (switched off for now) */ PayoutsPage, TerminalsPage, AccountsPage, PayrollPage, CompliancePage, KycPage } = pages
-const { CustomersPage, CustomerDetailPage, StorefrontPage /* , BnplPage (switched off) */ } = pages
+const { AuthPage, SelectBusinessPage, OverviewPage, TransactionsPage, /* BranchesPage, (switched off) */ PaymentsPage, ExpensesPage, InvoicesPage, CreateInvoicePage, /* ReconciliationPage, (switched off for now) */ PayoutsPage, TerminalsPage, AccountsPage, PayrollPage, CompliancePage, KycPage } = pages
+const { CustomersPage, CustomerDetailPage /* , StorefrontPage, BnplPage (switched off) */ } = pages
 const { InvoiceDetailPage } = pages
 
 export const router = createBrowserRouter([
@@ -29,10 +29,14 @@ export const router = createBrowserRouter([
         children: [
       {
         element: <AppLayout/>,
-        children: [
+        children: [{
+          element: <RequirePage/>,
+          children: [
           { index: true, element: <OverviewPage/> },
           { path: paths.transactions, element: <TransactionsPage/> },
-          { path: paths.branches, element: <BranchesPage/> },
+          // Branches is switched off for now: old links land on Overview. Restore with its nav item and page loader.
+          // { path: paths.branches, element: <BranchesPage/> },
+          { path: paths.branches, element: <Navigate to={paths.overview} replace/> },
           { path: paths.payments, element: <PaymentsPage/> },
           { path: paths.expenses, element: <ExpensesPage/> },
           { path: paths.invoices, element: <InvoicesPage/> },
@@ -50,10 +54,13 @@ export const router = createBrowserRouter([
           { path: paths.kyc, element: <KycPage/> },
           { path: paths.customers, element: <CustomersPage/> },
           { path: paths.customerDetail, element: <CustomerDetailPage/> },
-          { path: paths.storefront, element: <StorefrontPage/> },
+          // Storefront is switched off for now: old links land on Overview. Restore with its nav item and page loader.
+          // { path: paths.storefront, element: <StorefrontPage/> },
+          { path: paths.storefront, element: <Navigate to={paths.overview} replace/> },
           // Pay later is switched off for now; restore with its nav item.
           // { path: paths.bnpl, element: <BnplPage/> },
-        ],
+          ],
+        }],
       },
         ],
       },

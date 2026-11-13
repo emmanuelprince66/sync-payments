@@ -35,7 +35,7 @@ export function OperatingCard({ page }: { page: ExpensesModel }) {
 }
 
 /** The next expense waiting on this person, as in the design's inline approval strip. */
-export function InlineApproval({ page }: { page: ExpensesModel }) {
+export function InlineApproval({ page, onTransfer }: { page: ExpensesModel; onTransfer?: () => void }) {
   if (!page.inline) return null
   const { expense, approved, amount } = page.inline
   return <section className="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-white lg:grid-cols-[minmax(0,1fr)_auto]">
@@ -51,14 +51,14 @@ export function InlineApproval({ page }: { page: ExpensesModel }) {
     <div className="flex items-center gap-2 border-t border-border bg-[#FAFBFA] p-4 lg:border-l lg:border-t-0">
       <KitButton variant="secondary" onClick={page.audit.open}><History size={13}/> Audit trail</KitButton>
       {approved
-        ? <KitButton onClick={page.scheduleTransfer}><Send size={13}/> Schedule transfer</KitButton>
+        ? onTransfer && <KitButton onClick={onTransfer}><Send size={13}/> Pay from expense account</KitButton>
         : <KitButton onClick={page.approveInline}><Check size={13}/> Approve</KitButton>}
     </div>
   </section>
 }
 
 /** The design's monthly budget card, with who spent what underneath. */
-export function BudgetCard({ page, onManageBudgets }: { page: ExpensesModel; onManageBudgets: () => void }) {
+export function BudgetCard({ page, onManageBudgets, onOpenSettings }: { page: ExpensesModel; onManageBudgets: () => void; onOpenSettings?: () => void }) {
   const { budget } = page
   return <section className="min-w-0 rounded-2xl border border-border bg-white p-5">
     <div className="flex items-center justify-between gap-3"><div><h2 className="text-sm font-extrabold">{budget.month} budget</h2><p className="mt-1 text-[10px] text-muted-foreground">Across all categories</p></div><span className="text-xs font-extrabold text-secondary">{budget.percent}%</span></div>
@@ -80,7 +80,7 @@ export function BudgetCard({ page, onManageBudgets }: { page: ExpensesModel; onM
       <Sparkles size={16} className="text-secondary"/>
       <p className="mt-2 text-xs font-extrabold">Your approval policy</p>
       <p className="mt-1 text-[10px] leading-4 text-muted-foreground">{page.policy}</p>
-      {page.permissions.isOwner && <button type="button" onClick={page.openRules} className="mt-2 text-[10px] font-extrabold text-secondary hover:underline">Change in Settings</button>}
+      {onOpenSettings && <button type="button" onClick={onOpenSettings} className="mt-2 text-[10px] font-extrabold text-secondary hover:underline">Change in Expense settings</button>}
     </div>
   </section>
 }

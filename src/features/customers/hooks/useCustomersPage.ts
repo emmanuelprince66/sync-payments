@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
@@ -25,19 +26,24 @@ export function useCustomersPage() {
   const search = debounced.length >= 3 ? debounced : ''
   const query = useCustomers({ page, limit: pageSize, search, status })
   const remove = useDeleteCustomer()
-  const invoices = useCustomerInvoices()
-
-  const customers = query.data?.customers ?? []
+  const customers = useMemo(() => query.data?.customers ?? [], [query.data])
   const summary = query.data?.summary
+  // One customer-summaries request for the customers on this page.
+  const invoices = useCustomerInvoices(useMemo(() => customers.map(customer => customer.id), [customers]))
   const { totals, forCustomer } = invoices
   /** Invoice figures per row: total paid, and what's still owed ("At risk" when anything is). */
   const invoiceFigures = useCallback((customer: Customer) => {
     if (invoices.unavailable) return { paid: '—', paidNote: 'Invoices unavailable', unpaid: '—', atRisk: false }
-    const figures = forCustomer(customer)
-    return { paid: money(figures.paid), paidNote: `${figures.paidCount} paid invoice${figures.paidCount === 1 ? '' : 's'}`, unpaid: money(figures.unpaid), atRisk: figures.atRisk }
-  }, [forCustomer, money, invoices.unavailable])
+    if (invoices.rowsLoading) return { paid: '…', paidNote: 'Loading invoices', unpaid: '…', atRisk: false }
+    const figures = forCustomer(customer.id)
+    const note = figures.invoiceCount ? `Across ${figures.invoiceCount} invoice${figures.invoiceCount === 1 ? '' : 's'}${figures.overdue > 0 ? `, ${money(figures.overdue)} overdue` : ''}` : 'No invoices yet'
+    return { paid: money(figures.totalPaid), paidNote: note, unpaid: money(figures.totalUnpaid), atRisk: figures.totalUnpaid > 0 }
+  }, [forCustomer, money, invoices.unavailable, invoices.rowsLoading])
 
+  const permissions = usePermissions()
   return {
+    /** sink Customers / Contact: customers:create, customers:edit (fallback everyone), customers:delete (fallback admins). */
+    can: { add: permissions.canAddCustomers, edit: permissions.canEditCustomers, delete: permissions.canDeleteCustomers },
     searchInput,
     setSearch: (value: string) => { setSearchInput(value); setPage(1) },
     status,
@@ -45,12 +51,12 @@ export function useCustomersPage() {
     setStatus: (value: string) => { setStatus((value === 'all' ? '' : value) as CustomerStatusFilter); setPage(1) },
     customers,
     invoiceFigures,
-    stats: summary && !invoices.isLoading
+    stats: summary && !totals.isLoading
       ? [
           { label: 'Customers', value: summary.count.toLocaleString(), note: 'On your customer list' },
-          ...(invoices.unavailable ? [] : [
-          { label: 'Unpaid invoices', value: money(totals.unpaid), note: totals.unpaidCount ? `Owed on ${totals.unpaidCount} invoice${totals.unpaidCount === 1 ? '' : 's'}${totals.overdueCount ? `, ${totals.overdueCount} overdue` : ''}` : 'Nothing owed', danger: totals.unpaid > 0 },
-          { label: 'Invoices paid', value: money(totals.paid), note: `${totals.paidCount} invoice${totals.paidCount === 1 ? '' : 's'} paid in full` },
+          ...(totals.unavailable ? [] : [
+          { label: 'Unpaid invoices', value: money(totals.expectedCash), note: totals.openCount ? `Owed on ${totals.openCount} invoice${totals.openCount === 1 ? '' : 's'}${totals.overdueCount ? `, ${totals.overdueCount} overdue` : ''}` : 'Nothing owed', danger: totals.expectedCash > 0 },
+          { label: 'Paid this month', value: money(totals.paidThisMonth), note: totals.paidChange === '—' ? 'Collected on invoices this month' : totals.paidChange },
           ]),
         ]
       : null,

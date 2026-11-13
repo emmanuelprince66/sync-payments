@@ -34,7 +34,7 @@ export function ApprovalsTab() {
 
   if (!page.allowed) {
     return <section className="rounded-2xl border border-border bg-white">
-      <KitEmpty icon={<Lock size={18}/>} title="Nothing to see here" note="Your account doesn't handle expense payouts. The business owner can grant that in Settings › Approval rights."/>
+      <KitEmpty icon={<Lock size={18}/>} title="Nothing to see here" note="Your account doesn't handle expense payouts. The business owner or an admin can grant that in Expenses › Settings › Approval rights."/>
     </section>
   }
 

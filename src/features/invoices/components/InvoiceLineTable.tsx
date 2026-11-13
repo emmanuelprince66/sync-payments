@@ -31,7 +31,7 @@ export function InvoiceLineTable({ model }: { model: InvoiceFormModel }) {
   const { register, formState: { errors } } = model.form
   const show = model.columns.isVisible
   const noTax = model.values.taxMode === 'none'
-  const itemOptions = model.items.list.map(item => ({ value: item.id, label: item.code, hint: item.name }))
+  const itemOptions = model.items.list.map(item => ({ value: item.id, label: item.description, hint: `${money(item.price)} · ${item.taxRate ? `VAT ${item.taxRate}%` : 'No tax'}` }))
   const fileCount = model.files.list.length
 
   return <div className="flex flex-col gap-4">

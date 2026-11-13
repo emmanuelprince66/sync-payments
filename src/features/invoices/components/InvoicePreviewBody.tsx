@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
-import { tint, type InvoiceDocumentModel } from '../document'
+import { isDark, tint, wash, type InvoiceDocumentModel } from '../document'
 
 /**
  * Pieces every invoice design shares. Colours are plain hex/rgba (no Tailwind opacity
@@ -11,6 +11,8 @@ import { tint, type InvoiceDocumentModel } from '../document'
 export const INK = '#1D261C'
 export const MUTED = '#6B7A71'
 export const RULE = '#E3E8E4'
+/** Off-white behind the Pay into panel. */
+export const PAPER = '#F6F7F4'
 
 type Variant = 'classic' | 'ledger' | 'studio'
 
@@ -23,7 +25,7 @@ export function DocumentLines({ doc, variant }: { doc: InvoiceDocumentModel; var
     ? { background: tint(doc.accent, 0.1), color: doc.accent }
     : variant === 'ledger' ? { borderTop: `2px solid ${INK}`, borderBottom: `1px solid ${INK}`, color: INK } : { borderBottom: `2px solid ${doc.accent}`, color: MUTED }
   return <div>
-    <div className={`${columns} py-2.5 text-[10px] font-extrabold uppercase tracking-[.14em]`} style={head}>
+    <div className={`${columns} py-2.5 text-[11px] font-extrabold uppercase tracking-[.14em]`} style={head}>
       <span>Description</span><span className="text-right">Qty</span><span className="text-right">Price</span><span className="text-right">Amount</span>
     </div>
     {doc.lines.length === 0 && <p className="px-4 py-6 text-[12px]" style={{ color: MUTED }}>Line items you add show here.</p>}
@@ -85,20 +87,37 @@ export function ContactLine({ doc, color }: { doc: InvoiceDocumentModel; color?:
   return <p className="mt-1 text-[12px]" style={{ color: color ?? MUTED }}>{doc.contactLine}</p>
 }
 
-/** Bank, account number and name the customer pays into. */
-export function PayToBlock({ doc, framed = false }: { doc: InvoiceDocumentModel; framed?: boolean }) {
+function PayToField({ label, value, prominent = false }: { label: string; value: string; prominent?: boolean }) {
+  return <div className="min-w-0">
+    <p className="text-[11px] font-extrabold uppercase tracking-[.14em]" style={{ color: MUTED }}>{label}</p>
+    <p className={prominent ? 'mt-1.5 break-words text-[22px] font-black leading-7 tracking-[.06em] tabular-nums' : 'mt-1.5 break-words text-[16px] font-bold leading-6'} style={{ color: INK }}>{value || '—'}</p>
+  </div>
+}
+
+/**
+ * Bank, account number and name the customer pays into, on an off-white brand-tinted panel so
+ * the account stands out. Plain hex colours only, for the PDF renderer.
+ */
+export function PayToBlock({ doc, className = '' }: { doc: InvoiceDocumentModel; className?: string }) {
   if (!doc.payTo) return null
-  return <div data-pdf-block className={framed ? 'mt-8 grid grid-cols-3 gap-4 rounded-lg p-5' : 'grid grid-cols-3 gap-4'} style={framed ? { border: `1px solid ${RULE}` } : undefined}>
-    {[['Bank', doc.payTo.bank], ['Account number', doc.payTo.account], ['Account name', doc.payTo.name]].map(([label, value]) => <div key={label} className="min-w-0">
-      <p className="text-[10px] font-extrabold uppercase tracking-[.14em]" style={{ color: MUTED }}>{label}</p>
-      <p className="mt-1 break-words text-[13px] font-bold tabular-nums" style={{ color: INK }}>{value || '—'}</p>
-    </div>)}
+  // A very dark brand colour washes out to grey, so those get the plain off-white.
+  const background = isDark(doc.accent) ? PAPER : wash(doc.accent, 0.07)
+  return <div data-pdf-block className={`rounded-xl px-6 py-5 ${className}`} style={{ background, border: `1px solid ${wash(doc.accent, 0.22)}`, borderLeft: `5px solid ${doc.accent}` }}>
+    <div className="flex items-baseline justify-between gap-4">
+      <p className="text-[13px] font-black uppercase tracking-[.18em]" style={{ color: doc.accent }}>Pay into</p>
+      <p className="text-[12px] font-semibold" style={{ color: MUTED }}>Bank transfer details</p>
+    </div>
+    <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.3fr)] gap-5">
+      <PayToField label="Bank" value={doc.payTo.bank}/>
+      <PayToField label="Account number" value={doc.payTo.account} prominent/>
+      <PayToField label="Account name" value={doc.payTo.name}/>
+    </div>
   </div>
 }
 
 export function DocumentFooter({ doc }: { doc: InvoiceDocumentModel }) {
-  return <div data-pdf-block className="mt-10 pt-5 text-[11px] leading-5" style={{ borderTop: `1px solid ${RULE}`, color: MUTED }}>
-    {doc.payTo && <div className="mb-5"><p className="mb-2 text-[11px] font-extrabold" style={{ color: INK }}>Pay into</p><PayToBlock doc={doc}/></div>}
+  return <div data-pdf-block className="mt-10 pt-6 text-[12px] leading-5" style={{ borderTop: `1px solid ${RULE}`, color: MUTED }}>
+    <PayToBlock doc={doc} className="mb-6"/>
     <div className="grid grid-cols-2 gap-6">
     <p><span className="font-extrabold" style={{ color: INK }}>Payment</span><br/>Please use <b style={{ color: INK }}>{doc.number}</b> as your payment reference.</p>
     <p className="text-right"><span className="font-extrabold" style={{ color: INK }}>Thank you for your business</span><br/>{doc.legalName}</p>

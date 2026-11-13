@@ -32,8 +32,8 @@ export type ApprovalItem = {
   title: string
   requester: string
   amount: number
-  /** Bank charge on a payout; the wallet is debited amount + charges. */
-  charges: number
+  /** From the API for a payout (charges, stamp_duty, total_debit); null for a logged expense or when absent. */
+  fees: { charges: number; stampDuty: number; totalDebit: number } | null
   category: string
   status: string
   canDecide: boolean
@@ -61,7 +61,7 @@ export const fromTransfer = (transfer: ExpenseTransfer, userId: string): Approva
   title: transfer.beneficiaryName || 'Transfer request',
   requester: transfer.initiatedByName || 'Team member',
   amount: transfer.amount,
-  charges: transfer.charges,
+  fees: transfer.hasFees ? { charges: transfer.charges, stampDuty: transfer.stampDuty, totalDebit: transfer.totalDebit } : null,
   category: transfer.category || 'Uncategorised',
   status: transfer.status,
   canDecide: transfer.canApprove && isPending(transfer.status),
@@ -89,7 +89,7 @@ export const fromExpense = (expense: Expense): ApprovalItem => ({
   title: expense.name || 'Business expense',
   requester: expense.owner || 'Team member',
   amount: expense.amount,
-  charges: 0,
+  fees: null,
   category: expense.category || 'Uncategorised',
   status: expense.status,
   canDecide: expense.canApprove && isPending(expense.status),

@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { formatActivityDate } from '@/api/http'
 import { DataTable } from '@/components/ui/DataTable'
 import { KitEmpty, KitSearch, kitTableClass, StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
+import { KitSelect } from '@/components/ui/KitForm'
 import { KitButton } from '@/components/ui/PaymentKit'
 import { cn } from '@/lib/cn'
 import { useBudgetsTab, type BudgetHealth, type BudgetRow } from '../hooks/useBudgetsTab'
@@ -57,6 +58,7 @@ export function BudgetsTab() {
     <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-white">
       <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
         <KitSearch value={page.search} onChange={page.setSearch} placeholder="Search by category"/>
+        <KitSelect label="Year" className="w-full sm:w-32 [&>span]:sr-only" boxClassName="h-10" options={page.years.map(year => ({ value: String(year), label: String(year) }))} value={String(page.year)} onChange={event => page.setYear(Number(event.target.value))}/>
         {page.canManage && <KitButton onClick={() => page.create()} className="w-full sm:w-auto"><Plus size={14}/> Create budget</KitButton>}
       </div>
       <DataTable
@@ -77,7 +79,7 @@ export function BudgetsTab() {
 
     {page.unbudgeted.length > 0 && page.canManage && <section className="rounded-2xl border border-border bg-white p-5">
       <h2 className="text-sm font-extrabold">Spending without a budget</h2>
-      <p className="mt-1 text-[10px] text-muted-foreground">These categories have spend this year but nothing to measure it against.</p>
+      <p className="mt-1 text-[10px] text-muted-foreground">These categories have spend this year but no {page.year} budget to measure it against.</p>
       <div className="mt-4 divide-y divide-border">{page.unbudgeted.map(row => <div key={row.id} className="flex items-center justify-between gap-3 py-3">
         <div className="min-w-0"><p className="truncate text-xs font-extrabold">{row.name}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{row.spent} spent</p></div>
         <KitButton variant="secondary" onClick={() => page.create(row.id)}><Plus size={12}/> Set budget</KitButton>

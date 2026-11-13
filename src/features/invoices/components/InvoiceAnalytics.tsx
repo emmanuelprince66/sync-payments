@@ -32,15 +32,15 @@ export function InvoiceAnalytics({ summary, isLoading }: { summary?: InvoiceSumm
     </div>
     <div className="p-5">
       <p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-muted-foreground">Document flow</p>
-      <div className="mt-5 flex flex-col gap-4">
+      <div className="mt-5 flex flex-col gap-3">
         {summary.flow.map(item => <div key={item.label} className="flex items-center">
           <span className="mr-3 h-8 w-1 rounded-full" style={{ background: item.color }}/>
-          <div className="min-w-0"><p className="text-[10px] font-extrabold">{item.label}</p><p className="mt-0.5 text-[8px] text-muted-foreground">{item.count} document{item.count === 1 ? '' : 's'}</p></div>
+          <div className="min-w-0"><p className="text-[10px] font-extrabold">{item.label}</p><p className="mt-0.5 text-[9px] text-muted-foreground">{item.count} document{item.count === 1 ? '' : 's'}</p></div>
           {item.amount !== null && <p className="ml-auto pl-3 text-xs font-extrabold">{money(item.amount)}</p>}
         </div>)}
       </div>
       <div className="mt-5 rounded-lg bg-[#F4FAF5] p-3">
-        <p className="text-[9px] font-extrabold text-secondary">{summary.collectionRate} collection rate</p>
+        <p className="text-[10px] font-extrabold text-secondary">{summary.collectionRate} collection rate</p>
         <p className="mt-1 text-[8px] leading-4 text-muted-foreground">Expected cash from outstanding invoices: {money(summary.expectedCash)}</p>
       </div>
     </div>

@@ -10,7 +10,7 @@ import { ContactLine, DocumentFooter, DocumentLines, DocumentLogo, DocumentTotal
 type DesignProps = { doc: InvoiceDocumentModel }
 
 function Meta({ label, value, color }: { label: string; value: ReactNode; color?: string }) {
-  return <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[.14em]" style={{ color: MUTED }}>{label}</p><p className="mt-1 break-words text-[13px] font-bold" style={{ color: color ?? INK }}>{value}</p></div>
+  return <div className="min-w-0"><p className="text-[11px] font-extrabold uppercase tracking-[.14em]" style={{ color: MUTED }}>{label}</p><p className="mt-1 break-words text-[13px] font-bold" style={{ color: color ?? INK }}>{value}</p></div>
 }
 
 function PartyLines({ doc }: DesignProps) {
@@ -39,7 +39,7 @@ function ClassicDesign({ doc }: DesignProps) {
     </div>
     <div className="mt-10 grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-6">
       <div className="rounded-lg p-5" style={{ background: tint(doc.accent, 0.08) }}>
-        <p className="text-[10px] font-extrabold uppercase tracking-[.16em]" style={{ color: doc.accent }}>Bill to</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.16em]" style={{ color: doc.accent }}>Bill to</p>
         <p className="mt-2 break-words text-[16px] font-extrabold" style={{ color: INK }}>{doc.party}</p>
         <PartyLines doc={doc}/>
       </div>
@@ -67,7 +67,7 @@ function LedgerDesign({ doc }: DesignProps) {
         <ContactLine doc={doc} color="rgba(255,255,255,.72)"/>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-[11px] font-bold tracking-[.28em]" style={{ color: 'rgba(255,255,255,.7)' }}>DOCUMENT {documentNumber(doc.number)}</p>
+        <p className="text-[12px] font-bold tracking-[.28em]" style={{ color: 'rgba(255,255,255,.7)' }}>DOCUMENT {documentNumber(doc.number)}</p>
         <p className="mt-2 text-[40px] font-light leading-none">Invoice</p>
       </div>
     </div>
@@ -80,7 +80,7 @@ function LedgerDesign({ doc }: DesignProps) {
       </div>
       <div className="mt-8 flex items-start justify-between gap-6">
         <div className="min-w-0">
-          <p className="text-[10px] font-extrabold uppercase tracking-[.2em]" style={{ color: MUTED }}>Account</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.2em]" style={{ color: MUTED }}>Account</p>
           <p className="mt-2 break-words text-[16px] font-extrabold" style={{ color: INK }}>{doc.party}</p>
           <PartyLines doc={doc}/>
           {doc.reference && <p className="mt-2 text-[12px]" style={{ color: MUTED }}>Ref. {doc.reference}</p>}
@@ -102,7 +102,7 @@ function StudioDesign({ doc }: DesignProps) {
     <div className="flex items-start justify-between gap-8 pt-12">
       <DocumentLogo doc={doc} size={52}/>
       <div className="min-w-0 text-right">
-        <p className="text-[11px] font-extrabold uppercase tracking-[.22em]" style={{ color: INK }}>{doc.legalName}</p>
+        <p className="text-[12px] font-extrabold uppercase tracking-[.22em]" style={{ color: INK }}>{doc.legalName}</p>
         {doc.address && <p className="mt-2 max-w-[300px] whitespace-pre-line text-[12px] leading-5" style={{ color: MUTED }}>{doc.address}</p>}
         <ContactLine doc={doc}/>
       </div>
@@ -113,16 +113,16 @@ function StudioDesign({ doc }: DesignProps) {
       <PaidStamp doc={doc}/>
     </div>
     <div className="mt-10 grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] gap-6 pb-8" style={{ borderBottom: `1px solid ${RULE}` }}>
-      <div className="min-w-0"><p className="text-[10px] uppercase tracking-[.16em]" style={{ color: MUTED }}>Prepared for</p><p className="mt-2 break-words text-[16px] font-extrabold" style={{ color: INK }}>{doc.party}</p><PartyLines doc={doc}/></div>
+      <div className="min-w-0"><p className="text-[11px] uppercase tracking-[.16em]" style={{ color: MUTED }}>Prepared for</p><p className="mt-2 break-words text-[16px] font-extrabold" style={{ color: INK }}>{doc.party}</p><PartyLines doc={doc}/></div>
       <Meta label="Issued" value={longDate(doc.issueDate)}/>
       <Meta label="Due" value={longDate(doc.dueDate)} color={doc.accent}/>
     </div>
     <div className="mt-8"><DocumentLines doc={doc} variant="studio"/></div>
     <DocumentTotals doc={doc}/>
-    <PayToBlock doc={doc} framed/>
+    <PayToBlock doc={doc} className="mt-8"/>
     <div data-pdf-block className="mt-8 flex items-center justify-between gap-6 rounded-xl p-6" style={{ background: tint(doc.accent, 0.1) }}>
       <p className="max-w-[340px] text-[12px] leading-5" style={{ color: INK }}>Thank you for your business. Please use <b>{doc.number}</b> as your payment reference{doc.reference ? ` (${doc.reference})` : ''}.</p>
-      <div className="shrink-0 text-right"><p className="text-[10px] uppercase tracking-[.16em]" style={{ color: MUTED }}>{doc.amountPaid > 0 ? 'Balance due' : 'Amount due'}</p><p className="text-[22px] font-black" style={{ color: doc.accent }}>{money(doc.amountPaid > 0 ? doc.balance : doc.total)}</p></div>
+      <div className="shrink-0 text-right"><p className="text-[11px] uppercase tracking-[.16em]" style={{ color: MUTED }}>{doc.amountPaid > 0 ? 'Balance due' : 'Amount due'}</p><p className="text-[22px] font-black" style={{ color: doc.accent }}>{money(doc.amountPaid > 0 ? doc.balance : doc.total)}</p></div>
     </div>
   </div>
 }
