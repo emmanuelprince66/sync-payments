@@ -27,8 +27,10 @@ export const ACCESS = {
   expenseTransfer: { flag: 'can_initiate_expense_transfer', roles: 'adminLike' },
   /** Accountants approve by role (sink), whatever the checklist says. */
   approveExpenses: { flag: 'can_approve_expenses', roles: 'adminLike', alwaysForRoles: ['ACCOUNTANT'] },
-  /** Expense rules, budgets' settings tab and the team's approval rights. sink Staff → staff:manage_roles (fallback isAdminLike). */
+  /** The team's approval rights (PATCH business/attendant_permissions/): staff:manage_roles (fallback isAdminLike). */
   expenseRules: { matrix: ['staff:manage_roles'], roles: 'adminLike' },
+  /** Expense settings and rules (PATCH expenses/settings/): the backend's expenses:manage, on by default for ADMIN-ATTENDANT and MANAGER. */
+  expenseSettings: { matrix: ['expenses:manage'], roles: 'adminLike' },
 
   // ─── Invoices (backend's new `invoices` module) ─────────────────────────
   invoices: { matrix: ['invoices:view'], roles: 'everyone' },

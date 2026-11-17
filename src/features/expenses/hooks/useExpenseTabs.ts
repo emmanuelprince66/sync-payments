@@ -21,7 +21,9 @@ const isSection = (value: string | null): value is ExpenseSettingsSection => val
  */
 export function useExpenseTabs() {
   const [params, setParams] = useSearchParams()
-  const { isAdmin } = useExpensePermissions()
+  const { isAdmin: canSetRights, canEditSettings } = useExpensePermissions()
+  // The settings tab holds expense rules (expenses:manage) and approval rights (staff:manage_roles).
+  const isAdmin = canEditSettings || canSetRights
   const tabs = ALL_TABS.filter(item => item.value !== 'settings' || isAdmin)
   const requested = params.get('tab')
   const tab: ExpenseTab = tabs.find(item => item.value === requested)?.value ?? 'expenses'

@@ -10,10 +10,13 @@ export const permissionsFor = (subject: AccessSubject) => {
   const matrix = matrixFromPermissions(subject.permissions)
 
   const canLogExpenses = can('logExpenses')
-  const canTransferExpenses = can('expenseTransfer')
   const canApproveExpenses = can('approveExpenses')
   const canManageWallet = can('manageWallet')
-  /** Wallet transfers sit inside sink's manage_bank_details banner and need can_initiate_expense_transfer too. */
+  /**
+   * The backend enforces BOTH banking:manage (manage_bank_details) and expenses:transfer
+   * (can_initiate_expense_transfer) on every transfer: plain wallet and expense alike.
+   */
+  const canTransferExpenses = canManageWallet && can('expenseTransfer')
   const canWalletTransfer = canManageWallet && can('transfer')
   /**
    * sink: the checklist decides the Expenses page (expenses:view); without one the link shows for any of
@@ -48,6 +51,7 @@ export const permissionsFor = (subject: AccessSubject) => {
     canTransferExpenses,
     canApproveExpenses,
     canManageExpenseRules: can('expenseRules'),
+    canManageExpenseSettings: can('expenseSettings'),
     canViewInvoices: can('invoices'),
     canCreateInvoices: can('createInvoices'),
     canEditInvoices: can('editInvoices'),

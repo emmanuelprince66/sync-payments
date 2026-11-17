@@ -1,16 +1,12 @@
 /**
  * What a transfer costs on top of the amount. Previews only: once the API has answered, show its numbers.
  *
- * Wallet transfers (POST wallet/transfer/<bank_id>/): sink-inventory's table exactly (Transactions.tsx
- * `transferCharge`, shown by TransferSummary as "System Charges" + Total), no stamp duty:
- *  - ₦10 up to and including ₦5,000, ₦25 up to and including ₦50,000, ₦50 above.
- *
- * Expense transfers (POST expenses/transfers/initiate/<id>/): the backend answers with `charges`,
- * `stamp_duty` and `total_debit`, and those are shown afterwards. Before initiating, sink's
- * ConfirmExpenseTransfer previews the charge with `estimateCharges` (types/expense-governance.ts), labelled
- * as an estimate; the ₦50 stamp duty from ₦10,000 is added here because the expense route returns it:
+ * The backend uses ONE table for plain wallet transfers (POST wallet/transfer/<bank_id>/) and expense
+ * transfers (POST expenses/transfers/initiate/<id>/), confirmed by the backend team:
  *  - charges: ₦25 up to and including ₦50,000, ₦50 below ₦500,000, ₦100 from ₦500,000
  *  - stamp duty: ₦50 from ₦10,000 (inclusive)
+ * There is no cheaper no-stamp-duty tier. Expense transfers answer with `charges`, `stamp_duty` and
+ * `total_debit`, and those are shown once the API has replied.
  */
 export type TransferFees = { charges: number; stampDuty: number; totalDebit: number }
 
@@ -21,21 +17,6 @@ const positive = (value: number | string) => {
   return Number.isFinite(amount) && amount > 0 ? amount : 0
 }
 
-/** sink's wallet transfer charge (useTransactionsHook `transferCharge`). */
-export const walletTransferCharge = (value: number | string) => {
-  const amount = positive(value)
-  if (!amount) return 0
-  if (amount <= 5000) return 10
-  if (amount <= 50_000) return 25
-  return 50
-}
-
-export const walletTransferFees = (value: number | string): TransferFees => {
-  const amount = positive(value)
-  if (!amount) return none
-  const charges = walletTransferCharge(amount)
-  return { charges, stampDuty: 0, totalDebit: amount + charges }
-}
 
 export const EXPENSE_STAMP_DUTY_THRESHOLD = 10_000
 export const EXPENSE_STAMP_DUTY = 50
@@ -56,3 +37,7 @@ export const expenseTransferFees = (value: number | string): TransferFees => {
   const stampDuty = amount >= EXPENSE_STAMP_DUTY_THRESHOLD ? EXPENSE_STAMP_DUTY : 0
   return { charges, stampDuty, totalDebit: amount + charges + stampDuty }
 }
+
+/** Plain wallet transfers: the same table as expense transfers. */
+export const walletTransferCharge = expenseTransferCharge
+export const walletTransferFees = expenseTransferFees

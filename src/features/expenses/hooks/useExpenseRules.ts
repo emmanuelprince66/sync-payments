@@ -13,7 +13,7 @@ const shown = (value: string | number | undefined) => (value === undefined || va
  * GET/PATCH expenses/settings/{business_id}/. The owner and admins edit them; 0 means "not enforced", not "blocked".
  */
 export function useExpenseRules() {
-  const { isAdmin } = useExpensePermissions()
+  const { canEditSettings: isAdmin } = useExpensePermissions()
   const { businessId } = useBusinessBanks()
   const settings = useExpenseSettings()
   const save = useSaveExpenseSettings()

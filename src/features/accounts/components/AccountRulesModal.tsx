@@ -25,7 +25,8 @@ const DESCRIPTIONS: Record<RulesSection, string> = {
 export function AccountRulesModal({ open, section, onSectionChange, onClose }: { open: boolean; section: RulesSection; onSectionChange: (section: RulesSection) => void; onClose: () => void }) {
   const pin = usePinManager(onClose)
   // Expense rules and approval rights are for the owner and admins; everyone else only sees their PIN.
-  const { isAdmin } = useExpensePermissions()
+  const { isAdmin: canSetRights, canEditSettings } = useExpensePermissions()
+  const isAdmin = canEditSettings || canSetRights
   const current: RulesSection = isAdmin ? section : 'pin'
   const footer = (submit: () => void, label: string) => <div className="flex justify-end pt-1"><KitButton onClick={submit} loading={pin.busy}>{label}</KitButton></div>
 

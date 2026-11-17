@@ -48,11 +48,12 @@ export const ADMIN_ROLES: readonly string[] = ['OWNER', 'ADMIN-ATTENDANT', 'MANA
  * sink's useExpensePermissions: canLog = can_log_expenses, canTransfer = can_initiate_expense_transfer,
  * canApprove = can_approve_expenses or an accountant (by role), plus the personal ceilings (owners uncapped).
  * Each goes through sink's checks (lib/access-map.ts): the checklist when the login has one, else the flag,
- * else (no permissions at all) the role rule. `isAdmin` may change expense rules and approval rights.
+ * else (no permissions at all) the role rule. `canEditSettings` may change expense settings and rules
+ * (expenses:manage); `isAdmin` may change the team's approval rights (staff:manage_roles).
  */
 export const useExpensePermissions = () => {
   const user = useAuthStore(state => state.user)
-  const { isOwner, canLogExpenses, canTransferExpenses, canApproveExpenses, canManageExpenseRules } = usePermissions()
+  const { isOwner, canLogExpenses, canTransferExpenses, canApproveExpenses, canManageExpenseRules, canManageExpenseSettings } = usePermissions()
   const permissions = (user?.permissions ?? {}) as Record<string, unknown>
   return {
     canLog: canLogExpenses,
@@ -60,6 +61,7 @@ export const useExpensePermissions = () => {
     canApprove: canApproveExpenses,
     isOwner,
     isAdmin: canManageExpenseRules,
+    canEditSettings: canManageExpenseSettings,
     transferCap: capOf(permissions.max_expense_transfer_amount, isOwner),
     approvalCap: capOf(permissions.max_expense_approval_amount, isOwner),
   }

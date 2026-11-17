@@ -13,7 +13,7 @@ export function useBulkPayments() {
   const [rows, setRows] = useState<BulkRow[]>(SAMPLE_BULK_ROWS)
   const total = rows.reduce((sum, row) => sum + row.amount, 0)
   // Each recipient would be its own wallet transfer, so each carries sink's wallet charge (no stamp duty).
-  const fees = rows.reduce((sum, row) => sum + walletTransferFees(row.amount).charges, 0)
+  const fees = rows.reduce((sum, row) => sum + walletTransferFees(row.amount).charges + walletTransferFees(row.amount).stampDuty, 0)
 
   return {
     rows,
