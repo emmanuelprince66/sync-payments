@@ -1,9 +1,9 @@
 import { cn } from '@/lib/cn'
 
 const tones: Record<string, string> = {
-  Active: 'bg-[#E8F5EA] text-[#337D44]',
-  New: 'bg-[#E7F1FC] text-[#1C6FA8]',
-  'At Risk': 'bg-[#FFF6E4] text-[#A76700]',
+  Active: 'bg-[#E8F7EF] text-[#187A42]',
+  New: 'bg-[#E8F2FF] text-[#1367D8]',
+  'At Risk': 'bg-[#FFF7DF] text-[#8F5F00]',
   Inactive: 'bg-muted text-muted-foreground',
 }
 

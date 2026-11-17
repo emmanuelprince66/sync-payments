@@ -8,7 +8,7 @@ function DayChips({ label, days, selected, onToggle }: { label: string; days: re
   return <div role="group" aria-label={label} className="grid grid-cols-7 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
     {days.map(day => {
       const on = selected.includes(day.value)
-      return <button key={day.value} type="button" aria-pressed={on} onClick={() => onToggle(day.value)} className={cn('rounded-xl py-2.5 text-[11px] font-extrabold transition sm:min-w-[52px] sm:px-3', on ? 'bg-secondary text-white shadow-[0_4px_12px_rgba(82,150,97,.22)]' : 'border border-border bg-white text-muted-foreground hover:border-secondary')}>{day.short}</button>
+      return <button key={day.value} type="button" aria-pressed={on} onClick={() => onToggle(day.value)} className={cn('rounded-xl py-2.5 text-[11px] font-extrabold transition sm:min-w-[52px] sm:px-3', on ? 'bg-secondary text-secondary-foreground shadow-[0_4px_12px_rgba(255,127,0,.22)]' : 'border border-border bg-white text-muted-foreground hover:border-secondary')}>{day.short}</button>
     })}
   </div>
 }

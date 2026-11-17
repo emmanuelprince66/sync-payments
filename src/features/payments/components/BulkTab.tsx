@@ -14,14 +14,14 @@ export function BulkTab() {
         <KitButton variant="secondary" onClick={bulk.downloadTemplate}><Download size={13}/> CSV template</KitButton>
       </div>
       <FilePicker accept=".csv" onFile={file => void bulk.loadCsv(file)} className="mt-6 flex flex-col items-center rounded-xl border border-dashed border-secondary/40 bg-accent/35 p-8 text-center">
-        <Download size={21} className="rotate-180 text-secondary"/>
+        <Download size={21} className="rotate-180 text-brand"/>
         <p className="mt-3 text-xs font-extrabold">Drop your payment CSV here</p>
         <p className="mt-1 text-[9px] text-muted-foreground">Name, account number, bank, amount, reference</p>
       </FilePicker>
       <div className="mt-5 overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[420px] text-[10px]">
           <thead><tr className="bg-muted text-left text-[8px] uppercase tracking-wider text-muted-foreground"><th className="px-4 py-3">Recipient</th><th className="px-4 py-3">Bank</th><th className="px-4 py-3 text-right">Amount</th><th className="px-4 py-3">Check</th></tr></thead>
-          <tbody>{bulk.rows.map(row => <tr key={`${row.name}-${row.account}`} className="border-t border-border"><td className="px-4 py-3 font-extrabold">{row.name}</td><td className="px-4 py-3 text-muted-foreground">{row.bank} •• {row.account.slice(-4)}</td><td className="px-4 py-3 text-right font-extrabold">{bulk.money(row.amount)}</td><td className="px-4 py-3 text-secondary">Validated</td></tr>)}</tbody>
+          <tbody>{bulk.rows.map(row => <tr key={`${row.name}-${row.account}`} className="border-t border-border"><td className="px-4 py-3 font-extrabold">{row.name}</td><td className="px-4 py-3 text-muted-foreground">{row.bank} •• {row.account.slice(-4)}</td><td className="px-4 py-3 text-right font-extrabold">{bulk.money(row.amount)}</td><td className="px-4 py-3 text-brand">Validated</td></tr>)}</tbody>
         </table>
       </div>
     </section>

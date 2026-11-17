@@ -53,7 +53,7 @@ export default function TransactionsPage() {
       panelClassName="max-w-md"
       footer={<><KitButton variant="secondary" onClick={page.report.close}>Cancel</KitButton><KitButton onClick={page.exportCsv}><Download size={14}/> Generate report</KitButton></>}
     >
-      <div className="rounded-xl bg-[#F8FAF8] p-4 text-[10px] leading-4 text-muted-foreground">
+      <div className="rounded-xl bg-[#FAFAFA] p-4 text-[10px] leading-4 text-muted-foreground">
         <p className="text-xs font-extrabold text-foreground">Statement · CSV</p>
         <p className="mt-1">Includes ID, reference, customer, type, channel, amount, charges, account, date, status and description for {page.accountLabel}.</p>
       </div>

@@ -15,10 +15,10 @@ export const expenseStatusLabel = (status: string) => LABELS[status] ?? (status 
 /** The pill colours from the design's expense table. */
 export const expenseStatusClass = (status: string) => {
   const label = expenseStatusLabel(status)
-  if (label.startsWith('Awaiting')) return 'bg-[#FFF6E4] text-[#A76700]'
-  if (label === 'Paid' || label === 'Processing') return 'bg-[#E7F1FC] text-[#1C6FA8]'
-  if (label === 'Rejected' || label === 'Failed') return 'bg-[#FDEAEA] text-[#C72D34]'
-  return 'bg-accent text-secondary'
+  if (label.startsWith('Awaiting')) return 'bg-[#FFF7DF] text-[#8F5F00]'
+  if (label === 'Paid' || label === 'Processing') return 'bg-[#E8F2FF] text-[#1367D8]'
+  if (label === 'Rejected' || label === 'Failed') return 'bg-[#FFF0F0] text-[#C72D34]'
+  return 'bg-accent text-brand'
 }
 
 export const EXPENSE_STATUS_OPTIONS = [

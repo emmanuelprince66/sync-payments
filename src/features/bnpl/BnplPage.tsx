@@ -21,7 +21,7 @@ export default function BnplPage() {
       {page.isLoading ? <CardSkeleton className="rounded-xl border border-border bg-white p-4" lines={3}/> : <BnplCard active={page.active}/>}
       <ul className="flex flex-col gap-3 rounded-xl border border-border bg-white p-4">
         {facts.map(({ icon: Icon, title, note }) => <li key={title} className="flex items-start gap-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-secondary"><Icon size={15}/></span>
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-brand"><Icon size={15}/></span>
           <span className="min-w-0"><span className="block text-xs font-extrabold">{title}</span><span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{note}</span></span>
         </li>)}
       </ul>

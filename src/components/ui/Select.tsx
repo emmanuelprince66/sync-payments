@@ -93,33 +93,33 @@ export function Select({ label, options, value, defaultValue = '', placeholder =
   }
 
   return <div className={cn('block min-w-0', className)}>
-    {label && <label htmlFor={id} className="mb-2 block text-[12px] font-extrabold text-[#34483F]">{label}</label>}
+    {label && <label htmlFor={id} data-ff="label" className="mb-2 block text-[12px] font-extrabold text-[#474747]">{label}</label>}
     <input ref={attach} type="hidden" name={name} defaultValue={value === undefined ? defaultValue : undefined} value={value !== undefined ? current : undefined} readOnly={value !== undefined}/>
     <Popover.Root open={open} onOpenChange={next => { setOpen(next); if (!next) setQuery('') }}>
       <Popover.Trigger asChild>
-        <button id={id} type="button" disabled={disabled} aria-label={label ? undefined : rest['aria-label']} aria-invalid={error ? true : undefined} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); setOpen(true) } }}
-          className={cn('flex h-12 w-full items-center justify-between gap-2 rounded-xl border border-[#DCE7E0] bg-white px-3.5 text-left text-sm font-semibold text-[#09261C] outline-none transition hover:border-[#529661] focus-visible:border-[#529661] focus-visible:ring-4 focus-visible:ring-[#529661]/10 disabled:cursor-not-allowed disabled:opacity-55', open && 'border-[#529661] ring-4 ring-[#529661]/10', error && 'border-[#E65A4F]', boxClassName)}>
-          <span className={cn('min-w-0 truncate', !selected && 'font-medium text-[#9AABA3]')}>{selected?.label ?? placeholder}</span>
-          <ChevronDown size={16} className={cn('shrink-0 text-[#7C8D85] transition-transform', open && 'rotate-180')}/>
+        <button id={id} type="button" data-ff="box" disabled={disabled} aria-label={label ? undefined : rest['aria-label']} aria-invalid={error ? true : undefined} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); setOpen(true) } }}
+          className={cn('flex h-12 w-full items-center justify-between gap-2 rounded-xl border border-[#D9DADE] bg-white px-3.5 text-left text-sm font-semibold text-[#1E1E1E] outline-none transition hover:border-[#FF7F00] focus-visible:border-[#FF7F00] focus-visible:ring-4 focus-visible:ring-[#FF7F00]/10 disabled:cursor-not-allowed disabled:opacity-55', open && 'border-[#FF7F00] ring-4 ring-[#FF7F00]/10', error && 'border-[#E52929]', boxClassName)}>
+          <span className={cn('min-w-0 truncate', !selected && 'font-medium text-[#6D7176]')}>{selected?.label ?? placeholder}</span>
+          <ChevronDown size={16} className={cn('shrink-0 text-[#6D7176] transition-transform', open && 'rotate-180')}/>
         </button>
       </Popover.Trigger>
       {/* Not portalled, so it scrolls and stacks correctly inside dialogs. */}
       <Popover.Content align="start" sideOffset={6} collisionPadding={12} onOpenAutoFocus={event => { if (!showSearch || isCoarsePointer()) { event.preventDefault(); focusSelected() } }} onKeyDown={moveFocus}
-        className="z-[70] w-[var(--radix-popover-trigger-width)] min-w-[180px] overflow-hidden rounded-xl border border-[#E2EAE5] bg-white shadow-[0_18px_44px_rgba(9,38,28,.16)]">
-        {showSearch && <div className="flex items-center gap-2 border-b border-[#EDF1EF] px-3 py-2.5 text-[#7C8D85]"><Search size={14}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search…" aria-label="Search options" className="w-full min-w-0 bg-transparent text-xs font-semibold text-[#09261C] outline-none placeholder:font-medium placeholder:text-[#9AABA3]"/></div>}
+        className="z-[70] w-[var(--radix-popover-trigger-width)] min-w-[180px] overflow-hidden rounded-xl border border-[#E7E8EA] bg-white shadow-[0_18px_44px_rgba(30,30,30,.16)]">
+        {showSearch && <div className="flex items-center gap-2 border-b border-[#F0F1F2] px-3 py-2.5 text-[#6D7176]"><Search size={14}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search…" aria-label="Search options" className="w-full min-w-0 bg-transparent text-xs font-semibold text-[#1E1E1E] outline-none placeholder:font-medium placeholder:text-[#6D7176]"/></div>}
         <div ref={listRef} role="listbox" className="flex max-h-60 flex-col gap-0.5 overflow-y-auto p-1.5">
-          {visible.length === 0 && <p className="px-3 py-4 text-center text-xs font-medium text-[#829189]">No matches</p>}
+          {visible.length === 0 && <p className="px-3 py-4 text-center text-xs font-medium text-[#6D7176]">No matches</p>}
           {visible.map(option => {
             const active = option.value === current
             return <button key={option.value} type="button" role="option" aria-selected={active} disabled={option.disabled} onClick={() => pick(option.value)}
-              className={cn('flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-semibold outline-none transition-colors disabled:opacity-45', active ? 'bg-[#EEF6ED] font-extrabold text-[#2F6B3E]' : 'text-[#34483F] hover:bg-[#F3F7F4] focus:bg-[#F3F7F4]')}>
-              <span className="min-w-0"><span className="block truncate">{option.label}</span>{option.hint && <span className="mt-0.5 block truncate text-[10px] font-medium text-[#829189]">{option.hint}</span>}</span>
+              className={cn('flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-semibold outline-none transition-colors disabled:opacity-45', active ? 'bg-[#FFF1E4] font-extrabold text-[#AD5300]' : 'text-[#474747] hover:bg-[#F6F7F8] focus:bg-[#F6F7F8]')}>
+              <span className="min-w-0"><span className="block truncate">{option.label}</span>{option.hint && <span className="mt-0.5 block truncate text-[10px] font-medium text-[#6D7176]">{option.hint}</span>}</span>
               {active && <Check size={15} className="shrink-0"/>}
             </button>
           })}
         </div>
       </Popover.Content>
     </Popover.Root>
-    {error ? <span role="alert" className="mt-1.5 block text-[11px] font-semibold text-[#D15B50]">{error}</span> : hint && <span className="mt-1.5 block text-[11px] text-[#7C8D85]">{hint}</span>}
+    {error ? <span role="alert" className="mt-1.5 block text-[11px] font-semibold text-[#C72D34]">{error}</span> : hint && <span className="mt-1.5 block text-[11px] text-[#6D7176]">{hint}</span>}
   </div>
 }

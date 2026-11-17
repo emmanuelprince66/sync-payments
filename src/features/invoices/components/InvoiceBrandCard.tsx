@@ -8,7 +8,7 @@ export function InvoiceBrandCard({ form, logoName, logoUrl, onLogo }: { form: Us
   return <div className="rounded-xl border border-border p-4">
     <div className="mb-3 flex items-center justify-between gap-3">
       <div className="min-w-0"><p className="text-[11px] font-extrabold">Brand</p><p className="mt-1 text-[10px] text-muted-foreground">Logo, colour and business details on this invoice.</p></div>
-      <FilePicker accept="image/*" onFile={onLogo} className="shrink-0 rounded-lg border border-border px-3 py-2 text-[10px] font-extrabold text-secondary hover:bg-accent">Upload logo</FilePicker>
+      <FilePicker accept="image/*" onFile={onLogo} className="shrink-0 rounded-lg border border-border px-3 py-2 text-[10px] font-extrabold text-brand hover:bg-accent">Upload logo</FilePicker>
     </div>
     <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-3">
       <div className="flex min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2">

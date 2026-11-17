@@ -36,7 +36,7 @@ export function OtpInput({ value, onChange, length = 6 }: { value: string; onCha
       onChange={event => setDigit(index, event.target.value.replace(/\D/g, '').slice(-1))}
       onKeyDown={onKeyDown(index)}
       onPaste={onPaste}
-      className="h-14 min-w-0 flex-1 rounded-xl border border-[#D9E4DD] bg-[#FAFCFA] text-center text-xl font-black text-[#17382C] outline-none focus:border-[#529661] focus:ring-4 focus:ring-[#529661]/10"
+      className="h-14 min-w-0 flex-1 rounded-xl border border-[#D9DADE] bg-[#FAFAFA] text-center text-xl font-black text-[#1E1E1E] outline-none focus:border-[#FF7F00] focus:ring-4 focus:ring-[#FF7F00]/10"
     />)}
   </div>
 }

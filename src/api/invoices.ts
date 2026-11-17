@@ -232,7 +232,7 @@ export const mapInvoice = (value: unknown): Invoice => {
     taxMode: taxModeFromWire(record.tax_mode),
     design: designFromWire(record.design),
     branding: {
-      accent: str(record.brand_color) || '#529661',
+      accent: str(record.brand_color) || '#FF7F00',
       legalName: str(record.legal_name),
       address: str(record.billing_address),
       logoUrl: str(record.logo_url),
@@ -338,7 +338,7 @@ const mapAnalytics = (response: unknown): InvoiceSummary => {
     { label: 'Approved, not sent', count: count('APPROVED'), amount: null, color: '#6E8B7B' },
     { label: 'Sent, awaiting payment', count: count('SENT', 'VIEWED'), amount: null, color: '#D99A24' },
     { label: 'Overdue', count: count('OVERDUE'), amount: null, color: '#C72D34' },
-    { label: 'Paid', count: count('PAID'), amount: null, color: '#1D261C' },
+    { label: 'Paid', count: count('PAID'), amount: null, color: '#1E854A' },
     { label: 'Void', count: count('VOID'), amount: null, color: '#C3CCC7' },
   ]
   return {

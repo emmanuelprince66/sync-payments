@@ -8,7 +8,7 @@ import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { cn } from '@/lib/cn'
 
 function EmployeeStatus({ status }: { status: Employee['status'] }) {
-  return <span className={cn('rounded px-2 py-1 text-[8px] font-extrabold', status === 'Ready' ? 'bg-accent text-secondary' : 'bg-[#FFF6E4] text-[#A76700]')}>{status}</span>
+  return <span className={cn('rounded px-2 py-1 text-[8px] font-extrabold', status === 'Ready' ? 'bg-accent text-brand' : 'bg-[#FFF7DF] text-[#8F5F00]')}>{status}</span>
 }
 
 const head = 'bg-muted py-3 text-[8px] uppercase tracking-wider text-muted-foreground'
@@ -21,7 +21,7 @@ export function PayrollEmployees({ employees, onAdd }: { employees: Employee[]; 
     column.accessor('type', { header: 'Employment', cell: info => `${info.getValue()} · Full-time`, meta: { headerClassName: head } }),
     column.accessor('account', { header: 'Bank', meta: { headerClassName: head } }),
     column.accessor('amount', { header: 'Gross pay', cell: info => money(info.getValue()), meta: { headerClassName: head, cellClassName: 'font-extrabold' } }),
-    column.display({ id: 'tax', header: 'Tax setup', cell: () => 'Complete', meta: { headerClassName: head, cellClassName: 'text-secondary' } }),
+    column.display({ id: 'tax', header: 'Tax setup', cell: () => 'Complete', meta: { headerClassName: head, cellClassName: 'text-brand' } }),
     column.accessor('status', { header: 'Status', cell: info => <EmployeeStatus status={info.getValue()}/>, meta: { headerClassName: `${head} px-5`, cellClassName: 'px-5' } }),
   ], [money])
 
@@ -43,7 +43,7 @@ export function PayrollEmployees({ employees, onAdd }: { employees: Employee[]; 
             <EmployeeStatus status={person.status}/>
           </div>
           <div className="mt-3 flex items-end justify-between gap-3">
-            <div className="min-w-0 text-[9px] text-muted-foreground"><p>{person.type} · Full-time</p><p className="mt-0.5">{person.account} · <span className="text-secondary">Tax complete</span></p></div>
+            <div className="min-w-0 text-[9px] text-muted-foreground"><p>{person.type} · Full-time</p><p className="mt-0.5">{person.account} · <span className="text-brand">Tax complete</span></p></div>
             <p className="shrink-0 text-xs font-extrabold">{money(person.amount)}</p>
           </div>
         </div>}

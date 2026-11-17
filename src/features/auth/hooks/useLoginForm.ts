@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage, useLogin } from '@/api/auth'
 import { paths } from '@/routes/paths'
+import { setRememberMe } from '@/stores/auth-store'
 import { loginSchema, type LoginFormInput, type LoginFormOutput } from '../schemas'
 
 export function useLoginForm() {
@@ -17,7 +19,8 @@ export function useLoginForm() {
     defaultValues: { email: '', password: '' },
   })
 
-  const onSubmit = form.handleSubmit(values => login.mutate(values, {
+  const [remember, setRemember] = useState(true)
+  const onSubmit = form.handleSubmit(values => { setRememberMe(remember); login.mutate(values, {
     onSuccess: () => {
       toast.success('Welcome back')
       // Nothing cached for a previous session may show; the user picks a business next.
@@ -26,13 +29,15 @@ export function useLoginForm() {
       navigate(paths.selectBusiness, { replace: true, state: { from: from && from !== paths.login ? from : undefined } })
     },
     onError: error => toast.error(errorMessage(error, 'Unable to log in')),
-  }))
+  }) })
 
   return {
     register: form.register,
     errors: form.formState.errors,
     onSubmit,
     isSubmitting: login.isPending,
+    remember,
+    setRemember,
     onForgotPassword: () => toast.info('Password reset is coming soon'),
   }
 }

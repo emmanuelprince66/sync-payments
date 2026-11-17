@@ -44,17 +44,17 @@ export function DateRangeFilter({ value, onChange, singleDay = false, placeholde
   const compact = (date: Date) => format(date, date.getFullYear() === year ? 'MMM d' : singleDay ? 'MMM d, yyyy' : 'MMM d, yy')
   const oneDay = value?.from && (!value.to || value.from.toDateString() === value.to.toDateString())
   const label = value?.from ? (value.to && !oneDay ? `${compact(value.from)} – ${compact(value.to)}` : compact(value.from)) : placeholder
-  const accent = { '--rdp-accent-color': '#529661', '--rdp-accent-background-color': 'rgba(82,150,97,.16)', '--rdp-day_button-width': '36px', '--rdp-day_button-height': '36px', '--rdp-day-width': '38px', '--rdp-day-height': '38px', fontSize: '13px' } as React.CSSProperties
+  const accent = { '--rdp-accent-color': '#333333', '--rdp-accent-background-color': 'rgba(255,127,0,.16)', '--rdp-day_button-width': '36px', '--rdp-day_button-height': '36px', '--rdp-day-width': '38px', '--rdp-day-height': '38px', fontSize: '13px' } as React.CSSProperties
 
   return <div className={cn('relative inline-flex min-w-0', className)}>
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button type="button" className={cn('flex h-10 w-full min-w-0 items-center gap-2 rounded-xl border border-[#DFE7E2] bg-white px-3 text-xs font-bold outline-none transition hover:border-[#529661] focus-visible:border-[#529661]', open && 'border-[#529661]', value?.from ? 'text-[#09261C]' : 'text-[#7C8D85]', value?.from && 'pr-8', triggerClassName)}>
+        <button type="button" className={cn('flex h-10 w-full min-w-0 items-center gap-2 rounded-xl border border-[#E7E8EA] bg-white px-3 text-xs font-bold outline-none transition hover:border-[#FF7F00] focus-visible:border-[#FF7F00]', open && 'border-[#FF7F00]', value?.from ? 'text-[#1E1E1E]' : 'text-[#6D7176]', value?.from && 'pr-8', triggerClassName)}>
           <Calendar size={15} className="shrink-0"/><span className="truncate whitespace-nowrap">{label}</span>
         </button>
       </Popover.Trigger>
-      {value?.from && <button type="button" aria-label="Clear dates" onClick={() => onChange(undefined)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#91A098] hover:text-[#C2483D]"><X size={14}/></button>}
-      <Popover.Content align={align} sideOffset={6} collisionPadding={12} className="z-[70] max-h-[calc(100dvh-24px)] overflow-auto rounded-2xl border border-[#E2EAE5] bg-white p-3 shadow-[0_18px_44px_rgba(9,38,28,.16)]">
+      {value?.from && <button type="button" aria-label="Clear dates" onClick={() => onChange(undefined)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#6D7176] hover:text-[#C2483D]"><X size={14}/></button>}
+      <Popover.Content align={align} sideOffset={6} collisionPadding={12} className="z-[70] max-h-[calc(100dvh-24px)] overflow-auto rounded-2xl border border-[#E7E8EA] bg-white p-3 shadow-[0_18px_44px_rgba(30,30,30,.16)]">
         {singleDay
           ? <DayPicker
             mode="single"

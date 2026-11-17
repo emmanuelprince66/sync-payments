@@ -20,7 +20,7 @@ export function ApprovalRightsSection() {
   const { symbol } = useBusinessCurrency()
   const { register } = rights.form
 
-  if (!rights.isAdmin) return <p className="rounded-xl bg-[#F8FAF8] p-4 text-xs text-muted-foreground">Only the business owner or an admin can change approval rights.</p>
+  if (!rights.isAdmin) return <p className="rounded-xl bg-[#FAFAFA] p-4 text-xs text-muted-foreground">Only the business owner or an admin can change approval rights.</p>
 
   if (!rights.member) {
     return <div>
@@ -32,8 +32,8 @@ export function ApprovalRightsSection() {
             ? <KitEmpty title="Couldn't load your team" action={<KitButton variant="secondary" onClick={rights.retryTeam}>Try again</KitButton>} className="py-6"/>
             : rights.team.length === 0
               ? <KitEmpty icon={<UsersRound size={18}/>} title="No team members yet" note="Staff added to this business on Sync360 show up here." className="py-6"/>
-              : rights.team.map(person => <button key={person.id} type="button" onClick={() => rights.open(person)} className="flex w-full items-center gap-3 p-4 text-left hover:bg-[#F8FAF8]">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-extrabold text-secondary">{person.name.charAt(0).toUpperCase()}</span>
+              : rights.team.map(person => <button key={person.id} type="button" onClick={() => rights.open(person)} className="flex w-full items-center gap-3 p-4 text-left hover:bg-[#FAFAFA]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-extrabold text-brand">{person.name.charAt(0).toUpperCase()}</span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-xs font-extrabold">{person.name}</span><span className="mt-0.5 block truncate text-[10px] capitalize text-muted-foreground">{person.roleLabel}{person.email ? ` · ${person.email}` : ''}</span></span>
                 <ChevronRight size={15} className="shrink-0 text-muted-foreground"/>
               </button>)}

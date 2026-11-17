@@ -34,7 +34,7 @@ export function PayrollOverview({ data, totals, onOpenRun, onTask }: Props) {
         <h2 className="text-sm font-extrabold">Tasks before payday</h2>
         <div className="mt-4 flex flex-col gap-4">
           {data.tasks.map((task, index) => <button key={task.task} type="button" onClick={() => onTask(task.tab)} className="flex w-full items-center text-left">
-            <span className={cn('grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9px] font-extrabold', index === 0 ? 'bg-[#FFF6E4] text-[#A76700]' : 'bg-muted text-muted-foreground')}>{index + 1}</span>
+            <span className={cn('grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9px] font-extrabold', index === 0 ? 'bg-[#FFF7DF] text-[#8F5F00]' : 'bg-muted text-muted-foreground')}>{index + 1}</span>
             <span className="ml-3 min-w-0"><b className="block text-[10px]">{task.task}</b><i className="mt-0.5 block text-[8px] not-italic text-muted-foreground">{task.due}</i></span>
             <ArrowRight size={12} className="ml-auto shrink-0"/>
           </button>)}

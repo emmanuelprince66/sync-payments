@@ -15,7 +15,7 @@ export function RecentTransfers({ rows, loading, money }: { rows: WalletTrx[]; l
       : rows.length === 0
         ? <KitEmpty icon={<Send size={18}/>} title="No transfers yet" note="Transfers you send in this period show up here." className="py-6"/>
         : <div className="mt-4 flex flex-col">{rows.map(row => <div key={row.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0 last:pb-0">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-secondary"><ArrowUpRight size={15}/></span>
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-brand"><ArrowUpRight size={15}/></span>
           <span className="min-w-0 flex-1"><span className="block truncate text-xs font-extrabold">{trxCustomer(row)}</span><span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{row.bankName ? `${row.bankName} · ` : ''}{trxDay(row.createdAt)}, {trxTime(row.createdAt)}</span></span>
           <span className="shrink-0 text-right"><span className="block text-xs font-extrabold">{money(row.amount)}</span><span className="mt-1 block"><StatusPill value={trxStatus(row.status)}/></span></span>
         </div>)}</div>}

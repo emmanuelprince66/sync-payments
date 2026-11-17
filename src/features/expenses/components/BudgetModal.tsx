@@ -7,7 +7,7 @@ import { cn } from '@/lib/cn'
 import { DURATION_PICKS, useBudgetForm } from '../hooks/useBudgetForm'
 import type { BudgetRow } from '../hooks/useBudgetsTab'
 
-const dangerClass = 'inline-flex items-center gap-2 rounded-lg border border-[#EC1B24]/30 px-4 py-2.5 text-xs font-extrabold text-[#C72D34] hover:bg-[#FDEAEA] disabled:opacity-50'
+const dangerClass = 'inline-flex items-center gap-2 rounded-lg border border-[#E52929]/30 px-4 py-2.5 text-xs font-extrabold text-[#C72D34] hover:bg-[#FFF0F0] disabled:opacity-50'
 
 /** Set or change one category's budget (sink: SetCategoryBudgetModal). */
 export function BudgetModal({ open, budget, presetCategoryId, onClose }: { open: boolean; budget: BudgetRow | null; presetCategoryId: string; onClose: () => void }) {
@@ -39,11 +39,11 @@ export function BudgetModal({ open, budget, presetCategoryId, onClose }: { open:
         {DURATION_PICKS.map(value => <button key={value} type="button" aria-pressed={model.months === String(value)} onClick={() => model.pickMonths(value)} className={cn('rounded-lg px-3 py-2 text-[10px] font-extrabold', model.months === String(value) ? 'bg-primary text-white' : 'border border-border text-muted-foreground hover:bg-muted')}>{value} {value === 1 ? 'month' : 'months'}</button>)}
       </div>
       <div className="rounded-xl bg-accent p-4">
-        <p className="text-[9px] font-extrabold uppercase tracking-wider text-secondary">Monthly allocation</p>
+        <p className="text-[9px] font-extrabold uppercase tracking-wider text-brand">Monthly allocation</p>
         <p className="mt-1 text-xl font-extrabold">{model.monthlyLabel}</p>
         <p className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground"><CalendarRange size={12}/> The total spread evenly over the duration.</p>
       </div>
-      {model.confirming && <p className="rounded-lg bg-[#FDEAEA] p-3 text-center text-[10px] font-bold text-[#C72D34]">Remove this budget? Spend in the category stays; it just stops being tracked against a limit.</p>}
+      {model.confirming && <p className="rounded-lg bg-[#FFF0F0] p-3 text-center text-[10px] font-bold text-[#C72D34]">Remove this budget? Spend in the category stays; it just stops being tracked against a limit.</p>}
     </form>
   </KitModal>
 }

@@ -29,7 +29,7 @@ function Details({ flow }: { flow: TransferFlow }) {
       <span className="mb-1.5 block text-[10px] font-extrabold">Beneficiary</span>
       {flow.verifying
         ? <Skeleton className="h-11 w-full rounded-xl"/>
-        : <div className={cn('flex h-11 items-center gap-2 rounded-xl border px-3 text-xs font-bold', flow.beneficiary ? 'border-secondary/25 bg-accent text-secondary' : 'border-border bg-[#F8FAF8] text-muted-foreground')}>
+        : <div className={cn('flex h-11 items-center gap-2 rounded-xl border px-3 text-xs font-bold', flow.beneficiary ? 'border-secondary/25 bg-accent text-brand' : 'border-border bg-[#FAFAFA] text-muted-foreground')}>
           {flow.beneficiary && <CheckCircle2 size={14} className="shrink-0"/>}
           <span className="truncate">{flow.beneficiary?.name ?? (flow.enquiryFailed ? 'We couldn\'t verify this account' : 'Verified automatically from the account number')}</span>
         </div>}
@@ -42,8 +42,8 @@ function Details({ flow }: { flow: TransferFlow }) {
       </KitSelect>
     </div>
     <KitField label="Payment reference" placeholder="What is this payment for?" {...flow.register('narration')}/>
-    <div className="rounded-lg bg-[#F8FAF8] p-4 text-[9px] leading-4 text-muted-foreground"><ShieldCheck size={14} className="mb-2 text-secondary"/>{flow.isExpenseAccount ? 'Paying from an expense account follows your approval rules: it may wait for an approver before funds move.' : 'The beneficiary is verified before you can continue, and every transfer needs your transaction PIN.'}</div>
-    {flow.error && <p role="alert" className="rounded-lg bg-[#FDEAEA] px-3 py-2 text-[10px] font-bold text-[#C72D34]">{flow.error}</p>}
+    <div className="rounded-lg bg-[#FAFAFA] p-4 text-[9px] leading-4 text-muted-foreground"><ShieldCheck size={14} className="mb-2 text-brand"/>{flow.isExpenseAccount ? 'Paying from an expense account follows your approval rules: it may wait for an approver before funds move.' : 'The beneficiary is verified before you can continue, and every transfer needs your transaction PIN.'}</div>
+    {flow.error && <p role="alert" className="rounded-lg bg-[#FFF0F0] px-3 py-2 text-[10px] font-bold text-[#C72D34]">{flow.error}</p>}
   </div>
 }
 
@@ -59,7 +59,7 @@ function Review({ flow }: { flow: TransferFlow }) {
     {flow.feesAreEstimate && <p className="mt-2 text-[10px] text-muted-foreground">The charges are an estimate and are confirmed when the payout runs.</p>}
     <p className="mt-6 text-center text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Enter transaction PIN</p>
     <div className="mx-auto max-w-[260px] [&>div]:mt-3"><OtpInput value={flow.pin} onChange={flow.setPin} length={4}/></div>
-    {flow.error && <p role="alert" className="mt-4 rounded-lg bg-[#FDEAEA] px-3 py-2 text-[10px] font-bold text-[#C72D34]">{flow.error}</p>}
+    {flow.error && <p role="alert" className="mt-4 rounded-lg bg-[#FFF0F0] px-3 py-2 text-[10px] font-bold text-[#C72D34]">{flow.error}</p>}
   </div>
 }
 
@@ -70,7 +70,7 @@ export function TransferTab({ flow }: { flow: TransferFlow }) {
     <section className="min-w-0 rounded-xl border border-border bg-white">
       <div className="flex items-center justify-between gap-3 border-b border-border p-5">
         <div className="min-w-0"><h2 className="text-sm font-extrabold">Make a transfer</h2><p className="mt-1 text-[9px] text-muted-foreground">Bank transfer to any account</p></div>
-        <div className="flex shrink-0 items-center gap-2 text-[9px] font-extrabold text-muted-foreground"><span className="text-secondary">1 Details</span><i className="h-px w-6 bg-border"/><span className={flow.step >= 2 ? 'text-secondary' : ''}>2 Review</span></div>
+        <div className="flex shrink-0 items-center gap-2 text-[9px] font-extrabold text-muted-foreground"><span className="text-brand">1 Details</span><i className="h-px w-6 bg-border"/><span className={flow.step >= 2 ? 'text-brand' : ''}>2 Review</span></div>
       </div>
       {flow.step === 1 ? <Details flow={flow}/> : <Review flow={flow}/>}
       <div className="flex justify-between gap-2 border-t border-border px-6 py-4">
@@ -79,7 +79,7 @@ export function TransferTab({ flow }: { flow: TransferFlow }) {
       </div>
     </section>
     <aside className="flex min-w-0 flex-col gap-4">
-      <div className="rounded-xl bg-primary p-5 text-white">
+      <div className="rounded-xl hero-gradient p-5 text-white">
         <p className="text-[9px] font-extrabold uppercase tracking-wider text-white/50">Available to transfer</p>
         {flow.availableLoading ? <Skeleton className="mt-2 h-9 w-44 bg-white/10"/> : <p className="mt-2 text-3xl font-extrabold [overflow-wrap:anywhere]">{flow.available}</p>}
         <p className="mt-1 truncate text-[9px] text-white/50">{flow.fromLabel}</p>
@@ -91,7 +91,7 @@ export function TransferTab({ flow }: { flow: TransferFlow }) {
           : flow.recent.rows.length === 0
             ? <p className="mt-4 text-[10px] leading-4 text-muted-foreground">People you pay will show up here for quick repeat transfers.</p>
             : <div className="mt-4 flex flex-col gap-4">{flow.recent.rows.map(row => <button key={`${row.bankCode}-${row.accountNumber}`} type="button" onClick={() => flow.recent.apply(row)} className="flex w-full items-center text-left">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-secondary">{initials(row.accountName || 'B')}</span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-brand">{initials(row.accountName || 'B')}</span>
               <span className="ml-3 min-w-0"><b className="block truncate text-[10px]">{row.accountName || 'Beneficiary'}</b><i className="mt-0.5 block truncate text-[8px] not-italic text-muted-foreground">{row.bankName} •• {row.accountNumber.slice(-4)}</i></span>
               <ArrowRight size={12} className="ml-auto shrink-0 text-muted-foreground"/>
             </button>)}</div>}

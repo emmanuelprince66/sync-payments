@@ -7,7 +7,7 @@ import type { ExpenseAccountRow, ExpenseAccountsModel } from '../hooks/useExpens
 
 function CopyNumber({ account, model, light }: { account: ExpenseAccountRow; model: ExpenseAccountsModel; light?: boolean }) {
   const copied = model.copiedId === account.id
-  return <button type="button" onClick={() => model.copyNumber(account)} aria-label={`Copy account number ${account.accountNumber}`} className={light ? 'inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 text-[11px] font-extrabold text-white hover:bg-white/20' : 'inline-flex items-center gap-1.5 rounded-lg border border-border px-2 py-1 text-[11px] font-extrabold text-secondary hover:bg-accent'}>
+  return <button type="button" onClick={() => model.copyNumber(account)} aria-label={`Copy account number ${account.accountNumber}`} className={light ? 'inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 text-[11px] font-extrabold text-white hover:bg-white/20' : 'inline-flex items-center gap-1.5 rounded-lg border border-border px-2 py-1 text-[11px] font-extrabold text-brand hover:bg-accent'}>
     {copied ? <Check size={12}/> : <Copy size={12}/>}{copied ? 'Copied' : 'Copy'}
   </button>
 }
@@ -18,7 +18,7 @@ type Actions = { onCreate: () => void; onTransfer: (accountId: string) => void }
 export function ExpenseAccountCard({ model, onCreate, onTransfer }: { model: ExpenseAccountsModel } & Actions) {
   const account = model.selected
   return <section className="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-white md:grid-cols-[minmax(0,1fr)_auto]">
-    <div className="min-w-0 bg-primary p-5 text-white">
+    <div className="min-w-0 hero-gradient p-5 text-white">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.15em] text-white/60"><Wallet size={14}/> Expense account</p>
         {model.hasMultiple && <KitSelect label="Spending from" className="w-full sm:w-64 [&>span]:text-white/60" boxClassName="h-9 border-white/15 bg-white/10 text-white" options={model.accounts.map(row => ({ value: row.id, label: `${row.label} · ${row.accountNumber}` }))} value={account?.id ?? ''} onChange={event => model.select(event.target.value)}/>}
@@ -41,7 +41,7 @@ export function ExpenseAccountCard({ model, onCreate, onTransfer }: { model: Exp
             <p className="mt-1 max-w-md text-[11px] leading-4 text-white/60">Create one to hold a float your team can spend from, separately from your takings.</p>
           </>}
     </div>
-    <div className="flex flex-wrap items-center gap-2 border-t border-border bg-[#FAFBFA] p-4 md:flex-col md:items-stretch md:justify-center md:border-l md:border-t-0">
+    <div className="flex flex-wrap items-center gap-2 border-t border-border bg-[#FAFAFA] p-4 md:flex-col md:items-stretch md:justify-center md:border-l md:border-t-0">
       {account && model.canTransfer && <KitButton onClick={() => onTransfer(account.id)}><ArrowUpRight size={14}/> Transfer money</KitButton>}
       {model.canCreate && <KitButton variant={account ? 'secondary' : 'primary'} onClick={onCreate}><Plus size={14}/> Create expense account</KitButton>}
     </div>
@@ -61,7 +61,7 @@ export function ExpenseAccountsTab({ model, onCreate, onTransfer }: { model: Exp
         ? <KitEmpty icon={<Wallet size={18}/>} title="No expense account yet" note="Create one to separate company spend from your main business funds." action={model.canCreate ? <KitButton onClick={onCreate}><Plus size={14}/> Create expense account</KitButton> : undefined}/>
         : <ul className="divide-y divide-border">
           {model.accounts.map(account => <li key={account.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-secondary"><Wallet size={17}/></span>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-brand"><Wallet size={17}/></span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-extrabold">{account.label}</p>
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{account.fullName}</p>

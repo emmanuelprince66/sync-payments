@@ -5,10 +5,10 @@ import { cn } from '@/lib/cn'
 const STATE_CLASS: Record<InvoicePaymentState, string> = {
   Draft: 'bg-muted text-muted-foreground',
   Approved: 'bg-[#EEF3FB] text-[#3D5A99]',
-  Pending: 'bg-[#FFF6E4] text-[#A76700]',
-  'Part paid': 'bg-[#E7F1FC] text-[#1C6FA8]',
-  Overdue: 'bg-[#FDEAEA] text-[#C72D34]',
-  Paid: 'bg-[#E8F5EA] text-[#337D44]',
+  Pending: 'bg-[#FFF7DF] text-[#8F5F00]',
+  'Part paid': 'bg-[#E8F2FF] text-[#1367D8]',
+  Overdue: 'bg-[#FFF0F0] text-[#C72D34]',
+  Paid: 'bg-[#E8F7EF] text-[#187A42]',
   Void: 'bg-muted text-muted-foreground line-through',
 }
 

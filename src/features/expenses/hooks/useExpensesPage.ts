@@ -18,7 +18,7 @@ export type ExpenseDraft = { merchant: string; amount: number; note?: string }
 const PENDING = ['PENDING_APPROVAL', 'PENDING_OWNER_APPROVAL', 'PENDING']
 const sum = (rows: Expense[]) => rows.reduce((total, row) => total + row.amount, 0)
 
-const PALETTE = ['#529661', '#356C82', '#9A6A43', '#A76578', '#6FA0B5', '#C49168']
+const PALETTE = ['#FF7F00', '#1367D8', '#1E854A', '#A97500', '#E52929', '#6D7176']
 
 /** Everything the Expenses screen shows and does. */
 export function useExpensesPage() {

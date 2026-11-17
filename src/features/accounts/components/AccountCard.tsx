@@ -15,7 +15,7 @@ export function AccountCard({ account, loading, compact = false }: { account: Ac
   const { code } = useBusinessCurrency()
   const number = account?.accountNumber ?? ''
 
-  return <section className={cn('relative min-w-0 overflow-hidden bg-primary text-white', compact ? 'rounded-2xl p-5' : 'rounded-[22px] p-6 md:p-7')}>
+  return <section className={cn('relative min-w-0 overflow-hidden hero-gradient text-white', compact ? 'rounded-2xl p-5' : 'rounded-[22px] p-6 md:p-7')}>
     <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full border-[32px] border-white/[.035]"/>
     <div className="absolute -bottom-14 right-28 h-32 w-32 rounded-full border-[24px] border-secondary/10"/>
     <div className="relative">
@@ -27,7 +27,7 @@ export function AccountCard({ account, loading, compact = false }: { account: Ac
             : <div className={cn('font-extrabold tracking-[0.04em]', compact ? 'mt-4 text-xl' : 'mt-5 text-2xl md:text-[28px]')}>{number ? groupAccount(number) : 'No account yet'}</div>}
           <p className="mt-1.5 truncate text-xs text-white/55">{account ? `${account.bankName || 'Bank'} · ${account.accountName}` : 'Complete verification to open your account'}</p>
         </div>
-        <span className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-extrabold text-[#BDE7C6]">{number ? 'ACTIVE' : 'PENDING'}</span>
+        <span className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-extrabold text-[#FFD3A7]">{number ? 'ACTIVE' : 'PENDING'}</span>
       </div>
       {!compact && <div className="mt-7 flex flex-wrap items-end justify-between gap-5 border-t border-white/10 pt-5">
         <div className="min-w-0">

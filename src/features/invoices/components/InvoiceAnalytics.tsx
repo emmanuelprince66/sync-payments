@@ -11,7 +11,7 @@ export function InvoiceAnalytics({ summary, isLoading }: { summary?: InvoiceSumm
   return <section className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-white xl:grid-cols-[minmax(0,1.3fr)_minmax(0,.7fr)]">
     <div className="border-b border-border p-5 xl:border-b-0 xl:border-r">
       <div className="flex items-center justify-between">
-        <div><p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-secondary">Invoice analytics</p><h2 className="mt-1 text-sm font-extrabold">Cash collection performance</h2></div>
+        <div><p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-brand">Invoice analytics</p><h2 className="mt-1 text-sm font-extrabold">Cash collection performance</h2></div>
         <span className="text-[9px] font-bold text-muted-foreground">Last 6 months</span>
       </div>
       {summary.months.length
@@ -39,8 +39,8 @@ export function InvoiceAnalytics({ summary, isLoading }: { summary?: InvoiceSumm
           {item.amount !== null && <p className="ml-auto pl-3 text-xs font-extrabold">{money(item.amount)}</p>}
         </div>)}
       </div>
-      <div className="mt-5 rounded-lg bg-[#F4FAF5] p-3">
-        <p className="text-[10px] font-extrabold text-secondary">{summary.collectionRate} collection rate</p>
+      <div className="mt-5 rounded-lg bg-[#F6F7F8] p-3">
+        <p className="text-[10px] font-extrabold text-brand">{summary.collectionRate} collection rate</p>
         <p className="mt-1 text-[8px] leading-4 text-muted-foreground">Expected cash from outstanding invoices: {money(summary.expectedCash)}</p>
       </div>
     </div>

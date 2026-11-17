@@ -65,15 +65,15 @@ export function EntityPicker({ value, options, onChange, onCreate, onDelete, cre
     </Popover.Trigger>
     <Popover.Portal>
       <Popover.Content align="start" sideOffset={6} collisionPadding={12} onKeyDown={moveFocus}
-        className={cn('z-[70] w-[min(var(--radix-popover-trigger-width),calc(100vw-24px))] min-w-[260px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-[#E2EAE5] bg-white shadow-[0_18px_44px_rgba(9,38,28,.16)]', contentClassName)}>
-        <div className="flex items-center gap-2 border-b border-[#EDF1EF] px-3 py-2.5 text-muted-foreground">
+        className={cn('z-[70] w-[min(var(--radix-popover-trigger-width),calc(100vw-24px))] min-w-[260px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-[#E7E8EA] bg-white shadow-[0_18px_44px_rgba(30,30,30,.16)]', contentClassName)}>
+        <div className="flex items-center gap-2 border-b border-[#F0F1F2] px-3 py-2.5 text-muted-foreground">
           <Search size={14}/>
           <input autoFocus value={query} onChange={event => search(event.target.value)} placeholder="Search…" aria-label={`Search ${rest['aria-label'].toLowerCase()}`}
             onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); if (visible.length === 1) pick(visible[0].value); else if (!visible.length) create() } }}
             className="w-full min-w-0 bg-transparent text-xs font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground"/>
         </div>
         <div ref={listRef} className="flex max-h-64 flex-col overflow-y-auto">
-          <button type="button" onClick={create} className="flex w-full items-center gap-3 border-b border-[#EDF1EF] bg-[#F6F8F7] px-3.5 py-3 text-left text-xs font-extrabold text-secondary outline-none hover:bg-accent focus:bg-accent">
+          <button type="button" onClick={create} className="flex w-full items-center gap-3 border-b border-[#F0F1F2] bg-[#F6F7F8] px-3.5 py-3 text-left text-xs font-extrabold text-brand outline-none hover:bg-accent focus:bg-accent">
             <Plus size={15}/>{createLabel}{query.trim() && <span className="truncate font-semibold text-muted-foreground">“{query.trim()}”</span>}
           </button>
           <div role="listbox" className="flex flex-col gap-0.5 p-1.5">
@@ -81,20 +81,20 @@ export function EntityPicker({ value, options, onChange, onCreate, onDelete, cre
             {!loading && visible.map(option => {
               const active = option.value === value
               const row = <button key={option.value} type="button" role="option" aria-selected={active} onClick={() => pick(option.value)}
-                className={cn('flex w-full min-w-0 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold outline-none', active ? 'bg-[#EEF6ED] font-extrabold text-[#2F6B3E]' : 'text-foreground hover:bg-[#F3F7F4] focus:bg-[#F3F7F4]')}>
+                className={cn('flex w-full min-w-0 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold outline-none', active ? 'bg-[#FFF1E4] font-extrabold text-[#AD5300]' : 'text-foreground hover:bg-[#F6F7F8] focus:bg-[#F6F7F8]')}>
                 <span className="min-w-0"><span className="block truncate">{option.label}</span>{option.hint && <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{option.hint}</span>}</span>
                 {active && <Check size={14} className="shrink-0"/>}
               </button>
               if (!onDelete) return row
               return <div key={option.value} className="flex items-center gap-1">
                 {row}
-                <button type="button" aria-label={`Delete ${option.label}`} onClick={() => onDelete(option.value)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-[#FDEAEA] hover:text-[#C72D34] focus:bg-[#FDEAEA] focus:text-[#C72D34]"><Trash2 size={13}/></button>
+                <button type="button" aria-label={`Delete ${option.label}`} onClick={() => onDelete(option.value)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-[#FFF0F0] hover:text-[#C72D34] focus:bg-[#FFF0F0] focus:text-[#C72D34]"><Trash2 size={13}/></button>
               </div>
             })}
             {!loading && !visible.length && query.trim() && <p className="px-3 py-3 text-center text-xs text-muted-foreground">No matches</p>}
           </div>
         </div>
-        {note && <p className="border-t border-[#EDF1EF] px-4 py-4 text-center text-[11px] leading-5 text-muted-foreground">{note}</p>}
+        {note && <p className="border-t border-[#F0F1F2] px-4 py-4 text-center text-[11px] leading-5 text-muted-foreground">{note}</p>}
       </Popover.Content>
     </Popover.Portal>
   </Popover.Root>

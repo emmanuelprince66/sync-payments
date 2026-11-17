@@ -13,7 +13,7 @@ import { BudgetModal } from './BudgetModal'
 const column = createColumnHelper<BudgetRow>()
 
 const BAR: Record<BudgetHealth, string> = { over: 'bg-[#C72D34]', near: 'bg-[#D99A1E]', ok: 'bg-secondary' }
-const PILL: Record<BudgetHealth, string> = { over: 'bg-[#FDEAEA] text-[#C72D34]', near: 'bg-[#FFF6E4] text-[#A76700]', ok: 'bg-accent text-secondary' }
+const PILL: Record<BudgetHealth, string> = { over: 'bg-[#FFF0F0] text-[#C72D34]', near: 'bg-[#FFF7DF] text-[#8F5F00]', ok: 'bg-accent text-brand' }
 
 /** Spent vs budget, with sink's "Over budget" wording past 100%. */
 function Usage({ row, money }: { row: BudgetRow; money: (value: number) => string }) {
@@ -50,7 +50,7 @@ export function BudgetsTab() {
     </div>
 
     {page.alerts.length > 0 && <section aria-label="Budget alerts" className="flex flex-col gap-2">
-      {page.alerts.map(alert => <div key={alert.id} role="status" className={cn('flex items-start gap-2.5 rounded-xl border p-3 text-[11px] font-bold', alert.tone === 'over' ? 'border-[#EC1B24]/20 bg-[#FDEAEA] text-[#7A1F24]' : 'border-[#D99A1E]/25 bg-[#FFF9EC] text-[#7A5310]')}>
+      {page.alerts.map(alert => <div key={alert.id} role="status" className={cn('flex items-start gap-2.5 rounded-xl border p-3 text-[11px] font-bold', alert.tone === 'over' ? 'border-[#E52929]/20 bg-[#FFF0F0] text-[#7A1F24]' : 'border-[#D99A1E]/25 bg-[#FFF9EC] text-[#7A5310]')}>
         <AlertTriangle size={15} className="mt-0.5 shrink-0"/>{alert.text}
       </div>)}
     </section>}

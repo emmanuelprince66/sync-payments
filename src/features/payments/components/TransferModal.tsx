@@ -27,20 +27,20 @@ function CloseButton({ onClose, light }: { onClose: () => void; light?: boolean 
 function FromAccount({ flow }: { flow: TransferFlow }) {
   if (!flow.fromAccount) return null
   const { name, bank, number, isExpense } = flow.fromAccount
-  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-[#F8FAF8] px-3 py-2.5">
+  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-[#FAFAFA] px-3 py-2.5">
     <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">{isExpense ? 'Paying from expense account' : 'Paying from'}</p><p className="mt-0.5 truncate text-xs font-extrabold">{name}</p></div>
     <p className="shrink-0 text-right text-[11px] text-muted-foreground">{bank}<br/><b className="font-mono text-xs tracking-wider text-foreground">{number || '—'}</b></p>
   </div>
 }
 
 function ErrorNote({ children }: { children: ReactNode }) {
-  return <p role="alert" className="rounded-lg bg-[#FDEAEA] px-3 py-2.5 text-[11px] font-bold text-[#C72D34]">{children}</p>
+  return <p role="alert" className="rounded-lg bg-[#FFF0F0] px-3 py-2.5 text-[11px] font-bold text-[#C72D34]">{children}</p>
 }
 
 function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => void }) {
   const { symbol } = useBusinessCurrency()
   return <>
-    <div className="shrink-0 bg-primary p-6 text-white">
+    <div className="shrink-0 hero-gradient p-6 text-white">
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs text-white/70">Available Balance</p>
         <span className="-mr-2 -mt-2"><CloseButton onClose={onClose} light/></span>
@@ -59,18 +59,18 @@ function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => vo
         <KitField label="Account Number" inputMode="numeric" placeholder="1234567890" value={flow.accountNumber} onChange={event => flow.setAccountNumber(event.target.value)} error={flow.errors.accountNumber?.message}/>
         <div>
           <KitSelect label="Category (Optional)" placeholder="Select a category..." options={[{ value: '', label: 'No category' }, ...flow.categories]} {...flow.register('categoryId')}/>
-          <p className="mt-1.5 text-[10px] font-semibold text-[#A76700]">Attach an expense category (except for stock purchases)</p>
+          <p className="mt-1.5 text-[10px] font-semibold text-[#8F5F00]">Attach an expense category (except for stock purchases)</p>
         </div>
         <div>
-          <span className="mb-1.5 flex items-center justify-between text-[10px] font-extrabold">Account Name{flow.verifying && <Loader2 size={13} className="animate-spin text-secondary"/>}</span>
-          <div className={cn('flex h-11 items-center gap-2 rounded-xl border px-3 text-xs font-bold', flow.beneficiary ? 'border-secondary/25 bg-accent text-secondary' : 'border-border bg-[#F1F4F1] text-muted-foreground')}>
+          <span className="mb-1.5 flex items-center justify-between text-[10px] font-extrabold">Account Name{flow.verifying && <Loader2 size={13} className="animate-spin text-brand"/>}</span>
+          <div className={cn('flex h-11 items-center gap-2 rounded-xl border px-3 text-xs font-bold', flow.beneficiary ? 'border-secondary/25 bg-accent text-brand' : 'border-border bg-[#F0F1F2] text-muted-foreground')}>
             {flow.beneficiary && <CheckCircle2 size={14} className="shrink-0"/>}
             <span className="truncate">{flow.beneficiary?.name ?? (flow.enquiryFailed ? 'We couldn\'t verify this account' : 'Recipient Full Name')}</span>
           </div>
         </div>
         <KitMoneyField label={`Amount (${symbol})`} symbol={symbol} error={flow.errors.amount?.message} {...flow.register('amount')}/>
         <KitField label="Narration (Optional)" placeholder="e.g. Rent payment" {...flow.register('narration')}/>
-        {flow.isExpenseAccount && <p className="flex gap-2 rounded-lg bg-[#F8FAF8] p-3 text-[10px] leading-4 text-muted-foreground"><ShieldCheck size={14} className="shrink-0 text-secondary"/>Paying from an expense account follows your approval rules: it may wait for an approver before funds move.</p>}
+        {flow.isExpenseAccount && <p className="flex gap-2 rounded-lg bg-[#FAFAFA] p-3 text-[10px] leading-4 text-muted-foreground"><ShieldCheck size={14} className="shrink-0 text-brand"/>Paying from an expense account follows your approval rules: it may wait for an approver before funds move.</p>}
         {flow.error && <ErrorNote>{flow.error}</ErrorNote>}
         <KitButton type="submit" className="h-12 w-full text-sm">Transfer Now</KitButton>
       </div>
@@ -81,7 +81,7 @@ function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => vo
 function ConfirmRow({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: 'green' }) {
   return <div className="flex justify-between gap-4 text-xs">
     <span className={cn('shrink-0', strong ? 'font-extrabold text-foreground' : 'font-semibold text-foreground/75')}>{label}</span>
-    <span className={cn('text-right [overflow-wrap:anywhere]', tone === 'green' ? 'font-extrabold text-secondary' : strong ? 'font-extrabold' : 'text-muted-foreground')}>{value}</span>
+    <span className={cn('text-right [overflow-wrap:anywhere]', tone === 'green' ? 'font-extrabold text-brand' : strong ? 'font-extrabold' : 'text-muted-foreground')}>{value}</span>
   </div>
 }
 
@@ -94,7 +94,7 @@ function ConfirmTransfer({ flow, onClose }: { flow: TransferFlow; onClose: () =>
     <div className="min-h-0 flex-1 overflow-y-auto p-6">
       <ModalTitle className="text-xl font-extrabold">Confirm Transfer</ModalTitle>
       <p className="mt-2 text-xs leading-5 text-muted-foreground">Please verify the transaction details and enter your PIN to complete the transfer.</p>
-      <div className="mt-6 flex flex-col gap-3 rounded-xl border border-border bg-[#F8FAF8] p-4">
+      <div className="mt-6 flex flex-col gap-3 rounded-xl border border-border bg-[#FAFAFA] p-4">
         {flow.fromAccount && <ConfirmRow label="From:" value={`${flow.fromAccount.name} · ${flow.fromAccount.number}`}/>}
         <ConfirmRow label="Bank Name:" value={flow.bank.name}/>
         <ConfirmRow label="Account Number:" value={flow.accountNumber}/>
@@ -126,7 +126,7 @@ function TransferDialog({ bankId, onClose }: { bankId?: string; onClose: () => v
   let body: ReactNode
   if (!flow.canInitiate) body = <><div className="flex justify-end px-4 pt-4"><CloseButton onClose={onClose}/></div><KitEmpty icon={<ShieldCheck size={18}/>} title="You can't start transfers" note="Ask the business owner to give you the transfer permission." className="pb-8"/></>
   else if (flow.submittedForApproval) body = <div className="p-8 text-center">
-    <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-accent text-secondary"><CheckCircle2 size={22}/></span>
+    <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-accent text-brand"><CheckCircle2 size={22}/></span>
     <ModalTitle className="mt-4 text-lg font-extrabold">Submitted for approval</ModalTitle>
     <p className="mt-2 text-xs leading-5 text-muted-foreground">Funds stay in the expense account until an approver releases the request.</p>
     <KitButton onClick={onClose} className="mt-6 h-12 w-full text-sm">Done</KitButton>

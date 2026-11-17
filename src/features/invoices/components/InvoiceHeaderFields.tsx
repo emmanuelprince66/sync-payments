@@ -10,7 +10,7 @@ import type { InvoiceFormModel } from '../hooks/useInvoiceForm'
 import { EntityPicker } from './EntityPicker'
 
 const labelClass = 'mb-1.5 block text-[11px] font-extrabold text-foreground'
-const boxClass = 'h-11 rounded-xl border border-border bg-[#F8FAF8] px-3 text-xs font-bold text-foreground transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/10'
+const boxClass = 'h-11 rounded-xl border border-border bg-[#FAFAFA] px-3 text-xs font-bold text-foreground transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/10'
 const invalidClass = 'border-[#C72D34]'
 
 function FieldError({ message }: { message?: string }) {
@@ -30,7 +30,7 @@ function DateField({ model, name, label, placeholder }: { model: InvoiceFormMode
   const day = field.value ? new Date(`${field.value}T00:00:00`) : undefined
   return <HeaderField label={label} error={fieldState.error?.message}>
     <DateRangeFilter singleDay align="start" placeholder={placeholder} value={day ? { from: day, to: day } : undefined} onChange={next => field.onChange(toApiDate(next?.from))}
-      className="flex w-full" triggerClassName={cn('h-11 gap-2.5 border-border bg-[#F8FAF8] text-xs font-bold', fieldState.error && invalidClass)}/>
+      className="flex w-full" triggerClassName={cn('h-11 gap-2.5 border-border bg-[#FAFAFA] text-xs font-bold', fieldState.error && invalidClass)}/>
   </HeaderField>
 }
 
@@ -87,7 +87,7 @@ export function InvoiceHeaderFields({ model }: { model: InvoiceFormModel }) {
 
     <HeaderField label="Online payments">
       <Link to={model.onlinePaymentsPath} className={cn('flex items-center justify-between gap-2 bg-white hover:border-secondary', boxClass)}>
-        <span className="truncate font-extrabold text-secondary">Set up online payments</span>
+        <span className="truncate font-extrabold text-brand">Set up online payments</span>
         <CardLogos/>
       </Link>
     </HeaderField>
@@ -101,7 +101,7 @@ export function InvoiceHeaderFields({ model }: { model: InvoiceFormModel }) {
     </HeaderField>
 
     <HeaderField label="Tax">
-      <Select aria-label="Tax" options={TAX_MODES} boxClassName="h-11 border-border bg-[#F8FAF8] px-3 text-xs font-bold text-foreground" {...register('taxMode')}/>
+      <Select aria-label="Tax" options={TAX_MODES} boxClassName="h-11 border-border bg-[#FAFAFA] px-3 text-xs font-bold text-foreground" {...register('taxMode')}/>
     </HeaderField>
   </div>
 }

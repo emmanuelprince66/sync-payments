@@ -47,7 +47,7 @@ export default function AccountsPage() {
               <div className="min-w-0 sm:text-right"><p className="text-[10px] text-muted-foreground">Available balance</p><p className="mt-1 text-3xl font-extrabold tracking-[-.03em] [overflow-wrap:anywhere]">{current.balance}</p></div>
             </div>
             <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3">
-              {flows.map(([label, value, Icon]) => <div key={label} className="min-w-0 border-l-2 border-border pl-4"><Icon size={14} className="text-secondary"/><p className="mt-3 text-[9px] text-muted-foreground">{label}</p>{page.flows.loading ? <Skeleton className="mt-1 h-4 w-24"/> : <p className="mt-1 text-sm font-extrabold [overflow-wrap:anywhere]">{value}</p>}</div>)}
+              {flows.map(([label, value, Icon]) => <div key={label} className="min-w-0 border-l-2 border-border pl-4"><Icon size={14} className="text-brand"/><p className="mt-3 text-[9px] text-muted-foreground">{label}</p>{page.flows.loading ? <Skeleton className="mt-1 h-4 w-24"/> : <p className="mt-1 text-sm font-extrabold [overflow-wrap:anywhere]">{value}</p>}</div>)}
             </div>
             <div className="mt-8 flex flex-wrap gap-2 border-t border-border pt-5">
               <KitButton onClick={page.transfer}><Send size={14}/> Make transfer</KitButton>
@@ -59,26 +59,26 @@ export default function AccountsPage() {
         </section>}
 
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-3">
-      <div className="min-w-0 rounded-xl border border-border bg-primary p-5 text-white md:col-span-2">
+      <div className="min-w-0 rounded-xl border border-border hero-gradient p-5 text-white md:col-span-2">
         <p className="text-[9px] font-extrabold uppercase tracking-wider text-white/50">Total cash across accounts</p>
         {page.loading ? <Skeleton className="mt-2 h-9 w-48 bg-white/10"/> : <p className="mt-2 text-3xl font-extrabold [overflow-wrap:anywhere]">{page.total}</p>}
         <div className="mt-5 flex gap-1">{page.split.map(part => <div key={part.id} className={cn('h-2 rounded-full', part.color)} style={{ width: `${part.width}%` }}/>)}</div>
       </div>
-      <div className="min-w-0 rounded-xl border border-border bg-white p-5"><p className="text-[10px] font-extrabold text-muted-foreground">Bank connections</p><p className="mt-2 text-2xl font-extrabold">{page.connections}</p><p className="mt-1 text-[9px] text-secondary">{page.syncedNote}</p></div>
+      <div className="min-w-0 rounded-xl border border-border bg-white p-5"><p className="text-[10px] font-extrabold text-muted-foreground">Bank connections</p><p className="mt-2 text-2xl font-extrabold">{page.connections}</p><p className="mt-1 text-[9px] text-brand">{page.syncedNote}</p></div>
     </div>
 
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
       <AccountCard account={page.card} loading={page.loading}/>
       <div className="min-w-0 rounded-[22px] border border-border bg-white p-6">
-        <div className="flex items-center justify-between gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-secondary"><Building2 size={18}/></div><span className="rounded-full bg-[#E8F5EA] px-2.5 py-1 text-[10px] font-extrabold text-[#337D44]">PAYOUT ACCOUNT</span></div>
+        <div className="flex items-center justify-between gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-brand"><Building2 size={18}/></div><span className="rounded-full bg-[#E8F7EF] px-2.5 py-1 text-[10px] font-extrabold text-[#187A42]">PAYOUT ACCOUNT</span></div>
         {page.payoutsLoading
           ? <ListSkeleton rows={1} className="mt-4"/>
           : page.payouts.length === 0
             ? <KitEmpty title="No payout account yet" note="Add the bank account withdrawals should reach." className="py-6"/>
             : <div className="mt-4 divide-y divide-border">{page.payouts.map(payout => <div key={payout.id} className="flex items-center gap-3 py-3">
               <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{payout.bankName}</p><p className="mt-1 truncate text-xs text-muted-foreground">{payout.accountName} · {maskAccount(payout.accountNumber)}</p></div>
-              <span className="shrink-0 text-xs font-extrabold text-secondary">Connected</span>
-              {page.canManage && <button type="button" aria-label={`Remove ${payout.bankName}`} disabled={page.removing} onClick={() => page.removePayout(payout.id)} className="shrink-0 rounded-md p-1.5 text-[#C72D34] hover:bg-[#FDEAEA]"><Trash2 size={14}/></button>}
+              <span className="shrink-0 text-xs font-extrabold text-brand">Connected</span>
+              {page.canManage && <button type="button" aria-label={`Remove ${payout.bankName}`} disabled={page.removing} onClick={() => page.removePayout(payout.id)} className="shrink-0 rounded-md p-1.5 text-[#C72D34] hover:bg-[#FFF0F0]"><Trash2 size={14}/></button>}
             </div>)}</div>}
         {page.canManage && <KitButton variant="secondary" onClick={page.payoutBank.open} className="mt-4 w-full"><Plus size={14}/> Add payout account</KitButton>}
       </div>
@@ -87,10 +87,10 @@ export default function AccountsPage() {
     <section className="rounded-2xl border border-border bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h2 className="text-sm font-extrabold">Account capabilities</h2>
-        <button type="button" onClick={page.kyc.goTo} className="flex items-center gap-2 text-left text-[10px] font-extrabold text-secondary hover:underline"><ShieldCheck size={14} className="shrink-0"/>{page.kyc.loading ? 'Checking verification…' : `${page.kyc.tierLabel} · ${page.kyc.note}`}</button>
+        <button type="button" onClick={page.kyc.goTo} className="flex items-center gap-2 text-left text-[10px] font-extrabold text-brand hover:underline"><ShieldCheck size={14} className="shrink-0"/>{page.kyc.loading ? 'Checking verification…' : `${page.kyc.tierLabel} · ${page.kyc.note}`}</button>
       </div>
       <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(4,minmax(0,1fr))]">
-        {capabilities.map(([Icon, title, note]) => <div key={title} className="rounded-xl bg-[#F8FAF8] p-4"><Icon size={17} className="text-secondary"/><p className="mt-3 text-xs font-extrabold">{title}</p><p className="mt-1 text-[10px] text-muted-foreground">{note}</p></div>)}
+        {capabilities.map(([Icon, title, note]) => <div key={title} className="rounded-xl bg-[#FAFAFA] p-4"><Icon size={17} className="text-brand"/><p className="mt-3 text-xs font-extrabold">{title}</p><p className="mt-1 text-[10px] text-muted-foreground">{note}</p></div>)}
       </div>
     </section>
 

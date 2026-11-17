@@ -26,15 +26,15 @@ export function TransactionModal({ trx, accountLabel, onClose, onReceipt, onReco
     {trx && <>
       <div className="flex shrink-0 items-center justify-between border-b border-border p-5">
         <div className="min-w-0">
-          <p className="text-[9px] font-extrabold uppercase tracking-[.14em] text-secondary">Payment record</p>
+          <p className="text-[9px] font-extrabold uppercase tracking-[.14em] text-brand">Payment record</p>
           <ModalTitle className="mt-1 text-sm font-extrabold">Transaction details</ModalTitle>
           <p className="mt-1 truncate font-mono text-[9px] text-muted-foreground">{trxShortId(trx.id)} · {trx.reference}</p>
         </div>
         <button type="button" aria-label="Close" onClick={onClose} className="rounded-md p-2 text-muted-foreground hover:bg-muted"><X size={17}/></button>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] overflow-y-auto md:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
-        <div className="min-w-0 border-b border-border bg-[#F8FAF8] p-6 md:border-b-0 md:border-r">
-          <div className="grid h-11 w-11 place-items-center rounded-lg bg-accent text-secondary">{out ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}</div>
+        <div className="min-w-0 border-b border-border bg-[#FAFAFA] p-6 md:border-b-0 md:border-r">
+          <div className="grid h-11 w-11 place-items-center rounded-lg bg-accent text-brand">{out ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}</div>
           <p className="mt-4 text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground">{out ? 'Money out' : 'Money received'}</p>
           <p className="mt-1 text-3xl font-extrabold [overflow-wrap:anywhere]">{out ? '−' : '+'}{money(trx.amount)}</p>
           <div className="mt-2"><StatusPill value={status}/></div>
@@ -43,7 +43,7 @@ export function TransactionModal({ trx, accountLabel, onClose, onReceipt, onReco
           </div>
         </div>
         <div className="min-w-0 p-6">
-          <div className="flex items-center gap-2"><History size={15} className="text-secondary"/><h3 className="text-xs font-extrabold">Transaction history</h3></div>
+          <div className="flex items-center gap-2"><History size={15} className="text-brand"/><h3 className="text-xs font-extrabold">Transaction history</h3></div>
           <div className="mt-5">
             {[
               [trxTime(trx.createdAt), out ? 'Transfer created' : 'Payment initiated', out ? `To ${customer}` : `Sent by ${customer}`],

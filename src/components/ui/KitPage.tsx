@@ -9,7 +9,7 @@ export function KitPage({ children, className }: { children: ReactNode; classNam
 export function KitPageHeader({ eyebrow, title, subtitle, badge, actions }: { eyebrow?: string; title: string; subtitle: string; badge?: ReactNode; actions?: ReactNode }) {
   return <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
     <div className="min-w-0">
-      {eyebrow && <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-secondary">{eyebrow}</p>}
+      {eyebrow && <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-brand">{eyebrow}</p>}
       <div className={cn('flex flex-wrap items-center gap-3', eyebrow && 'mt-1')}>
         <h1 className="text-2xl font-extrabold tracking-[-0.035em] text-foreground">{title}</h1>
         {badge}

@@ -23,7 +23,7 @@ function Intro() {
       <p className={caption}>With your expense account, you can</p>
       <ul className="mt-3 flex flex-col gap-3">
         {BENEFITS.map(({ icon: Icon, text }) => <li key={text} className="flex items-start gap-2.5">
-          <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-secondary"><Icon size={14}/></span>
+          <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-brand"><Icon size={14}/></span>
           <span className="text-xs leading-5 text-foreground/80">{text}</span>
         </li>)}
       </ul>
@@ -38,14 +38,14 @@ function Setup({ model }: { model: CreateExpenseAccountModel }) {
       {model.fundingLoading
         ? <Skeleton className="h-11 w-full rounded-xl"/>
         : model.fundingOptions.length === 0
-          ? <p className="rounded-xl bg-[#FFF6E4] px-3.5 py-3 text-[11px] leading-4 text-[#A76700]">No business bank account found. An expense account has to be funded from one, so open your main account first (Accounts › KYC).</p>
+          ? <p className="rounded-xl bg-[#FFF7DF] px-3.5 py-3 text-[11px] leading-4 text-[#8F5F00]">No business bank account found. An expense account has to be funded from one, so open your main account first (Accounts › KYC).</p>
           : <KitSelect label="Fund from" placeholder="Select bank account" options={model.fundingOptions} value={model.fundFrom} onChange={event => model.setFundFrom(event.target.value)}/>}
       <p className="mt-1.5 text-[10px] text-muted-foreground">An existing Sync360 business bank account.</p>
     </div>
     <div>
       <label htmlFor="expense-account-name" className="mb-1.5 block text-[10px] font-extrabold">Expense account name</label>
       {/* The prefix sits inside the field, so the whole name is visible while it's typed. */}
-      <div className="flex h-11 items-stretch overflow-hidden rounded-xl border border-border bg-[#F8FAF8] focus-within:border-secondary">
+      <div className="flex h-11 items-stretch overflow-hidden rounded-xl border border-border bg-[#FAFAFA] focus-within:border-secondary">
         <span className="flex shrink-0 items-center border-r border-border bg-muted px-3 text-xs font-extrabold text-foreground/75">{EXPENSE_PREFIX}</span>
         <input id="expense-account-name" value={model.name} onChange={event => model.setName(event.target.value)} placeholder="Operations, Marketing, Staff…" className="min-w-0 flex-1 bg-transparent px-3 text-xs font-bold outline-none"/>
       </div>
@@ -54,7 +54,7 @@ function Setup({ model }: { model: CreateExpenseAccountModel }) {
     <p className="rounded-xl bg-accent px-3.5 py-3 text-[11px] leading-4 text-foreground/75">
       {model.preview ? <>This account will show on transactions and transfers as <b className="text-foreground">{model.preview}</b>.</> : 'Your expense account name is used in the account name shown on transactions and transfers.'}
     </p>
-    {model.error && <p role="alert" className="rounded-lg bg-[#FDEAEA] px-3 py-2 text-[11px] font-bold text-[#C72D34]">{model.error}</p>}
+    {model.error && <p role="alert" className="rounded-lg bg-[#FFF0F0] px-3 py-2 text-[11px] font-bold text-[#C72D34]">{model.error}</p>}
     <button type="submit" hidden aria-hidden="true"/>
   </form>
 }
@@ -62,7 +62,7 @@ function Setup({ model }: { model: CreateExpenseAccountModel }) {
 function Done({ model }: { model: CreateExpenseAccountModel }) {
   return <div className="flex flex-col gap-5">
     <div className="flex items-start gap-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-secondary"><Check size={18}/></span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-brand"><Check size={18}/></span>
       <p className="text-xs leading-5 text-muted-foreground">Your expense account has been created.</p>
     </div>
     <div className="flex flex-col gap-2">

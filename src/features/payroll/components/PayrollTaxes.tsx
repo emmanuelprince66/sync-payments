@@ -21,7 +21,7 @@ export function PayrollTaxes({ data }: { data: PayrollData }) {
       <h2 className="text-sm font-extrabold">Filings & compliance</h2>
       <div className="mt-5 flex flex-col gap-3">
         {data.filings.map(filing => <div key={filing.form} className="rounded-lg border border-border p-4">
-          <div className="flex justify-between gap-3"><p className="min-w-0 text-[10px] font-extrabold">{filing.form}</p><span className="shrink-0 text-[8px] font-extrabold text-secondary">{filing.status}</span></div>
+          <div className="flex justify-between gap-3"><p className="min-w-0 text-[10px] font-extrabold">{filing.form}</p><span className="shrink-0 text-[8px] font-extrabold text-brand">{filing.status}</span></div>
           <p className="mt-2 text-[8px] text-muted-foreground">Due {filing.due}</p>
         </div>)}
       </div>

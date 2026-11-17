@@ -34,7 +34,7 @@ export function StatTileSkeleton() {
 
 export function KitEmpty({ icon, title, note, action, className }: { icon?: ReactNode; title: string; note?: string; action?: ReactNode; className?: string }) {
   return <div className={cn('flex flex-col items-center px-5 py-12 text-center', className)}>
-    {icon && <div className="mb-3 grid h-11 w-11 place-items-center rounded-2xl bg-accent text-secondary">{icon}</div>}
+    {icon && <div className="mb-3 grid h-11 w-11 place-items-center rounded-2xl bg-accent text-brand">{icon}</div>}
     <p className="text-sm font-extrabold text-foreground">{title}</p>
     {note && <p className="mt-1 max-w-sm text-[11px] leading-4 text-muted-foreground">{note}</p>}
     {action && <div className="mt-4">{action}</div>}
@@ -42,12 +42,12 @@ export function KitEmpty({ icon, title, note, action, className }: { icon?: Reac
 }
 
 /** Design styling for DataTable: head tint, hover, and rows that act as the click target of a stretched button. */
-export const kitTableClass = 'text-xs [&_thead_tr]:border-border [&_thead_tr]:bg-[#FAFBFA] [&_thead_tr]:text-muted-foreground [&_tbody_tr]:relative [&_tbody_tr]:border-border/70 [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-[#F8FBF8]'
+export const kitTableClass = 'text-xs [&_thead_tr]:border-border [&_thead_tr]:bg-[#FAFAFA] [&_thead_tr]:text-muted-foreground [&_tbody_tr]:relative [&_tbody_tr]:border-border/70 [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-[#FAFAFA]'
 
 /** Goes on a row's button: stretches its click area over the whole row. */
 export const stretchedButton = "after:absolute after:inset-0 after:content-['']"
 
-const areaClass = 'min-h-20 w-full min-w-0 rounded-xl border border-border bg-[#F8FAF8] p-3 text-xs font-semibold outline-none focus:border-secondary aria-invalid:border-[#C72D34]'
+const areaClass = 'min-h-20 w-full min-w-0 rounded-xl border border-border bg-[#FAFAFA] p-3 text-xs font-semibold outline-none focus:border-secondary aria-invalid:border-[#C72D34]'
 
 export function KitTextarea({ label, error, className, ref, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; error?: string; ref?: Ref<HTMLTextAreaElement> }) {
   return <label className={cn('block min-w-0', className)}>
@@ -63,7 +63,7 @@ export function KitMoneyField({ label, symbol, error, className, ref, ...props }
     <span className="mb-1.5 block text-[10px] font-extrabold">{label}</span>
     <span className="relative block">
       <span className="absolute left-3 top-3 text-xs font-extrabold text-muted-foreground">{symbol}</span>
-      <input ref={ref} inputMode="decimal" aria-invalid={error ? true : undefined} placeholder="0.00" className="h-11 w-full min-w-0 rounded-xl border border-border bg-[#F8FAF8] pl-7 pr-3 text-xs font-bold outline-none focus:border-secondary aria-invalid:border-[#C72D34]" {...props}/>
+      <input ref={ref} inputMode="decimal" aria-invalid={error ? true : undefined} placeholder="0.00" className="h-11 w-full min-w-0 rounded-xl border border-border bg-[#FAFAFA] pl-7 pr-3 text-xs font-bold outline-none focus:border-secondary aria-invalid:border-[#C72D34]" {...props}/>
     </span>
     {error && <span role="alert" className="mt-1 block text-[10px] font-semibold text-[#C72D34]">{error}</span>}
   </label>
@@ -72,7 +72,7 @@ export function KitMoneyField({ label, symbol, error, className, ref, ...props }
 export function KitSearch({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {
   return <label className="relative min-w-0 flex-1">
     <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-    <input type="search" aria-label={placeholder} value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} className="h-10 w-full rounded-xl border border-border bg-[#F8FAF8] pl-9 pr-3 text-xs font-semibold outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/10"/>
+    <input type="search" aria-label={placeholder} value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} className="h-10 w-full rounded-xl border border-border bg-[#FAFAFA] pl-9 pr-3 text-xs font-semibold outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/10"/>
   </label>
 }
 
@@ -104,7 +104,7 @@ export function KitModal({ open, onClose, title, description, icon, subheader, c
     <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-6 py-5">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          {icon && <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-accent text-secondary">{icon}</span>}
+          {icon && <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-accent text-brand">{icon}</span>}
           <ModalTitle className="text-base font-extrabold">{title}</ModalTitle>
         </div>
         {description && <div className="mt-2 text-[11px] text-muted-foreground">{description}</div>}

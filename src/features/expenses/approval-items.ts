@@ -6,13 +6,13 @@ import { formatActivityDate } from '@/api/http'
  * the details sheet shows, kept in one table so the badge, filters and modal can't drift apart.
  */
 export const TRANSFER_STATUS: Record<string, { label: string; className: string; hint: string }> = {
-  PENDING_APPROVAL: { label: 'Pending approval', className: 'bg-[#FFF6E4] text-[#A76700]', hint: 'Waiting for an approver to review it.' },
-  PENDING_OWNER_APPROVAL: { label: 'Awaiting owner', className: 'bg-[#FFF6E4] text-[#A76700]', hint: 'Above the staff approval cap, so only the owner can release it.' },
-  PENDING: { label: 'Pending approval', className: 'bg-[#FFF6E4] text-[#A76700]', hint: 'Waiting for an approver to review it.' },
-  APPROVED: { label: 'Approved', className: 'bg-[#E7F1FC] text-[#1C6FA8]', hint: 'Approved and queued for the bank.' },
-  PROCESSING: { label: 'Processing', className: 'bg-[#E7F1FC] text-[#1C6FA8]', hint: 'With the bank. Nothing to do but wait.' },
-  SUCCESS: { label: 'Paid', className: 'bg-accent text-secondary', hint: 'Sent, and recorded as an expense.' },
-  FAILED: { label: 'Failed', className: 'bg-[#FDEAEA] text-[#C72D34]', hint: 'The bank rejected the payout.' },
+  PENDING_APPROVAL: { label: 'Pending approval', className: 'bg-[#FFF7DF] text-[#8F5F00]', hint: 'Waiting for an approver to review it.' },
+  PENDING_OWNER_APPROVAL: { label: 'Awaiting owner', className: 'bg-[#FFF7DF] text-[#8F5F00]', hint: 'Above the staff approval cap, so only the owner can release it.' },
+  PENDING: { label: 'Pending approval', className: 'bg-[#FFF7DF] text-[#8F5F00]', hint: 'Waiting for an approver to review it.' },
+  APPROVED: { label: 'Approved', className: 'bg-[#E8F2FF] text-[#1367D8]', hint: 'Approved and queued for the bank.' },
+  PROCESSING: { label: 'Processing', className: 'bg-[#E8F2FF] text-[#1367D8]', hint: 'With the bank. Nothing to do but wait.' },
+  SUCCESS: { label: 'Paid', className: 'bg-accent text-brand', hint: 'Sent, and recorded as an expense.' },
+  FAILED: { label: 'Failed', className: 'bg-[#FFF0F0] text-[#C72D34]', hint: 'The bank rejected the payout.' },
   REJECTED: { label: 'Rejected', className: 'bg-muted text-muted-foreground', hint: 'Declined by an approver.' },
 }
 

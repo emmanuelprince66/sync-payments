@@ -46,10 +46,10 @@ export function Tier2Form({ kyc, onSubmit }: FormProps) {
   const onFile = otherIdentity(tier2Identity)
   const onFileVerified = onFile === 'nin' ? verification.hasNin : verification.hasBvn
   return <form noValidate className="w-full flex flex-col gap-6" onSubmit={event => { event.preventDefault(); onSubmit() }}>
-    <div className="flex items-center gap-3 rounded-2xl border border-secondary/25 bg-[#F4FAF5] p-4">
-      <span className="shrink-0 text-secondary"><Icon name="check" size={18} stroke={2.4}/></span>
+    <div className="flex items-center gap-3 rounded-2xl border border-secondary/25 bg-[#F6F7F8] p-4">
+      <span className="shrink-0 text-brand"><Icon name="check" size={18} stroke={2.4}/></span>
       <div className="text-xs leading-5">
-        <p className="text-[13px] font-extrabold text-secondary">{IDENTITY_SHORT[onFile]} verified</p>
+        <p className="text-[13px] font-extrabold text-brand">{IDENTITY_SHORT[onFile]} verified</p>
         <p className="text-muted-foreground">{onFileVerified
           ? `Your ${IDENTITY_SHORT[onFile]} cleared at Tier 1. Add your ${IDENTITY_SHORT[tier2Identity]} to finish Tier 2.`
           : `Submitted at Tier 1. Add your ${IDENTITY_SHORT[tier2Identity]} to finish Tier 2.`}</p>
@@ -92,7 +92,7 @@ export function Tier3Form({ kyc, onSubmit }: { kyc: Kyc; onSubmit: (mode: 'autoc
       <div className="relative">
         <label className="block" htmlFor="kyc-address">
           <span className="mb-1.5 block text-[10px] font-extrabold text-foreground">Residential address</span>
-          <span className={cn('flex min-h-11 items-start gap-2 rounded-xl border border-border bg-[#F8FAF8] px-3 py-3 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/10', errors.address && 'border-[#C72D34]')}>
+          <span className={cn('flex min-h-11 items-start gap-2 rounded-xl border border-border bg-[#FAFAFA] px-3 py-3 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/10', errors.address && 'border-[#C72D34]')}>
             <span className="mt-0.5 text-muted-foreground"><Icon name="location" size={16}/></span>
             <textarea
               id="kyc-address"
@@ -106,15 +106,15 @@ export function Tier3Form({ kyc, onSubmit }: { kyc: Kyc; onSubmit: (mode: 'autoc
               autoComplete="street-address"
               className="min-w-0 flex-1 resize-none bg-transparent text-xs font-bold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground"
             />
-            {autocomplete && address.hasCoordinates && <span className="mt-0.5 text-secondary" title="Address confirmed"><Icon name="check" size={16} stroke={2.6}/></span>}
+            {autocomplete && address.hasCoordinates && <span className="mt-0.5 text-brand" title="Address confirmed"><Icon name="check" size={16} stroke={2.6}/></span>}
           </span>
         </label>
-        {address.open && <ul role="listbox" className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-border bg-white p-1.5 shadow-[0_20px_50px_rgba(9,38,28,.16)]">
+        {address.open && <ul role="listbox" className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-border bg-white p-1.5 shadow-[0_20px_50px_rgba(30,30,30,.16)]">
           {address.searching && address.suggestions.length === 0 && <li className="px-3 py-3 text-xs text-muted-foreground">Searching…</li>}
           {!address.searching && address.suggestions.length === 0 && <li className="px-3 py-3 text-xs text-muted-foreground">No matching addresses</li>}
           {address.suggestions.map(suggestion => <li key={suggestion.id}>
             <button type="button" role="option" aria-selected={false} onMouseDown={event => event.preventDefault()} onClick={() => address.choose(suggestion)} className="flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-accent">
-              <span className="mt-0.5 text-secondary"><Icon name="location" size={15}/></span>
+              <span className="mt-0.5 text-brand"><Icon name="location" size={15}/></span>
               <span className="min-w-0"><span className="block truncate text-xs font-bold text-foreground">{suggestion.address || suggestion.label}</span><span className="block truncate text-[10px] text-muted-foreground">{[suggestion.city, suggestion.state].filter(Boolean).join(', ')}</span></span>
             </button>
           </li>)}

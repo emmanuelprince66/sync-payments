@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn'
 
 /** "At risk": the customer has an invoice with money still owed. */
 export function AtRiskChip({ className }: { className?: string }) {
-  return <span className={cn('inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[#FDEAEA] px-2.5 py-1 text-[10px] font-extrabold text-[#C72D34]', className)}><TriangleAlert size={11}/>At risk</span>
+  return <span className={cn('inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[#FFF0F0] px-2.5 py-1 text-[10px] font-extrabold text-[#C72D34]', className)}><TriangleAlert size={11}/>At risk</span>
 }
 
 /** Unpaid amount in red with the At risk chip, or a quiet dash when nothing is owed. */
@@ -14,10 +14,10 @@ export function UnpaidCell({ amount, atRisk }: { amount: string; atRisk: boolean
 }
 
 const stateTones: Record<InvoicePaymentState, string> = {
-  Paid: 'bg-[#E8F5EA] text-[#337D44]',
-  Pending: 'bg-[#FFF6E4] text-[#A76700]',
-  'Part paid': 'bg-[#E7F1FC] text-[#1C6FA8]',
-  Overdue: 'bg-[#FDEAEA] text-[#C72D34]',
+  Paid: 'bg-[#E8F7EF] text-[#187A42]',
+  Pending: 'bg-[#FFF7DF] text-[#8F5F00]',
+  'Part paid': 'bg-[#E8F2FF] text-[#1367D8]',
+  Overdue: 'bg-[#FFF0F0] text-[#C72D34]',
   Draft: 'bg-muted text-muted-foreground',
   Approved: 'bg-[#EEF3FB] text-[#3D5A99]',
   Void: 'bg-muted text-muted-foreground line-through',

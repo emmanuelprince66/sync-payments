@@ -22,7 +22,7 @@ export default function PayrollPage() {
       actions={<KitButton onClick={page.openPayRun}><Plus size={14}/> Run payroll</KitButton>}
     />
     <div className="flex gap-1 overflow-x-auto border-b border-border">
-      {PAYROLL_TABS.map(item => <button key={item} type="button" onClick={() => page.setTab(item)} className={cn('shrink-0 border-b-2 px-4 py-3 text-[10px] font-extrabold', page.tab === item ? 'border-secondary text-secondary' : 'border-transparent text-muted-foreground hover:text-foreground')}>{item}</button>)}
+      {PAYROLL_TABS.map(item => <button key={item} type="button" onClick={() => page.setTab(item)} className={cn('shrink-0 border-b-2 px-4 py-3 text-[10px] font-extrabold', page.tab === item ? 'border-secondary text-brand' : 'border-transparent text-muted-foreground hover:text-foreground')}>{item}</button>)}
     </div>
     {!page.data
       ? <div className="flex flex-col gap-5"><StatCardsSkeleton count={4} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"/><CardSkeleton lines={4}/></div>

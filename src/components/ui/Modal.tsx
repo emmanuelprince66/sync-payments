@@ -23,7 +23,7 @@ type ModalProps = {
  * Accessible dialog (Radix: focus trap, Escape, scroll lock, portal) with the
  * design's overlay. Closes on backdrop click. Use <Drawer> for the right-hand panel.
  */
-export function Modal({ open, onClose, children, panelClassName, overlayClassName = 'bg-[#09261C]/40 p-4 backdrop-blur-[2px]', placement = 'center', title }: ModalProps) {
+export function Modal({ open, onClose, children, panelClassName, overlayClassName = 'bg-[#242424]/40 p-4 backdrop-blur-[2px]', placement = 'center', title }: ModalProps) {
   return <Dialog.Root open={open} onOpenChange={next => { if (!next) onClose() }}>
     <Dialog.Portal>
       <Dialog.Overlay className={cn('fixed inset-0 z-50 flex', placement === 'center' ? 'items-center justify-center' : placement === 'left' ? 'justify-start' : 'justify-end', overlayClassName)}>
@@ -37,7 +37,7 @@ export function Modal({ open, onClose, children, panelClassName, overlayClassNam
 }
 
 /** Right-hand drawer (order details). */
-export function Drawer({ panelClassName = 'h-full w-full max-w-[480px] overflow-y-auto bg-white shadow-[-20px_0_60px_rgba(9,38,28,.16)]', overlayClassName = 'bg-[#09261C]/35 backdrop-blur-[2px]', ...props }: Omit<ModalProps, 'placement' | 'panelClassName'> & { panelClassName?: string }) {
+export function Drawer({ panelClassName = 'h-full w-full max-w-[480px] overflow-y-auto bg-white shadow-[-20px_0_60px_rgba(30,30,30,.16)]', overlayClassName = 'bg-[#242424]/35 backdrop-blur-[2px]', ...props }: Omit<ModalProps, 'placement' | 'panelClassName'> & { panelClassName?: string }) {
   return <Modal {...props} placement="right" panelClassName={panelClassName} overlayClassName={overlayClassName}/>
 }
 
@@ -53,10 +53,10 @@ export function ModalHeader({ title, description, onClose, closeButton = 'border
 }) {
   return <div className={cn('flex justify-between', align === 'center' ? 'items-center' : 'items-start', className)}>
     <div>
-      <Dialog.Title className="text-lg font-black text-[#17382C]">{title}</Dialog.Title>
-      {description && <div className="mt-1 text-xs text-[#819088]">{description}</div>}
+      <Dialog.Title className="text-lg font-black text-[#1E1E1E]">{title}</Dialog.Title>
+      {description && <div className="mt-1 text-xs text-[#6D7176]">{description}</div>}
     </div>
-    {closeButton !== 'none' && onClose && <button type="button" aria-label="Close" onClick={onClose} className={closeButton === 'bordered' ? 'flex h-9 w-9 items-center justify-center rounded-xl border border-[#E0E8E3]' : undefined}><Icon name="close" size={closeButton === 'bordered' ? 17 : 18}/></button>}
+    {closeButton !== 'none' && onClose && <button type="button" aria-label="Close" onClick={onClose} className={closeButton === 'bordered' ? 'flex h-9 w-9 items-center justify-center rounded-xl border border-[#E7E8EA]' : undefined}><Icon name="close" size={closeButton === 'bordered' ? 17 : 18}/></button>}
   </div>
 }
 

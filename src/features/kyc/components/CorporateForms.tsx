@@ -63,9 +63,9 @@ export function DirectorCard({ director, index, canRemove, errors, onNameChange,
   return <div className={cn('rounded-2xl border bg-white p-4 sm:p-5', hasErrors ? 'border-[#C72D34]/40' : 'border-border')}>
     <header className="mb-4 flex items-center justify-between gap-3 border-b border-border pb-3">
       <div className="flex min-w-0 items-center gap-2.5">
-        <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', complete ? 'bg-secondary text-white' : 'bg-muted text-muted-foreground')}><Icon name={complete ? 'check' : 'user'} size={15}/></span>
+        <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', complete ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground')}><Icon name={complete ? 'check' : 'user'} size={15}/></span>
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-2 text-xs font-extrabold text-foreground">Director {index + 1}{index === 0 && <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-extrabold uppercase text-secondary">Primary</span>}</p>
+          <p className="flex flex-wrap items-center gap-2 text-xs font-extrabold text-foreground">Director {index + 1}{index === 0 && <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-extrabold uppercase text-brand">Primary</span>}</p>
           <p className="text-[10px] text-muted-foreground">{uploaded} of {DIRECTOR_DOCUMENTS.length} documents uploaded</p>
         </div>
       </div>
@@ -109,7 +109,7 @@ export function CorporateTier2Form({ kyc, onSubmit }: FormProps) {
           onRemove={() => removeDirector(director.id)}
         />)}
       </div>
-      <button type="button" onClick={addDirector} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-secondary text-xs font-extrabold text-secondary transition-colors hover:bg-[#F4FAF5]"><Icon name="plus" size={16}/>Add director</button>
+      <button type="button" onClick={addDirector} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-secondary text-xs font-extrabold text-brand transition-colors hover:bg-[#F6F7F8]"><Icon name="plus" size={16}/>Add director</button>
     </div>
 
     <Notice>Document review usually takes 1–3 business days. You keep your Tier 1 limit while the review is running, and we will email every director listed here if anything needs re-uploading.</Notice>

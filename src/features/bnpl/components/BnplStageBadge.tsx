@@ -2,10 +2,10 @@ import { cn } from '@/lib/cn'
 
 /** Settled reads as done; a retry is the only stage that has actually gone wrong, so it stands out. */
 const STAGE_TONES: Record<string, string> = {
-  SETTLED: 'bg-[#E8F5EA] text-[#337D44]',
-  PROCESSING_PAYOUT: 'bg-[#E7F1FC] text-[#1C6FA8]',
-  FAILED_RETRYING: 'bg-[#FDEAEA] text-[#C72D34]',
-  AWAITING_SETTLEMENT: 'bg-[#FFF6E4] text-[#A76700]',
+  SETTLED: 'bg-[#E8F7EF] text-[#187A42]',
+  PROCESSING_PAYOUT: 'bg-[#E8F2FF] text-[#1367D8]',
+  FAILED_RETRYING: 'bg-[#FFF0F0] text-[#C72D34]',
+  AWAITING_SETTLEMENT: 'bg-[#FFF7DF] text-[#8F5F00]',
 }
 
 /** Payout stage of one Akawopay settlement; the full description rides on the tooltip. */

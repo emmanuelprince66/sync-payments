@@ -8,14 +8,14 @@ import { StatusPill } from '@/components/ui/PaymentKit'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { cn } from '@/lib/cn'
 
-const head = 'bg-[#FAFBFA] py-3'
+const head = 'bg-[#FAFAFA] py-3'
 const column = createColumnHelper<ReconciliationException>()
 
 type Props = { dateRange: DateRange | undefined; onDateRange: (value: DateRange | undefined) => void; rows: ReconciliationException[]; isLoading: boolean; resolvingId: string | null | undefined; onResolve: (id: string) => void }
 
 function ResolveAction({ row, resolvingId, onResolve }: { row: ReconciliationException } & Pick<Props, 'resolvingId' | 'onResolve'>) {
-  if (row.resolved) return <span className="inline-flex items-center gap-1 font-extrabold text-secondary"><Check size={14}/> Resolved</span>
-  return <button type="button" disabled={resolvingId === row.id} onClick={() => onResolve(row.id)} className="rounded-lg border border-secondary px-3 py-1.5 font-extrabold text-secondary hover:bg-accent disabled:opacity-50">Resolve</button>
+  if (row.resolved) return <span className="inline-flex items-center gap-1 font-extrabold text-brand"><Check size={14}/> Resolved</span>
+  return <button type="button" disabled={resolvingId === row.id} onClick={() => onResolve(row.id)} className="rounded-lg border border-secondary px-3 py-1.5 font-extrabold text-brand hover:bg-accent disabled:opacity-50">Resolve</button>
 }
 
 type Money = (amount: number) => string
@@ -23,9 +23,9 @@ type Money = (amount: number) => string
 const receivedText = (row: ReconciliationException, money: Money) => (row.received === null ? 'Pending' : money(row.received))
 
 const varianceOf = (row: ReconciliationException, money: Money) => {
-  if (row.received === null) return { text: '—', className: 'text-secondary' }
+  if (row.received === null) return { text: '—', className: 'text-brand' }
   const variance = row.received - row.expected
-  return variance < 0 ? { text: `−${money(Math.abs(variance))}`, className: 'text-[#C72D34]' } : { text: money(variance), className: 'text-secondary' }
+  return variance < 0 ? { text: `−${money(Math.abs(variance))}`, className: 'text-[#C72D34]' } : { text: money(variance), className: 'text-brand' }
 }
 
 function Variance({ row, money, className }: { row: ReconciliationException; money: Money; className?: string }) {

@@ -42,7 +42,7 @@ export default function CreateInvoicePage() {
 
     <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">
       <InvoiceDesignPicker value={model.design.value} onChange={model.design.choose} accent={model.values.accent}/>
-      <button type="button" onClick={model.preview.show} className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-secondary hover:underline"><Eye size={13}/> Preview and edit branding</button>
+      <button type="button" onClick={model.preview.show} className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-brand hover:underline"><Eye size={13}/> Preview and edit branding</button>
     </section>
 
     <InvoiceLineTable model={model}/>

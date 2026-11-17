@@ -9,7 +9,7 @@ import { shortDate } from '../dates'
 import { InvoiceStatusPill, ViewedTag } from './InvoiceStatusPill'
 
 function ViewButton({ invoice, onClick }: { invoice: Invoice; onClick: () => void }) {
-  return <button type="button" onClick={onClick} aria-label={`View more about ${invoice.number}`} className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-extrabold text-secondary hover:bg-accent">View more <ChevronRight size={12}/></button>
+  return <button type="button" onClick={onClick} aria-label={`View more about ${invoice.number}`} className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-extrabold text-brand hover:bg-accent">View more <ChevronRight size={12}/></button>
 }
 
 /** Payment state, plus "Viewed" while the customer has opened it but not yet paid. */
@@ -18,7 +18,7 @@ function StatusCell({ invoice }: { invoice: Invoice }) {
   return <span className="inline-flex flex-wrap items-center gap-1.5"><InvoiceStatusPill state={state}/>{invoice.viewed && state !== 'Paid' && <ViewedTag/>}</span>
 }
 
-const head = 'bg-[#FAFBFA] py-3'
+const head = 'bg-[#FAFAFA] py-3'
 const column = createColumnHelper<Invoice>()
 
 type Props = {
@@ -50,7 +50,7 @@ export function InvoicesTable({ rows, isLoading, search, onSearch, currentPage, 
     <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
       <label className="relative flex-1">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-        <input aria-label="Search invoices or clients" placeholder="Search invoices or clients" value={search} onChange={event => onSearch(event.target.value)} className="h-10 w-full rounded-xl border border-border bg-[#F8FAF8] pl-9 pr-3 text-xs font-semibold outline-none focus:border-secondary"/>
+        <input aria-label="Search invoices or clients" placeholder="Search invoices or clients" value={search} onChange={event => onSearch(event.target.value)} className="h-10 w-full rounded-xl border border-border bg-[#FAFAFA] pl-9 pr-3 text-xs font-semibold outline-none focus:border-secondary"/>
       </label>
       <div className="flex gap-2">{actions}</div>
     </div>

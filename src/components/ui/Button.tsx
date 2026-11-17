@@ -5,10 +5,10 @@ import { Icon, type IconName } from './Icon'
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline'
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-[#09261C] text-white hover:bg-[#123D2E] shadow-[0_5px_14px_rgba(9,38,28,.16)]',
-  secondary: 'bg-[#529661] text-white hover:bg-[#438352]',
-  ghost: 'text-[#50635B] hover:text-[#09261C] hover:bg-[#EEF5F0]',
-  outline: 'border border-[#DCE7E0] bg-white text-[#09261C] hover:border-[#529661]',
+  primary: 'bg-primary text-white hover:bg-[#222222] shadow-[0_5px_14px_rgba(30,30,30,.14)]',
+  secondary: 'bg-secondary text-secondary-foreground hover:bg-[#E86F00]',
+  ghost: 'text-[#555555] hover:text-[#1E1E1E] hover:bg-[#F0F1F2]',
+  outline: 'border border-[#D7D8DA] bg-white text-primary hover:border-primary',
 }
 
 type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {

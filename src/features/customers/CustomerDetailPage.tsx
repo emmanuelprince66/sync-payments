@@ -59,7 +59,7 @@ export default function CustomerDetailPage() {
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
           <section className="rounded-xl border border-border bg-white p-5">
             <h2 className="text-sm font-extrabold">Customer details</h2>
-            {page.insight && <p className="mt-3 flex gap-2 rounded-xl bg-accent p-3 text-[11px] leading-4 text-foreground/80"><Sparkles size={14} className="mt-0.5 shrink-0 text-secondary"/>{page.insight}</p>}
+            {page.insight && <p className="mt-3 flex gap-2 rounded-xl bg-accent p-3 text-[11px] leading-4 text-foreground/80"><Sparkles size={14} className="mt-0.5 shrink-0 text-brand"/>{page.insight}</p>}
             <dl className="mt-3 divide-y divide-border">
               {page.details.map(([label, value]) => <div key={label} className="py-3"><dt className="text-[10px] text-muted-foreground">{label}</dt><dd className="mt-1 text-xs font-extrabold [overflow-wrap:anywhere]">{value}</dd></div>)}
             </dl>

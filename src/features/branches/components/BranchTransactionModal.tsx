@@ -17,11 +17,11 @@ export function BranchTransactionModal({ row, branchName, onClose }: { row: Wall
   ]
   return <Modal open onClose={onClose} overlayClassName="bg-primary/40 p-4 backdrop-blur-sm" panelClassName="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl bg-white shadow-2xl">
     <div className="flex items-center justify-between border-b border-border p-5">
-      <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[.14em] text-secondary">Payment record</p><ModalTitle className="mt-1 text-sm font-extrabold">Transaction details</ModalTitle><p className="mt-1 truncate font-mono text-[9px] text-muted-foreground">{row.reference}</p></div>
+      <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[.14em] text-brand">Payment record</p><ModalTitle className="mt-1 text-sm font-extrabold">Transaction details</ModalTitle><p className="mt-1 truncate font-mono text-[9px] text-muted-foreground">{row.reference}</p></div>
       <button type="button" aria-label="Close" onClick={onClose} className="rounded-md p-2 text-muted-foreground hover:bg-muted"><X size={17}/></button>
     </div>
-    <div className="bg-[#F8FAF8] p-6">
-      <div className="grid h-11 w-11 place-items-center rounded-lg bg-accent text-secondary">{isDebit ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}</div>
+    <div className="bg-[#FAFAFA] p-6">
+      <div className="grid h-11 w-11 place-items-center rounded-lg bg-accent text-brand">{isDebit ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}</div>
       <p className="mt-4 text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground">{isDebit ? 'Money out' : 'Money received'}</p>
       <p className="mt-1 break-words text-3xl font-extrabold">{isDebit ? '−' : '+'}{money(row.amount)}</p>
       <div className="mt-2"><StatusPill value={row.status}/></div>

@@ -24,7 +24,7 @@ export function SubAccountModal({ open, onClose }: { open: boolean; onClose: () 
         {form.fundingOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
       </KitSelect>
       <KitField label="Account or branch name" placeholder="e.g. Lekki branch" error={form.errors.branch?.message} {...form.register('branch')}/>
-      <label className="flex items-center gap-3 rounded-xl bg-[#F8FAF8] p-4 text-xs font-bold"><input type="checkbox" className="h-4 w-4 accent-[#529661]" {...form.register('isExpenses')}/> Use this as an expense account</label>
+      <label className="flex items-center gap-3 rounded-xl bg-[#FAFAFA] p-4 text-xs font-bold"><input type="checkbox" className="h-4 w-4 accent-[#FF7F00]" {...form.register('isExpenses')}/> Use this as an expense account</label>
     </div>
   </KitModal>
 }
@@ -47,8 +47,8 @@ export function PayoutBankModal({ open, onClose }: { open: boolean; onClose: () 
       </KitSelect>
       <KitField label="Account number" inputMode="numeric" maxLength={10} placeholder="10-digit account number" error={form.errors.accountNumber?.message} {...form.register('accountNumber')}/>
       {form.verifying && <Skeleton className="h-11 w-full rounded-xl"/>}
-      {!form.verifying && form.accountName && <div className="flex items-center gap-2 rounded-xl border border-secondary/25 bg-accent px-3 py-3 text-xs font-bold text-secondary"><CheckCircle2 size={14} className="shrink-0"/><span className="truncate">{form.accountName}</span></div>}
-      {form.verifyFailed && <p role="alert" className="rounded-lg bg-[#FDEAEA] px-3 py-2 text-[10px] font-bold text-[#C72D34]">We couldn't verify this account. Check the bank and number.</p>}
+      {!form.verifying && form.accountName && <div className="flex items-center gap-2 rounded-xl border border-secondary/25 bg-accent px-3 py-3 text-xs font-bold text-brand"><CheckCircle2 size={14} className="shrink-0"/><span className="truncate">{form.accountName}</span></div>}
+      {form.verifyFailed && <p role="alert" className="rounded-lg bg-[#FFF0F0] px-3 py-2 text-[10px] font-bold text-[#C72D34]">We couldn't verify this account. Check the bank and number.</p>}
     </div>
   </KitModal>
 }
@@ -65,7 +65,7 @@ export function FundModal({ page }: { page: AccountsModel }) {
     panelClassName="max-w-md"
     footer={<><KitButton variant="secondary" onClick={page.copyNumber} disabled={!account?.accountNumber}>{page.copied ? <Check size={14}/> : <Copy size={14}/>}{page.copied ? 'Copied' : 'Copy number'}</KitButton><KitButton onClick={page.fund.close}>Done</KitButton></>}
   >
-    <div className="rounded-2xl bg-primary p-5 text-white">
+    <div className="rounded-2xl hero-gradient p-5 text-white">
       <p className="truncate text-sm font-extrabold">{account?.name}</p>
       <p className="mt-4 text-2xl font-extrabold tracking-[.06em] [overflow-wrap:anywhere]">{account?.accountNumber ? groupAccount(account.accountNumber) : 'Nil'}</p>
       <p className="mt-1 text-xs text-white/70">{account?.bank}</p>

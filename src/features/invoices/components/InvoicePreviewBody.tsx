@@ -8,7 +8,7 @@ import { isDark, tint, wash, type InvoiceDocumentModel } from '../document'
  * places a long invoice may break onto a new page.
  */
 
-export const INK = '#1D261C'
+export const INK = '#1E1E1E'
 export const MUTED = '#6B7A71'
 export const RULE = '#E3E8E4'
 /** Off-white behind the Pay into panel. */

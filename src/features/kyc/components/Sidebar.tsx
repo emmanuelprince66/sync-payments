@@ -5,7 +5,7 @@ import type { Verification } from '../hooks/useKyc'
 import type { KycTier } from '../tiers'
 
 function Flag({ label, on }: { label: string; on: boolean }) {
-  return <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-extrabold', on ? 'bg-accent text-secondary' : 'bg-muted text-muted-foreground')}>
+  return <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-extrabold', on ? 'bg-accent text-brand' : 'bg-muted text-muted-foreground')}>
     <Icon name={on ? 'check' : 'close'} size={11} stroke={3}/>{label}
   </span>
 }
@@ -26,7 +26,7 @@ export function AccountStatusCard({ verification }: { verification: Verification
   return <div className="rounded-2xl border border-border bg-white p-4">
     <div className="flex items-start justify-between gap-2">
       <p className="text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-foreground">{verification.accountType === 'corporate' ? 'Corporate account' : 'Settlement account'}</p>
-      {verification.tierLabel && <span className="rounded-full bg-secondary px-2 py-0.5 text-[9px] font-extrabold uppercase text-white">{verification.tierLabel}</span>}
+      {verification.tierLabel && <span className="rounded-full bg-secondary px-2 py-0.5 text-[9px] font-extrabold uppercase text-secondary-foreground">{verification.tierLabel}</span>}
     </div>
     <p className="mt-2 truncate text-sm font-extrabold text-foreground">{wallet.account_name}</p>
     <p className="text-[11px] text-muted-foreground">{wallet.account_number}{wallet.bank_name ? ` · ${wallet.bank_name}` : ''}</p>
@@ -41,7 +41,7 @@ export function AccountStatusCard({ verification }: { verification: Verification
 
 /** The verification ladder shared by both flows: beside the form on desktop, above it on mobile. */
 export function TierRail({ tiers, currentTier, completedTiers, canAccessTier, onSelect }: { tiers: KycTier[]; currentTier: number; completedTiers: number[]; canAccessTier: (tier: number) => boolean; onSelect: (tier: number) => void }) {
-  return <div className="rounded-2xl border border-border bg-[#F4FAF5] p-4">
+  return <div className="rounded-2xl border border-border bg-[#F6F7F8] p-4">
     <h2 className="mb-3 text-[11px] font-extrabold uppercase tracking-[.1em] text-foreground">Verification progress</h2>
     <ol className="flex flex-col gap-2">
       {tiers.map((tier, index) => {
@@ -58,13 +58,13 @@ export function TierRail({ tiers, currentTier, completedTiers, canAccessTier, on
             className={cn('relative flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors',
               active ? 'border-secondary bg-white shadow-sm' : done ? 'border-secondary/25 bg-accent hover:bg-accent' : unlocked ? 'border-border bg-white/70 hover:border-secondary/30' : 'cursor-not-allowed border-border bg-muted/60')}
           >
-            <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold', done ? 'bg-secondary text-white' : active ? 'bg-accent text-secondary ring-2 ring-secondary' : 'bg-muted text-muted-foreground')}>
+            <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold', done ? 'bg-secondary text-secondary-foreground' : active ? 'bg-accent text-brand ring-2 ring-secondary' : 'bg-muted text-muted-foreground')}>
               {done ? <Icon name="check" size={13} stroke={3}/> : tier.tier}
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className={cn('text-xs font-extrabold', unlocked ? 'text-foreground' : 'text-muted-foreground')}>Tier {tier.tier}</span>
-                {done && <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-extrabold uppercase text-secondary">Verified</span>}
+                {done && <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-extrabold uppercase text-brand">Verified</span>}
                 {!unlocked && <span className="text-[9px] font-extrabold uppercase text-muted-foreground">Locked</span>}
               </span>
               <span className={cn('mt-0.5 block text-[11px] font-bold', unlocked ? 'text-foreground' : 'text-muted-foreground')}>{tier.title}</span>

@@ -9,17 +9,17 @@ import { useCompliancePage } from './hooks/useCompliancePage'
 const ICONS: Record<ComplianceItem['id'], LucideIcon> = { business: Building2, identity: Users, documents: ShieldCheck, address: MapPin, settlement: Landmark }
 
 const STATES: Record<ComplianceState, { label: string; className: string; icon: LucideIcon }> = {
-  done: { label: 'Complete', className: 'bg-accent text-secondary', icon: Check },
-  action: { label: 'To do', className: 'bg-[#FFF6E4] text-[#A76700]', icon: ArrowRight },
-  review: { label: 'In review', className: 'bg-[#E7F1FC] text-[#1C6FA8]', icon: Clock3 },
-  rejected: { label: 'Sent back', className: 'bg-[#FDEAEA] text-[#C72D34]', icon: TriangleAlert },
+  done: { label: 'Complete', className: 'bg-accent text-brand', icon: Check },
+  action: { label: 'To do', className: 'bg-[#FFF7DF] text-[#8F5F00]', icon: ArrowRight },
+  review: { label: 'In review', className: 'bg-[#E8F2FF] text-[#1367D8]', icon: Clock3 },
+  rejected: { label: 'Sent back', className: 'bg-[#FFF0F0] text-[#C72D34]', icon: TriangleAlert },
 }
 
 function ItemRow({ item, onOpen }: { item: ComplianceItem; onOpen: () => void }) {
   const Icon = ICONS[item.id]
   const state = STATES[item.state]
   const body = <>
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-secondary"><Icon size={18}/></span>
+    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-brand"><Icon size={18}/></span>
     <span className="min-w-0 flex-1">
       <span className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-extrabold text-foreground">{item.title}</span>
@@ -30,7 +30,7 @@ function ItemRow({ item, onOpen }: { item: ComplianceItem; onOpen: () => void })
     </span>
   </>
   if (!item.viaKyc) return <div className="flex items-start gap-3 p-4 sm:p-5">{body}</div>
-  return <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-[#F8FBF8] sm:p-5">
+  return <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-[#FAFAFA] sm:p-5">
     {body}
     <ArrowRight size={15} className="mt-1 shrink-0 text-muted-foreground"/>
   </button>
@@ -44,7 +44,7 @@ export default function CompliancePage() {
       title="Compliance"
       subtitle="Where your business stands. Finish verification to activate higher transaction limits, instant payouts and additional terminals."
     />
-    {page.isError && <p role="alert" className="rounded-xl border border-[#EC1B24]/20 bg-[#FDEAEA] p-4 text-xs font-bold text-[#C72D34]">We could not load your verification status. Try again shortly.</p>}
+    {page.isError && <p role="alert" className="rounded-xl border border-[#E52929]/20 bg-[#FFF0F0] p-4 text-xs font-bold text-[#C72D34]">We could not load your verification status. Try again shortly.</p>}
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,.75fr)_minmax(0,1.25fr)]">
       {page.isLoading
         ? <><CardSkeleton lines={6}/><CardSkeleton lines={6}/></>

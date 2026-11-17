@@ -19,11 +19,11 @@ export function PendingApprovalsBanner({ onOpen }: { onOpen: () => void }) {
     : 'Yours are in here too. An approver decides them.'
 
   return <button type="button" onClick={onOpen} className="flex w-full items-center gap-3 rounded-2xl border border-secondary/40 bg-accent p-4 text-left transition hover:bg-accent/70">
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary text-white"><ClipboardCheck size={18}/></span>
+    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary text-secondary-foreground"><ClipboardCheck size={18}/></span>
     <span className="min-w-0 flex-1">
       <span className="block text-xs font-extrabold">{pending.total} payout{pending.total === 1 ? '' : 's'} waiting on a decision</span>
       <span className="mt-0.5 block text-[10px] text-muted-foreground">{note}</span>
     </span>
-    <ChevronRight size={18} className="shrink-0 text-secondary"/>
+    <ChevronRight size={18} className="shrink-0 text-brand"/>
   </button>
 }

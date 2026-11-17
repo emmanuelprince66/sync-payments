@@ -36,7 +36,7 @@ function CustomerForm({ customer, onClose }: { customer: Customer | null; onClos
       </div>
 
       {form.phoneMatches.length > 0 && <div className="rounded-xl border border-[#BFD7EE] bg-[#F1F7FD] p-3">
-        <p className="flex items-center gap-2 text-[11px] font-extrabold text-[#1C6FA8]"><UserCheck size={14} className="shrink-0"/>{form.phoneMatches.length === 1 ? 'This number is already on file' : `${form.phoneMatches.length} customers have this number`}</p>
+        <p className="flex items-center gap-2 text-[11px] font-extrabold text-[#1367D8]"><UserCheck size={14} className="shrink-0"/>{form.phoneMatches.length === 1 ? 'This number is already on file' : `${form.phoneMatches.length} customers have this number`}</p>
         <div className="mt-2 flex flex-col gap-2">
           {form.phoneMatches.map(match => <div key={match.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2">
             <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{match.name}</p><p className="truncate text-[10px] text-muted-foreground">{match.phone}{match.email ? ` · ${match.email}` : ''}</p></div>
@@ -59,7 +59,7 @@ function CustomerForm({ customer, onClose }: { customer: Customer | null; onClos
       </div>
       {form.isEditing && <KitField label="Address phone" type="tel" placeholder="Delivery contact number" error={errors.addressPhone?.message} {...register('addressPhone')}/>}
 
-      {!form.isEditing && <div className="flex items-start gap-2.5 rounded-xl border border-[#BFD7EE] bg-[#F1F7FD] p-3 text-[11px] font-semibold leading-4 text-[#1C6FA8]">
+      {!form.isEditing && <div className="flex items-start gap-2.5 rounded-xl border border-[#BFD7EE] bg-[#F1F7FD] p-3 text-[11px] font-semibold leading-4 text-[#1367D8]">
         <CircleAlert size={15} className="mt-0.5 shrink-0"/>Ask your customers for permission before you subscribe them to marketing emails or SMS.
       </div>}
     </div>

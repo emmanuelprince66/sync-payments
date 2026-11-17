@@ -23,7 +23,7 @@ const stamp = (days: number, hour = 10) => `${dayOffset(days)}T${String(hour).pa
 const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 const publicUrlFor = (number: string) => `https://pay.sync360.africa/i/${number.toLowerCase()}`
 
-const SEED_BRANDING: InvoiceBranding = { accent: '#529661', legalName: 'Kemi Store Ltd', address: '14 Admiralty Way, Lekki Phase 1, Lagos', logoUrl: '' }
+const SEED_BRANDING: InvoiceBranding = { accent: '#FF7F00', legalName: 'Kemi Store Ltd', address: '14 Admiralty Way, Lekki Phase 1, Lagos', logoUrl: '' }
 const SEED_CREATOR = 'Kemi Adeyemi'
 
 const lineFigures = (row: Omit<InvoiceLineRecord, 'amount' | 'tax'>, taxMode: Invoice['taxMode']): InvoiceLineRecord => {

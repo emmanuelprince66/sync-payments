@@ -11,7 +11,7 @@ export function PasswordField(props: PasswordFieldProps) {
   return <Field
     {...props}
     type={visible ? 'text' : 'password'}
-    endAdornment={<button type="button" onClick={toggle} aria-label={visible ? 'Hide password' : 'Show password'} aria-pressed={visible} className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#7C8D85] transition hover:bg-[#EEF5F0] hover:text-[#09261C]">
+    endAdornment={<button type="button" onClick={toggle} aria-label={visible ? 'Hide password' : 'Show password'} aria-pressed={visible} className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#6D7176] transition hover:bg-[#F0F1F2] hover:text-[#1E1E1E]">
       <Icon name={visible ? 'eyeOff' : 'eye'} size={18}/>
     </button>}
   />

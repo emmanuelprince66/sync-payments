@@ -2,8 +2,8 @@ import type { InvoiceDesign } from '@/api/invoices'
 
 /** The three printable designs, with the brand colour each starts with. */
 export const INVOICE_TEMPLATES: readonly { name: InvoiceDesign; note: string; accent: string }[] = [
-  { name: 'Classic', note: 'Clean letterhead with a tinted bill-to panel', accent: '#529661' },
-  { name: 'Ledger', note: 'Bold header band and ruled accounting table', accent: '#1D261C' },
+  { name: 'Classic', note: 'Clean letterhead with a tinted bill-to panel', accent: '#FF7F00' },
+  { name: 'Ledger', note: 'Bold header band and ruled accounting table', accent: '#242424' },
   { name: 'Studio', note: 'Big number, side stripe, editorial layout', accent: '#B97445' },
 ]
 

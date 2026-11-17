@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn'
 import { isPending, transferStatus } from '../approval-items'
 import type { ApprovalDecision } from '../hooks/useApprovalDecision'
 
-const rejectClass = 'rounded-xl border border-[#EC1B24]/30 px-4 py-3 text-xs font-extrabold text-[#C72D34] hover:bg-[#FDEAEA] disabled:opacity-50'
+const rejectClass = 'rounded-xl border border-[#E52929]/30 px-4 py-3 text-xs font-extrabold text-[#C72D34] hover:bg-[#FFF0F0] disabled:opacity-50'
 
 /**
  * One request and the decision on it (sink: TransferDetailsModal, TransactionPinDialog, RejectTransferDialog).
@@ -25,7 +25,7 @@ export function ApprovalDecisionModal({ decision }: { decision: ApprovalDecision
       <div className="flex justify-between gap-3">
         <div className="min-w-0">
           {decision.mode !== 'review'
-            ? <button type="button" onClick={decision.back} className="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-secondary"><ArrowLeft size={13}/> Back to request</button>
+            ? <button type="button" onClick={decision.back} className="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-brand"><ArrowLeft size={13}/> Back to request</button>
             : <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">{isPayout ? 'Transfer request' : 'Logged expense'}</p>}
           <ModalTitle className="mt-2 text-lg font-extrabold [overflow-wrap:anywhere]">{decision.mode === 'approve' ? (isPayout ? 'Approve and send' : 'Approve expense') : decision.mode === 'reject' ? `Reject this ${isPayout ? 'transfer' : 'expense'}` : item.title}</ModalTitle>
           <p className="mt-1 text-xs text-muted-foreground [overflow-wrap:anywhere]">{item.reference} · {item.requester}</p>
@@ -33,7 +33,7 @@ export function ApprovalDecisionModal({ decision }: { decision: ApprovalDecision
         <button type="button" aria-label="Close" onClick={decision.close} className="h-9 shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-muted"><X size={17}/></button>
       </div>
 
-      <div className="my-5 rounded-2xl bg-[#F8FAF8] p-5 text-center">
+      <div className="my-5 rounded-2xl bg-[#FAFAFA] p-5 text-center">
         <p className="text-[10px] text-muted-foreground">Amount requested</p>
         <p className="mt-2 text-3xl font-extrabold [overflow-wrap:anywhere]">{money(item.amount)}</p>
       </div>
@@ -51,7 +51,7 @@ export function ApprovalDecisionModal({ decision }: { decision: ApprovalDecision
         <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
           {item.details.map(([label, value]) => <div key={label} className="flex justify-between gap-3 text-xs"><span className="shrink-0 text-muted-foreground">{label}</span><span className="text-right font-extrabold [overflow-wrap:anywhere]">{value}</span></div>)}
         </div>
-        {item.decision && <div className={cn('mt-4 rounded-xl p-4 text-xs', item.decision.outcome === 'rejected' ? 'bg-[#FDEAEA] text-[#7A1F24]' : 'bg-accent text-primary')}>
+        {item.decision && <div className={cn('mt-4 rounded-xl p-4 text-xs', item.decision.outcome === 'rejected' ? 'bg-[#FFF0F0] text-[#7A1F24]' : 'bg-accent text-primary')}>
           <p className="font-extrabold">{item.decision.outcome === 'rejected' ? 'Rejected' : 'Approved'} by {item.decision.by}{item.decision.at ? ` · ${item.decision.at}` : ''}</p>
           {item.decision.reason && <p className="mt-1 [overflow-wrap:anywhere]">“{item.decision.reason}”</p>}
         </div>}
@@ -60,7 +60,7 @@ export function ApprovalDecisionModal({ decision }: { decision: ApprovalDecision
             <button type="button" onClick={decision.startReject} className={rejectClass}>Reject</button>
             <KitButton onClick={decision.startApprove}><Check size={14}/> Approve</KitButton>
           </div>
-          : isPending(item.status) && item.blockReason && <p className="mt-4 rounded-lg bg-[#FFF9EC] p-3 text-center text-[10px] font-bold text-[#A76700]">{item.blockReason}</p>}
+          : isPending(item.status) && item.blockReason && <p className="mt-4 rounded-lg bg-[#FFF9EC] p-3 text-center text-[10px] font-bold text-[#8F5F00]">{item.blockReason}</p>}
         <p className="mt-4 text-center text-[9px] leading-4 text-muted-foreground">{isPayout ? 'Approving pays the beneficiary straight away. This cannot be undone.' : 'Approving signs this off in your books. Nothing is paid out.'}</p>
       </>}
 
@@ -68,7 +68,7 @@ export function ApprovalDecisionModal({ decision }: { decision: ApprovalDecision
         <p className="text-center text-[11px] text-muted-foreground">{isPayout ? `${item.title} will be paid. This cannot be undone.` : 'Enter your transaction PIN to sign this expense off.'}</p>
         <p className="mt-4 text-center text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Transaction PIN</p>
         <div className="mx-auto max-w-[260px] [&>div]:mt-3"><OtpInput value={decision.pin} onChange={decision.setPin} length={4}/></div>
-        {decision.error && <div role="alert" className="mt-4 rounded-lg bg-[#FDEAEA] px-3 py-2 text-[10px] font-bold text-[#C72D34]">
+        {decision.error && <div role="alert" className="mt-4 rounded-lg bg-[#FFF0F0] px-3 py-2 text-[10px] font-bold text-[#C72D34]">
           {decision.error}
           {decision.needsPin && <button type="button" onClick={decision.createPin} className="mt-2 flex items-center gap-1 font-extrabold text-primary underline"><KeyRound size={12}/> Create my PIN</button>}
         </div>}

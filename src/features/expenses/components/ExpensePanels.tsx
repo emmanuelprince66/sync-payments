@@ -9,7 +9,7 @@ import type { ExpensesModel } from '../hooks/useExpensesPage'
 export function OperatingCard({ page }: { page: ExpensesModel }) {
   const { position } = page
   return <section className="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-white lg:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)]">
-    <div className="min-w-0 bg-primary p-5 text-white">
+    <div className="min-w-0 hero-gradient p-5 text-white">
       <p className="text-[9px] font-extrabold uppercase tracking-[.15em] text-white/50">Operating position · {position.month}</p>
       {position.loading ? <Skeleton className="mt-3 h-9 w-40 bg-white/10"/> : <p className="mt-3 text-3xl font-extrabold [overflow-wrap:anywhere]">{position.value}</p>}
       <p className="mt-1 text-[10px] text-white/55">Income remaining after recorded expenses</p>
@@ -40,15 +40,15 @@ export function InlineApproval({ page, onTransfer }: { page: ExpensesModel; onTr
   const { expense, approved, amount } = page.inline
   return <section className="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-white lg:grid-cols-[minmax(0,1fr)_auto]">
     <div className="flex min-w-0 items-center gap-4 p-5">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#FFF6E4] text-[#A76700]"><Clock3 size={17}/></div>
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#FFF7DF] text-[#8F5F00]"><Clock3 size={17}/></div>
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2"><p className="min-w-0 truncate text-xs font-extrabold">{expense.name} · {expense.reference}</p><span className={cn('rounded px-2 py-0.5 text-[8px] font-extrabold', approved ? 'bg-accent text-secondary' : 'bg-[#FFF6E4] text-[#A76700]')}>{approved ? 'APPROVED' : 'YOUR APPROVAL'}</span></div>
+        <div className="flex flex-wrap items-center gap-2"><p className="min-w-0 truncate text-xs font-extrabold">{expense.name} · {expense.reference}</p><span className={cn('rounded px-2 py-0.5 text-[8px] font-extrabold', approved ? 'bg-accent text-brand' : 'bg-[#FFF7DF] text-[#8F5F00]')}>{approved ? 'APPROVED' : 'YOUR APPROVAL'}</span></div>
         <p className="mt-1 text-[10px] text-muted-foreground">{expense.owner || 'A team member'} requested {amount}{expense.note ? ` · ${expense.note}` : ''}</p>
         <div className="mt-2 flex items-center gap-4 text-[9px] text-muted-foreground"><span className="flex items-center gap-1"><History size={11}/> {expense.date || 'Today'}</span><span>{expense.category || 'Uncategorised'}</span></div>
       </div>
       <p className="ml-auto hidden shrink-0 text-lg font-extrabold sm:block">{amount}</p>
     </div>
-    <div className="flex items-center gap-2 border-t border-border bg-[#FAFBFA] p-4 lg:border-l lg:border-t-0">
+    <div className="flex items-center gap-2 border-t border-border bg-[#FAFAFA] p-4 lg:border-l lg:border-t-0">
       <KitButton variant="secondary" onClick={page.audit.open}><History size={13}/> Audit trail</KitButton>
       {approved
         ? onTransfer && <KitButton onClick={onTransfer}><Send size={13}/> Pay from expense account</KitButton>
@@ -61,7 +61,7 @@ export function InlineApproval({ page, onTransfer }: { page: ExpensesModel; onTr
 export function BudgetCard({ page, onManageBudgets, onOpenSettings }: { page: ExpensesModel; onManageBudgets: () => void; onOpenSettings?: () => void }) {
   const { budget } = page
   return <section className="min-w-0 rounded-2xl border border-border bg-white p-5">
-    <div className="flex items-center justify-between gap-3"><div><h2 className="text-sm font-extrabold">{budget.month} budget</h2><p className="mt-1 text-[10px] text-muted-foreground">Across all categories</p></div><span className="text-xs font-extrabold text-secondary">{budget.percent}%</span></div>
+    <div className="flex items-center justify-between gap-3"><div><h2 className="text-sm font-extrabold">{budget.month} budget</h2><p className="mt-1 text-[10px] text-muted-foreground">Across all categories</p></div><span className="text-xs font-extrabold text-brand">{budget.percent}%</span></div>
     <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-secondary" style={{ width: `${budget.percent}%` }}/></div>
     <div className="mt-3 flex justify-between gap-3"><span className="text-xs font-extrabold">{budget.spent} spent</span><span className="text-right text-[10px] text-muted-foreground">{budget.limit}</span></div>
     {budget.loading
@@ -71,16 +71,16 @@ export function BudgetCard({ page, onManageBudgets, onOpenSettings }: { page: Ex
         <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className={cn('h-full rounded-full', row.over ? 'bg-[#C72D34]' : 'bg-primary')} style={{ width: `${row.percent}%` }}/></div>
         {row.over && <p className="mt-1 text-[9px] font-extrabold text-[#C72D34]">Over budget</p>}
       </div>)}</div>}
-    <button type="button" onClick={onManageBudgets} className="mt-4 text-[10px] font-extrabold text-secondary hover:underline">{budget.rows.length ? 'Manage budgets' : 'Set a budget'}</button>
+    <button type="button" onClick={onManageBudgets} className="mt-4 text-[10px] font-extrabold text-brand hover:underline">{budget.rows.length ? 'Manage budgets' : 'Set a budget'}</button>
     {page.spendByUser.length > 0 && <div className="mt-6 border-t border-border pt-4">
       <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Spend by person</p>
       <div className="mt-3 flex flex-col gap-2">{page.spendByUser.map(row => <div key={row.id || row.name} className="flex justify-between gap-2 text-[10px]"><span className="truncate font-bold">{row.name}</span><span className="shrink-0 text-muted-foreground">{row.total}</span></div>)}</div>
     </div>}
-    <div className="mt-6 rounded-xl bg-[#F4FAF5] p-4">
-      <Sparkles size={16} className="text-secondary"/>
+    <div className="mt-6 rounded-xl bg-[#F6F7F8] p-4">
+      <Sparkles size={16} className="text-brand"/>
       <p className="mt-2 text-xs font-extrabold">Your approval policy</p>
       <p className="mt-1 text-[10px] leading-4 text-muted-foreground">{page.policy}</p>
-      {onOpenSettings && <button type="button" onClick={onOpenSettings} className="mt-2 text-[10px] font-extrabold text-secondary hover:underline">Change in Expense settings</button>}
+      {onOpenSettings && <button type="button" onClick={onOpenSettings} className="mt-2 text-[10px] font-extrabold text-brand hover:underline">Change in Expense settings</button>}
     </div>
   </section>
 }

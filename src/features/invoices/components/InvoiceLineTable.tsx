@@ -10,12 +10,12 @@ import { EntityPicker } from './EntityPicker'
 
 const ITEM_NOTE = "Create items to save details for reuse. If you don't need to save details use the description field."
 
-const th = 'whitespace-nowrap border-b border-r border-border bg-[#F6F8F7] px-3 py-3 text-left text-[11px] font-extrabold text-foreground'
+const th = 'whitespace-nowrap border-b border-r border-border bg-[#F6F7F8] px-3 py-3 text-left text-[11px] font-extrabold text-foreground'
 const td = 'border-b border-r border-border p-0 align-middle'
 const cellInput = 'h-11 w-full min-w-0 bg-transparent px-3 text-xs font-semibold text-foreground outline-none focus:bg-white focus:ring-2 focus:ring-inset focus:ring-secondary/50 aria-invalid:bg-[#FDF3F3] aria-invalid:ring-2 aria-invalid:ring-inset aria-invalid:ring-[#C72D34]/60'
 const cellSelect = 'h-11 rounded-none border-0 bg-transparent px-3 text-xs font-semibold hover:border-0 focus-visible:ring-2 focus-visible:ring-inset'
-const menuClass = 'z-[70] min-w-[200px] overflow-hidden rounded-xl border border-[#E2EAE5] bg-white p-1.5 shadow-[0_18px_44px_rgba(9,38,28,.16)]'
-const toolbarButton = 'inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-white px-3.5 text-[11px] font-extrabold text-secondary transition hover:bg-accent'
+const menuClass = 'z-[70] min-w-[200px] overflow-hidden rounded-xl border border-[#E7E8EA] bg-white p-1.5 shadow-[0_18px_44px_rgba(30,30,30,.16)]'
+const toolbarButton = 'inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-white px-3.5 text-[11px] font-extrabold text-brand transition hover:bg-accent'
 
 function Menu({ trigger, children, align = 'start' }: { trigger: ReactNode; children: ReactNode; align?: 'start' | 'end' }) {
   return <Popover.Root>
@@ -24,7 +24,7 @@ function Menu({ trigger, children, align = 'start' }: { trigger: ReactNode; chil
   </Popover.Root>
 }
 
-const menuItem = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-foreground outline-none hover:bg-[#F3F7F4] focus:bg-[#F3F7F4]'
+const menuItem = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-foreground outline-none hover:bg-[#F6F7F8] focus:bg-[#F6F7F8]'
 
 export function InvoiceLineTable({ model }: { model: InvoiceFormModel }) {
   const money = useFormatMoney()
@@ -98,8 +98,8 @@ export function InvoiceLineTable({ model }: { model: InvoiceFormModel }) {
       </div>
       <div className="flex flex-wrap items-center gap-3 p-3">
         <div className="inline-flex overflow-hidden rounded-xl border border-border">
-          <button type="button" onClick={() => model.rows.add(1)} className="inline-flex h-10 items-center gap-1.5 px-3.5 text-[11px] font-extrabold text-secondary hover:bg-accent"><Plus size={14}/> Add row</button>
-          <Menu trigger={<button type="button" aria-label="More ways to add rows" className="grid h-10 w-10 place-items-center border-l border-border text-secondary hover:bg-accent"><ChevronDown size={14}/></button>}>
+          <button type="button" onClick={() => model.rows.add(1)} className="inline-flex h-10 items-center gap-1.5 px-3.5 text-[11px] font-extrabold text-brand hover:bg-accent"><Plus size={14}/> Add row</button>
+          <Menu trigger={<button type="button" aria-label="More ways to add rows" className="grid h-10 w-10 place-items-center border-l border-border text-brand hover:bg-accent"><ChevronDown size={14}/></button>}>
             <Popover.Close asChild><button type="button" onClick={() => model.rows.add(5)} className={menuItem}><Plus size={14}/> Add 5 rows</button></Popover.Close>
           </Menu>
         </div>
@@ -113,7 +113,7 @@ export function InvoiceLineTable({ model }: { model: InvoiceFormModel }) {
         {OPTIONAL_COLUMNS.map(column => {
           const visible = show(column.id)
           return <button key={column.id} type="button" role="menuitemcheckbox" aria-checked={visible} onClick={() => model.columns.toggle(column.id)} className={menuItem}>
-            <span className={cn('grid h-4 w-4 shrink-0 place-items-center rounded border', visible ? 'border-secondary bg-secondary text-white' : 'border-border bg-white')}>{visible && <Check size={11}/>}</span>
+            <span className={cn('grid h-4 w-4 shrink-0 place-items-center rounded border', visible ? 'border-secondary bg-secondary text-secondary-foreground' : 'border-border bg-white')}>{visible && <Check size={11}/>}</span>
             {column.label}
           </button>
         })}
@@ -126,7 +126,7 @@ export function InvoiceLineTable({ model }: { model: InvoiceFormModel }) {
             <span className="min-w-0 flex-1 truncate font-semibold">{file.name}</span>
             <button type="button" aria-label={`Remove ${file.name}`} onClick={() => model.files.remove(index)} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-[#C72D34]"><X size={13}/></button>
           </div>)}
-          <label className={cn(menuItem, 'cursor-pointer font-extrabold text-secondary')}>
+          <label className={cn(menuItem, 'cursor-pointer font-extrabold text-brand')}>
             <Plus size={14}/> Attach files
             <input type="file" multiple className="sr-only" onChange={event => { model.files.add(event.target.files); event.target.value = '' }}/>
           </label>
@@ -142,6 +142,6 @@ export function InvoiceTotals({ totals }: { totals: InvoiceFormModel['totals'] }
   return <dl className="ml-auto flex w-full flex-col text-sm md:max-w-sm">
     <div className="flex justify-between gap-4 py-2.5"><dt>Subtotal</dt><dd className="font-semibold">{money(totals.subtotal)}</dd></div>
     <div className="flex justify-between gap-4 py-2.5"><dt>Total tax</dt><dd className="font-semibold">{money(totals.tax)}</dd></div>
-    <div className="mt-2 flex justify-between gap-4 border-y-[3px] border-[#C9D2CD] py-3 text-xl font-extrabold"><dt>Total</dt><dd className="[overflow-wrap:anywhere]">{money(totals.total)}</dd></div>
+    <div className="mt-2 flex justify-between gap-4 border-y-[3px] border-[#C9CACE] py-3 text-xl font-extrabold"><dt>Total</dt><dd className="[overflow-wrap:anywhere]">{money(totals.total)}</dd></div>
   </dl>
 }

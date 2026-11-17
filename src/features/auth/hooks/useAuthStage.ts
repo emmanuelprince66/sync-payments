@@ -25,12 +25,15 @@ export function useAuthStage() {
   else if (stage === 'otp' && authenticated) redirectTo = paths.signupBusiness
 
   const resolved = stage ?? 'access'
-  const heading = resolved === 'access' ? (mode === 'login' ? 'Welcome back' : 'Create your account') : headings[resolved]
+  const heading = resolved === 'access' ? (mode === 'login' ? 'Sign in to Sync360 Payments' : 'Start accepting payments') : headings[resolved]
+  const setupStep = SETUP_STAGES.indexOf(resolved)
+  // Small orange label above the heading (design's .auth-heading > span).
+  const eyebrow = resolved === 'access' ? (mode === 'login' ? 'Welcome back' : 'Create your merchant account') : `Account setup · Step ${setupStep + 1} of 3`
   const subtitle = resolved === 'access'
-    ? (mode === 'login' ? 'Log in to manage collections, expenses, and payouts.' : 'Start collecting and paying in just a few steps.')
+    ? (mode === 'login' ? 'Enter your details to access your business workspace.' : 'Set up your account. You’ll verify your business in the next step.')
     : resolved === 'otp' ? `Enter the 6-digit code sent to ${email || 'your email'}.`
     : resolved === 'business' ? 'This information appears on your invoices and customer checkout.'
     : 'Complete KYC to unlock higher transaction and withdrawal limits.'
 
-  return { mode, stage: resolved, heading, subtitle, redirectTo, setupStep: SETUP_STAGES.indexOf(resolved) }
+  return { mode, stage: resolved, eyebrow, heading, subtitle, redirectTo, setupStep }
 }

@@ -21,7 +21,7 @@ const titleCase = (value: string) => value.replace(/_/g, ' ').toLowerCase().repl
 function Title({ row }: { row: CustomerTransaction }) {
   const inflow = row.flow === 'INFLOW'
   return <div className="flex items-center gap-3">
-    <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', inflow ? 'bg-accent text-secondary' : 'bg-[#E7F1FC] text-[#1C6FA8]')}>{inflow ? <ArrowDownLeft size={15}/> : <ArrowUpRight size={15}/>}</span>
+    <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', inflow ? 'bg-accent text-brand' : 'bg-[#E8F2FF] text-[#1367D8]')}>{inflow ? <ArrowDownLeft size={15}/> : <ArrowUpRight size={15}/>}</span>
     <div className="min-w-0"><p className="truncate font-extrabold text-foreground">{row.title}</p><p className="mt-0.5 truncate text-[10px] text-muted-foreground">{titleCase(row.type)}{row.reference ? ` · ${row.reference}` : ''}</p></div>
   </div>
 }

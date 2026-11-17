@@ -34,7 +34,7 @@ export function TransactionTable({ rows, loading, accountLabel, onSelect, emptyN
       header: 'Sender / customer',
       meta: { headerClassName: 'px-5', cellClassName: 'px-5' },
       cell: ({ row: { original: trx } }) => <div className="flex items-center gap-3">
-        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-secondary">{trxInitials(trx)}</div>
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-brand">{trxInitials(trx)}</div>
         <div><p className="max-w-[200px] truncate font-extrabold text-foreground">{trxCustomer(trx)}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{trxShortId(trx.id)}</p></div>
       </div>,
     }),
@@ -64,7 +64,7 @@ export function TransactionTable({ rows, loading, accountLabel, onSelect, emptyN
       id: 'details',
       header: 'Details',
       meta: { headerClassName: 'px-5 text-right', cellClassName: 'px-5 text-right' },
-      cell: ({ row: { original: trx } }) => <button type="button" onClick={() => onSelect(trx)} className={cn('cursor-pointer rounded-md border border-border px-2.5 py-1.5 text-[9px] font-extrabold text-secondary hover:border-secondary hover:bg-accent', stretchedButton)}>View more</button>,
+      cell: ({ row: { original: trx } }) => <button type="button" onClick={() => onSelect(trx)} className={cn('cursor-pointer rounded-md border border-border px-2.5 py-1.5 text-[9px] font-extrabold text-brand hover:border-secondary hover:bg-accent', stretchedButton)}>View more</button>,
     }),
   ], [accountLabel, onSelect])
 
@@ -78,7 +78,7 @@ export function TransactionTable({ rows, loading, accountLabel, onSelect, emptyN
     emptyState={<KitEmpty icon={<ReceiptText size={18}/>} title="No transactions found" note={emptyNote} className="py-4"/>}
     mobileListClassName="divide-y divide-border/70"
     renderMobileCard={trx => <button type="button" onClick={() => onSelect(trx)} className="flex w-full items-center gap-3 p-4 text-left text-xs">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-secondary">{trxInitials(trx)}</span>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-brand">{trxInitials(trx)}</span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-extrabold text-foreground">{trxCustomer(trx)}</span>
         <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{trxChannel(trx.channel)} · {trxDay(trx.createdAt)}, {trxTime(trx.createdAt)}</span>

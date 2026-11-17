@@ -23,7 +23,7 @@ export function RecordPaymentModal({ model, invoiceNumber }: { model: RecordPaym
         <KitMoneyField label="Amount paid" symbol={symbol} error={errors.amount?.message} {...register('amount')}/>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold text-muted-foreground">
           <span>{model.isFull ? 'This clears the invoice. It will be marked Paid.' : `${money(model.remaining)} will still be due.`}</span>
-          <button type="button" onClick={model.payInFull} className="font-extrabold text-secondary hover:underline">Pay full balance</button>
+          <button type="button" onClick={model.payInFull} className="font-extrabold text-brand hover:underline">Pay full balance</button>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

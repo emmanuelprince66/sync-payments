@@ -15,7 +15,7 @@ const labelClass = 'mb-1.5 block text-[10px] font-extrabold text-foreground'
 export function KitField({ label, error, className, ref, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; ref?: Ref<HTMLInputElement> }) {
   return <label className={cn('block min-w-0', className)}>
     <span className={labelClass}>{label}</span>
-    <input ref={ref} aria-invalid={error ? true : undefined} className="h-11 w-full min-w-0 rounded-xl border border-border bg-[#F8FAF8] px-3 text-xs font-bold text-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 aria-invalid:border-[#C72D34]" {...props}/>
+    <input ref={ref} aria-invalid={error ? true : undefined} className="h-11 w-full min-w-0 rounded-xl border border-border bg-[#FAFAFA] px-3 text-xs font-bold text-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 aria-invalid:border-[#C72D34]" {...props}/>
     <FieldError message={error}/>
   </label>
 }
@@ -56,7 +56,7 @@ type KitSelectProps = {
 export function KitSelect({ label, error, children, options, className, boxClassName, ...props }: KitSelectProps) {
   return <div className={cn('block min-w-0', className)}>
     <span className={labelClass}>{label}</span>
-    <Select aria-label={label} options={options ?? optionsFrom(children)} error={error} boxClassName={cn('h-11 border-border bg-[#F8FAF8] px-3 text-xs font-bold text-foreground', boxClassName)} {...props}/>
+    <Select aria-label={label} options={options ?? optionsFrom(children)} error={error} boxClassName={cn('h-11 border-border bg-[#FAFAFA] px-3 text-xs font-bold text-foreground', boxClassName)} {...props}/>
   </div>
 }
 
@@ -74,7 +74,7 @@ export function KitDateField({ label, value, onChange, error, placeholder = 'Sel
       max={max}
       yearJump={yearJump}
       className="flex w-full"
-      triggerClassName={cn('h-11 border-border bg-[#F8FAF8] text-xs font-bold', error && 'border-[#C72D34]')}
+      triggerClassName={cn('h-11 border-border bg-[#FAFAFA] text-xs font-bold', error && 'border-[#C72D34]')}
     />
     <FieldError message={error}/>
   </div>

@@ -12,7 +12,7 @@ import { cn } from '@/lib/cn'
 import { initials } from '@/lib/format'
 
 const ALL = 'all'
-const head = 'bg-[#FAFBFA] py-3.5'
+const head = 'bg-[#FAFAFA] py-3.5'
 const column = createColumnHelper<WalletRow>()
 
 type Props = {
@@ -33,7 +33,7 @@ type Props = {
 
 function Sender({ row }: { row: WalletRow }) {
   return <div className="flex items-center gap-3">
-    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-secondary">{initials(row.counterparty)}</div>
+    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-brand">{initials(row.counterparty)}</div>
     <div className="min-w-0"><p className="truncate font-extrabold text-foreground">{row.counterparty}</p><p className="mt-0.5 truncate text-[10px] text-muted-foreground">{row.reference}</p></div>
   </div>
 }
@@ -45,7 +45,7 @@ function Amount({ row }: { row: WalletRow }) {
 }
 
 function ViewMore({ onClick }: { onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="rounded-md border border-border px-2.5 py-1.5 text-[9px] font-extrabold text-secondary hover:border-secondary hover:bg-accent">View more</button>
+  return <button type="button" onClick={onClick} className="rounded-md border border-border px-2.5 py-1.5 text-[9px] font-extrabold text-brand hover:border-secondary hover:bg-accent">View more</button>
 }
 
 export function BranchTransactions({ branches, branchNames, dateRange, onDateRange, activeId, onChangeBranch, rows, isLoading, isError, currentPage, totalPages, onPageChange, onView }: Props) {

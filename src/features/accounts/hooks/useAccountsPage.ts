@@ -15,8 +15,8 @@ import { RULES_SECTIONS, type RulesSection } from '../rules-sections'
 
 const sectionFrom = (value: string | null): RulesSection => RULES_SECTIONS.find(item => item.value === value)?.value ?? 'pin'
 
-const COLORS = ['bg-primary', 'bg-secondary', 'bg-[#356C82]', 'bg-[#9A6A43]']
-const SPLIT_COLORS = ['bg-secondary', 'bg-[#91C99D]', 'bg-[#6FA0B5]', 'bg-[#C49168]']
+const COLORS = ['bg-primary', 'bg-secondary', 'bg-[#1367D8]', 'bg-[#1E854A]']
+const SPLIT_COLORS = ['bg-secondary', 'bg-[#1367D8]', 'bg-[#1E854A]', 'bg-[#A97500]']
 const STATEMENT_ROWS = 100
 
 const purposeOf = (bank: PaymentBank) => (bank.isExpenses ? 'Approved company spend' : bank.is_sub ? 'Branch or department funds' : 'Collections & operations')

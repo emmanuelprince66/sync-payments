@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { resetBusinessScopedStores } from './reset-business-scope'
 import type { Permissions } from '@/lib/sink-permissions'
 import type { UserRole } from './types'
@@ -33,6 +33,26 @@ type AuthState = {
   logout: () => void
 }
 
+const REMEMBER_KEY = 'syncpay-remember'
+
+/** "Keep me signed in": on → the session survives closing the browser (localStorage); off → this tab only (sessionStorage). */
+export const setRememberMe = (remember: boolean) => {
+  try { localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0') } catch { /* storage blocked */ }
+}
+const rememberMe = () => { try { return localStorage.getItem(REMEMBER_KEY) !== '0' } catch { return true } }
+
+const sessionAwareStorage: StateStorage = {
+  getItem: name => { try { return localStorage.getItem(name) ?? sessionStorage.getItem(name) } catch { return null } },
+  setItem: (name, value) => {
+    try {
+      const [keep, drop] = rememberMe() ? [localStorage, sessionStorage] : [sessionStorage, localStorage]
+      keep.setItem(name, value)
+      drop.removeItem(name)
+    } catch { /* storage blocked */ }
+  },
+  removeItem: name => { try { localStorage.removeItem(name); sessionStorage.removeItem(name) } catch { /* storage blocked */ } },
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     set => ({
@@ -52,7 +72,7 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken: null, refreshToken: null, user: null })
       },
     }),
-    { name: 'syncpay-auth' },
+    { name: 'syncpay-auth', storage: createJSONStorage(() => sessionAwareStorage) },
   ),
 )
 

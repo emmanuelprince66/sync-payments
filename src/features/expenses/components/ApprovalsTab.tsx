@@ -25,11 +25,11 @@ export function ApprovalsTab() {
 
   const columns = useMemo(() => [
     column.display({ id: 'requested', header: 'Requested', meta: { headerClassName: 'px-5', cellClassName: 'px-5' }, cell: ({ row: { original } }) => <span className="text-muted-foreground">{requestedOn(original)}</span> }),
-    column.display({ id: 'beneficiary', header: 'Beneficiary', cell: ({ row: { original } }) => <button type="button" onClick={() => decision.open(original)} className="max-w-[220px] text-left"><p className="truncate font-extrabold hover:text-secondary">{original.title}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">{original.reference} · {original.category}</p></button> }),
+    column.display({ id: 'beneficiary', header: 'Beneficiary', cell: ({ row: { original } }) => <button type="button" onClick={() => decision.open(original)} className="max-w-[220px] text-left"><p className="truncate font-extrabold hover:text-brand">{original.title}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">{original.reference} · {original.category}</p></button> }),
     column.display({ id: 'requester', header: 'Requested by', cell: ({ row: { original } }) => <span className="font-bold text-foreground/70">{original.requester}</span> }),
     column.display({ id: 'amount', header: 'Amount', meta: { headerClassName: 'text-right', cellClassName: 'text-right' }, cell: ({ row: { original } }) => <span className="font-extrabold">{money(original.amount)}</span> }),
     column.display({ id: 'status', header: 'Status', cell: ({ row: { original } }) => <TransferStatusChip status={original.status}/> }),
-    column.display({ id: 'action', header: 'Action', meta: { headerClassName: 'px-5 text-right', cellClassName: 'px-5 text-right' }, cell: ({ row: { original } }) => <button type="button" onClick={() => decision.open(original)} className={cn('rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold', original.canDecide ? 'bg-primary text-white hover:bg-primary/90' : 'border border-border text-secondary hover:bg-accent')}>{original.canDecide ? 'Review' : 'View'}</button> }),
+    column.display({ id: 'action', header: 'Action', meta: { headerClassName: 'px-5 text-right', cellClassName: 'px-5 text-right' }, cell: ({ row: { original } }) => <button type="button" onClick={() => decision.open(original)} className={cn('rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold', original.canDecide ? 'bg-primary text-white hover:bg-primary/90' : 'border border-border text-brand hover:bg-accent')}>{original.canDecide ? 'Review' : 'View'}</button> }),
   ], [money, decision])
 
   if (!page.allowed) {
@@ -44,7 +44,7 @@ export function ApprovalsTab() {
       <p className="mt-1 text-[10px] text-muted-foreground">{page.subtitle}</p>
     </div>
 
-    {page.capNote && <p className="flex items-center gap-2 rounded-xl bg-[#F8FAF8] px-3 py-2.5 text-[10px] font-bold text-muted-foreground"><ShieldCheck size={14} className="shrink-0 text-secondary"/>{page.capNote}</p>}
+    {page.capNote && <p className="flex items-center gap-2 rounded-xl bg-[#FAFAFA] px-3 py-2.5 text-[10px] font-bold text-muted-foreground"><ShieldCheck size={14} className="shrink-0 text-brand"/>{page.capNote}</p>}
 
     <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-white">
       <div className="flex flex-col gap-3 border-b border-border p-4 xl:flex-row xl:items-center xl:justify-between">

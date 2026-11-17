@@ -5,7 +5,7 @@ export type IconName =
   | 'search' | 'plus' | 'arrow' | 'chevron' | 'location' | 'scale' | 'trash'
   | 'link' | 'user' | 'card' | 'check' | 'copy' | 'clock' | 'download' | 'more'
   | 'logout' | 'building' | 'bank' | 'shield' | 'close' | 'filter' | 'route'
-  | 'eye' | 'eyeOff' | 'menu' | 'send' | 'arrowIn' | 'arrowOut'
+  | 'eye' | 'eyeOff' | 'menu' | 'send' | 'arrowIn' | 'arrowOut' | 'arrowRight'
 
 /** The design's stroke icon set (24px grid, currentColor). */
 export function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number; stroke?: number }) {
@@ -39,6 +39,7 @@ export function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?:
     shield: <><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-5"/></>,
     close: <path d="m6 6 12 12M18 6 6 18"/>,
     send: <><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></>,
+    arrowRight: <><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>,
     arrowIn: <><path d="M17 7 7 17"/><path d="M17 17H7V7"/></>,
     arrowOut: <><path d="M7 17 17 7"/><path d="M7 7h10v10"/></>,
     menu: <path d="M4 7h16M4 12h16M4 17h10"/>,

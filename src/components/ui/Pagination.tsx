@@ -14,7 +14,7 @@ type PaginationProps = {
 }
 
 function PageButton({ label, icon, flip, onClick, disabled, className }: { label: string; icon: 'arrow' | 'double'; flip?: boolean; onClick: () => void; disabled: boolean; className?: string }) {
-  return <button type="button" aria-label={label} onClick={onClick} disabled={disabled} className={cn('flex h-8 w-8 items-center justify-center rounded-lg border border-[#DFE7E2] bg-white text-[#34483F] transition hover:border-[#529661] disabled:cursor-not-allowed disabled:opacity-40', className)}>
+  return <button type="button" aria-label={label} onClick={onClick} disabled={disabled} className={cn('flex h-8 w-8 items-center justify-center rounded-lg border border-[#E7E8EA] bg-white text-[#474747] transition hover:border-[#FF7F00] disabled:cursor-not-allowed disabled:opacity-40', className)}>
     <span className={cn('flex', flip && 'rotate-180')}>{icon === 'double' ? <span className="flex -space-x-2"><Icon name="arrow" size={14}/><Icon name="arrow" size={14}/></span> : <Icon name="arrow" size={15}/>}</span>
   </button>
 }
@@ -25,12 +25,12 @@ export function Pagination({ currentPage, totalPages, onPageChange, pageSize, on
   const canGoPrevious = currentPage > 1
   const canGoNext = currentPage < pages
 
-  return <div className={cn('flex flex-col items-center justify-between gap-3 border-t border-[#EBF0ED] px-4 py-3 sm:flex-row sm:px-5', className)}>
-    <div className="order-2 text-[11px] font-semibold text-[#829189] sm:order-1">Page {Math.min(currentPage, pages)} of {pages}</div>
+  return <div className={cn('flex flex-col items-center justify-between gap-3 border-t border-[#F0F1F2] px-4 py-3 sm:flex-row sm:px-5', className)}>
+    <div className="order-2 text-[11px] font-semibold text-[#6D7176] sm:order-1">Page {Math.min(currentPage, pages)} of {pages}</div>
     <div className="order-1 flex w-full items-center justify-between gap-4 sm:order-2 sm:w-auto sm:justify-end">
       {pageSize !== undefined && onPageSizeChange && <div className="flex items-center gap-2">
-        <span className="hidden whitespace-nowrap text-[11px] font-bold text-[#53665D] sm:inline">Rows per page</span>
-        <Select aria-label="Rows per page" options={pageSizeOptions.map(size => ({ value: String(size), label: String(size) }))} value={String(pageSize)} onValueChange={size => onPageSizeChange(Number(size))} className="w-[72px]" boxClassName="h-8 rounded-lg border-[#DFE7E2] px-2.5 text-xs font-bold text-[#34483F]"/>
+        <span className="hidden whitespace-nowrap text-[11px] font-bold text-[#555555] sm:inline">Rows per page</span>
+        <Select aria-label="Rows per page" options={pageSizeOptions.map(size => ({ value: String(size), label: String(size) }))} value={String(pageSize)} onValueChange={size => onPageSizeChange(Number(size))} className="w-[72px]" boxClassName="h-8 rounded-lg border-[#E7E8EA] px-2.5 text-xs font-bold text-[#474747]"/>
       </div>}
       <div className="flex items-center gap-2">
         <PageButton label="Go to first page" icon="double" flip onClick={() => onPageChange(1)} disabled={!canGoPrevious} className="hidden lg:flex"/>

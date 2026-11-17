@@ -27,13 +27,13 @@ type Props = {
 }
 
 export function CustomerAvatar({ name, className }: { name: string; className?: string }) {
-  return <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-[10px] font-extrabold text-secondary', className)}>{initials(name || '?')}</span>
+  return <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-[10px] font-extrabold text-brand', className)}>{initials(name || '?')}</span>
 }
 
 function Actions({ customer, onEdit, onDelete }: { customer: Customer; onEdit: Props['onEdit']; onDelete: Props['onDelete'] }) {
   return <div className="relative z-10 flex justify-end gap-1">
-    {onEdit && <button type="button" aria-label={`Edit ${customer.name}`} onClick={() => onEdit(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-secondary"><Pencil size={14}/></button>}
-    {onDelete && <button type="button" aria-label={`Delete ${customer.name}`} onClick={() => onDelete(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-[#FDEAEA] hover:text-[#C72D34]"><Trash2 size={14}/></button>}
+    {onEdit && <button type="button" aria-label={`Edit ${customer.name}`} onClick={() => onEdit(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-brand"><Pencil size={14}/></button>}
+    {onDelete && <button type="button" aria-label={`Delete ${customer.name}`} onClick={() => onDelete(customer)} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-[#FFF0F0] hover:text-[#C72D34]"><Trash2 size={14}/></button>}
   </div>
 }
 

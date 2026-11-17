@@ -62,9 +62,9 @@ export default function InvoiceDetailPage() {
       />
     </div>
 
-    {model.justCreated && <div role="status" className="flex flex-col gap-3 rounded-2xl border border-[#CFE6D3] bg-[#F1F8F2] p-4 sm:flex-row sm:items-center sm:justify-between">
+    {model.justCreated && <div role="status" className="flex flex-col gap-3 rounded-2xl border border-[#FFD3A7] bg-[#F6F7F8] p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-white"><CheckCircle2 size={16}/></span>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><CheckCircle2 size={16}/></span>
         <div><p className="text-sm font-extrabold">{invoice.number} is saved</p><p className="mt-0.5 text-xs text-muted-foreground">Download the PDF or share it with {invoice.client || 'your customer'} now.</p></div>
       </div>
       <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -83,7 +83,7 @@ export default function InvoiceDetailPage() {
         {invoice.publicUrl && <InvoicePublicLinkCard link={model.actions.publicLink} viewed={invoice.viewed}/>}
         <InvoiceAmountCard invoice={invoice} balance={model.balance} paidPercent={model.paidPercent}/>
         <InvoicePaymentsCard invoice={invoice} onReverse={model.canReverse ? model.actions.reversal.ask : undefined}
-          action={model.canRecordPayment ? <button type="button" onClick={model.payment.start} className="text-[11px] font-extrabold text-secondary hover:underline">Record payment</button> : undefined}/>
+          action={model.canRecordPayment ? <button type="button" onClick={model.payment.start} className="text-[11px] font-extrabold text-brand hover:underline">Record payment</button> : undefined}/>
         <InvoiceActivityCard invoice={invoice}/>
       </div>
       <section className="min-w-0 self-start overflow-hidden rounded-2xl border border-border bg-white xl:sticky xl:top-6">

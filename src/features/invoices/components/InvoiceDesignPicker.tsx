@@ -43,10 +43,10 @@ export function InvoiceDesignPicker({ value, onChange, accent, compact = false }
         const selected = value === template.name
         return <button key={template.name} type="button" role="radio" aria-checked={selected} onClick={() => onChange(template.name)}
           className={cn('relative rounded-xl border p-2.5 text-left transition hover:border-secondary', selected ? 'border-secondary bg-accent/40 ring-2 ring-secondary/20' : 'border-border bg-white')}>
-          <div className={cn('overflow-hidden bg-[#E9ECE8] p-2', compact ? 'aspect-[1/1.1]' : 'aspect-[1.25/1]')}><DesignThumbnail name={template.name} accent={selected && accent ? accent : template.accent}/></div>
+          <div className={cn('overflow-hidden bg-[#E7E8EA] p-2', compact ? 'aspect-[1/1.1]' : 'aspect-[1.25/1]')}><DesignThumbnail name={template.name} accent={selected && accent ? accent : template.accent}/></div>
           <div className="mt-2 flex items-start justify-between gap-2">
             <div className="min-w-0"><p className="text-xs font-extrabold">{template.name}</p>{!compact && <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">{template.note}</p>}</div>
-            {selected && <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-secondary text-white"><Check size={12}/></span>}
+            {selected && <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-secondary text-secondary-foreground"><Check size={12}/></span>}
           </div>
         </button>
       })}

@@ -6,9 +6,9 @@ import { cn } from '@/lib/cn'
 export type KitButtonVariant = 'primary' | 'secondary' | 'ghost'
 
 const buttonVariants: Record<KitButtonVariant, string> = {
-  primary: 'bg-secondary text-white hover:bg-[#438351] shadow-[0_5px_14px_rgba(82,150,97,.18)]',
-  secondary: 'border border-border bg-white text-foreground hover:bg-muted',
-  ghost: 'text-secondary hover:bg-accent',
+  primary: 'bg-primary text-white hover:bg-[#222222] shadow-[0_5px_14px_rgba(30,30,30,.14)]',
+  secondary: 'border border-[#D7D8DA] bg-white text-primary hover:border-primary',
+  ghost: 'text-brand hover:bg-accent',
 }
 
 export function KitButton({ children, variant = 'primary', className, type = 'button', loading = false, disabled, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: KitButtonVariant; loading?: boolean; children?: ReactNode }) {
@@ -18,17 +18,17 @@ export function KitButton({ children, variant = 'primary', className, type = 'bu
 }
 
 const statusStyles: Record<string, string> = {
-  Completed: 'bg-[#E8F5EA] text-[#337D44]',
-  Matched: 'bg-[#E8F5EA] text-[#337D44]',
-  Online: 'bg-[#E8F5EA] text-[#337D44]',
-  Approved: 'bg-[#E8F5EA] text-[#337D44]',
-  Pending: 'bg-[#FFF6E4] text-[#A76700]',
-  Review: 'bg-[#FFF6E4] text-[#A76700]',
-  'Awaiting approval': 'bg-[#FFF6E4] text-[#A76700]',
-  Scheduled: 'bg-[#E7F1FC] text-[#1C6FA8]',
-  Reversed: 'bg-[#FDEAEA] text-[#C72D34]',
-  Rejected: 'bg-[#FDEAEA] text-[#C72D34]',
-  Failed: 'bg-[#FDEAEA] text-[#C72D34]',
+  Completed: 'bg-[#E8F7EF] text-[#187A42]',
+  Matched: 'bg-[#E8F7EF] text-[#187A42]',
+  Online: 'bg-[#E8F7EF] text-[#187A42]',
+  Approved: 'bg-[#E8F7EF] text-[#187A42]',
+  Pending: 'bg-[#FFF7DF] text-[#8F5F00]',
+  Review: 'bg-[#FFF7DF] text-[#8F5F00]',
+  'Awaiting approval': 'bg-[#FFF7DF] text-[#8F5F00]',
+  Scheduled: 'bg-[#E8F2FF] text-[#1367D8]',
+  Reversed: 'bg-[#FFF0F0] text-[#C72D34]',
+  Rejected: 'bg-[#FFF0F0] text-[#C72D34]',
+  Failed: 'bg-[#FFF0F0] text-[#C72D34]',
 }
 
 export function StatusPill({ value }: { value: string }) {
@@ -36,9 +36,9 @@ export function StatusPill({ value }: { value: string }) {
 }
 
 const statTones = {
-  green: 'bg-[#E8F5EA] text-secondary',
-  blue: 'bg-[#E7F1FC] text-[#1C70AA]',
-  amber: 'bg-[#FFF5E3] text-[#B57500]',
+  green: 'bg-[#FFF1E4] text-brand',
+  blue: 'bg-[#E8F2FF] text-[#1367D8]',
+  amber: 'bg-[#FFF7DF] text-[#8F5F00]',
 }
 
 export function KitStatCard({ label, value, note, icon: Icon, tone = 'green' }: { label: string; value: string; note: string; icon: ElementType; tone?: keyof typeof statTones }) {

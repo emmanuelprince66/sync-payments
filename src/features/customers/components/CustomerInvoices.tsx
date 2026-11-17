@@ -15,7 +15,7 @@ const head = 'py-3.5'
 /** The invoices sent to this customer; each opens the invoice. */
 export function CustomerInvoices({ model }: { model: CustomerDetailModel['invoices'] }) {
   const columns = useMemo(() => [
-    column.display({ id: 'number', header: 'Invoice', cell: ({ row: { original } }) => <><button type="button" onClick={() => model.open(original.id)} className={cn('font-extrabold text-foreground hover:text-secondary', stretchedButton)}>{original.number}</button><p className="mt-0.5 text-[10px] text-muted-foreground">Issued {original.issued}</p></>, meta: { headerClassName: `${head} px-5`, cellClassName: 'px-5' } }),
+    column.display({ id: 'number', header: 'Invoice', cell: ({ row: { original } }) => <><button type="button" onClick={() => model.open(original.id)} className={cn('font-extrabold text-foreground hover:text-brand', stretchedButton)}>{original.number}</button><p className="mt-0.5 text-[10px] text-muted-foreground">Issued {original.issued}</p></>, meta: { headerClassName: `${head} px-5`, cellClassName: 'px-5' } }),
     column.accessor('due', { header: 'Due', cell: info => <span className="font-bold text-foreground/75">{info.getValue()}</span>, meta: { headerClassName: head } }),
     column.accessor('state', { header: 'Status', cell: info => <InvoiceStatePill value={info.getValue()}/>, meta: { headerClassName: head } }),
     column.display({ id: 'amount', header: 'Amount', cell: ({ row: { original } }) => <div className="text-right"><p className="font-extrabold">{original.amount}</p>{original.balance && <p className="mt-0.5 text-[10px] font-extrabold text-[#C72D34]">{original.balance} unpaid</p>}</div>, meta: { headerClassName: `${head} px-5 text-right`, cellClassName: 'px-5' } }),

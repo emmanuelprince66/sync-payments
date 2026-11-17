@@ -53,11 +53,11 @@ export function InvoiceAmountCard({ invoice, balance, paidPercent }: { invoice: 
       <Row label="Subtotal" value={money(invoice.subtotal)}/>
       <Row label="Tax" value={money(invoice.tax)}/>
       <div className="border-t border-border pt-3"><Row label="Total" value={money(invoice.amount)} strong/></div>
-      <Row label="Amount paid" value={money(invoice.amountPaid)} tone="text-secondary"/>
+      <Row label="Amount paid" value={money(invoice.amountPaid)} tone="text-brand"/>
       <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Paid so far" aria-valuenow={paidPercent} aria-valuemin={0} aria-valuemax={100}>
         <div className="h-full rounded-full bg-secondary transition-[width]" style={{ width: `${paidPercent}%` }}/>
       </div>
-      <div className="rounded-xl bg-[#F8FAF8] px-4 py-3"><Row label="Balance due" value={money(balance)} strong tone={balance > 0 ? 'text-foreground' : 'text-secondary'}/></div>
+      <div className="rounded-xl bg-[#FAFAFA] px-4 py-3"><Row label="Balance due" value={money(balance)} strong tone={balance > 0 ? 'text-foreground' : 'text-brand'}/></div>
     </div>
   </Card>
 }
@@ -65,9 +65,9 @@ export function InvoiceAmountCard({ invoice, balance, paidPercent }: { invoice: 
 /** The customer-facing link (Sent and later): copy, share or open it. */
 export function InvoicePublicLinkCard({ link, viewed }: { link: InvoiceActions['publicLink']; viewed: boolean }) {
   return <Card title="Customer link" aside={viewed ? <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#4A5D86]"><Eye size={12}/> Viewed</span> : <span className="text-[10px] font-bold text-muted-foreground">Not opened yet</span>}>
-    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-[#F8FAF8] px-3 py-2.5">
-      <Link2 size={14} className="shrink-0 text-secondary"/>
-      <a href={link.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate font-mono text-[11px] font-bold text-foreground hover:text-secondary">{link.url}</a>
+    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-[#FAFAFA] px-3 py-2.5">
+      <Link2 size={14} className="shrink-0 text-brand"/>
+      <a href={link.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate font-mono text-[11px] font-bold text-foreground hover:text-brand">{link.url}</a>
     </div>
     <div className="mt-3 grid grid-cols-3 gap-2">
       <KitButton variant="secondary" className="px-2" onClick={link.copy}>{link.copied ? <Check size={14}/> : <Copy size={14}/>} {link.copied ? 'Copied' : 'Copy'}</KitButton>
@@ -86,7 +86,7 @@ export function InvoicePaymentsCard({ invoice, action, onReverse }: { invoice: I
       : <ul className="-my-3 divide-y divide-border">
         {invoice.payments.map(payment => <li key={payment.id} className={cn('flex items-start justify-between gap-3 py-3', payment.reversed && 'opacity-60')}>
           <div className="flex min-w-0 items-start gap-3">
-            <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl', payment.reversed ? 'bg-muted text-muted-foreground' : 'bg-[#E8F5EA] text-secondary')}>{payment.reversed ? <Undo2 size={15}/> : <Wallet size={15}/>}</span>
+            <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl', payment.reversed ? 'bg-muted text-muted-foreground' : 'bg-[#FFF1E4] text-brand')}>{payment.reversed ? <Undo2 size={15}/> : <Wallet size={15}/>}</span>
             <div className="min-w-0">
               <p className="text-xs font-extrabold">{payment.method}{payment.reversed && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[.08em] text-muted-foreground">Reversed</span>}</p>
               <p className="mt-0.5 text-[10px] text-muted-foreground">Paid {longDate(payment.date)}{payment.recordedBy && ` · recorded by ${payment.recordedBy}`}{payment.reversed && payment.reversedAt && ` · reversed ${dateTime(payment.reversedAt)}${payment.reversedBy ? ` by ${payment.reversedBy}` : ''}`}</p>
@@ -94,7 +94,7 @@ export function InvoicePaymentsCard({ invoice, action, onReverse }: { invoice: I
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <p className={cn('text-xs font-extrabold', payment.reversed ? 'text-muted-foreground line-through' : 'text-secondary')}>{money(payment.amount)}</p>
+            <p className={cn('text-xs font-extrabold', payment.reversed ? 'text-muted-foreground line-through' : 'text-brand')}>{money(payment.amount)}</p>
             {onReverse && !payment.reversed && <button type="button" onClick={() => onReverse(payment)} className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#C72D34] hover:underline"><Undo2 size={11}/> Reverse</button>}
           </div>
         </li>)}
@@ -129,9 +129,9 @@ const ACTIVITY_ICON: Record<InvoiceActivityType, ReactNode> = {
 }
 
 const ACTIVITY_TONE: Partial<Record<InvoiceActivityType, string>> = {
-  reminder: 'bg-[#FFF6E4] text-[#A76700]',
+  reminder: 'bg-[#FFF7DF] text-[#8F5F00]',
   viewed: 'bg-[#F1F4FA] text-[#4A5D86]',
-  payment_reversed: 'bg-[#FDEAEA] text-[#C72D34]',
+  payment_reversed: 'bg-[#FFF0F0] text-[#C72D34]',
   voided: 'bg-muted text-muted-foreground',
 }
 
@@ -141,7 +141,7 @@ export function InvoiceActivityCard({ invoice }: { invoice: Invoice }) {
       ? <p className="py-2 text-xs text-muted-foreground">No activity yet.</p>
       : <ol className="flex flex-col gap-4">
         {invoice.activity.map(entry => <li key={entry.id} className="flex items-start gap-3">
-          <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-full', ACTIVITY_TONE[entry.type] ?? 'bg-accent text-secondary')}>{ACTIVITY_ICON[entry.type]}</span>
+          <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-full', ACTIVITY_TONE[entry.type] ?? 'bg-accent text-brand')}>{ACTIVITY_ICON[entry.type]}</span>
           <div className="min-w-0">
             <p className="text-xs font-extrabold">{entry.message}</p>
             <p className="mt-0.5 text-[10px] text-muted-foreground">{[dateTime(entry.at), entry.by].filter(Boolean).join(' · ')}</p>

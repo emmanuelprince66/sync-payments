@@ -14,11 +14,11 @@ export function PayRun({ data, totals }: Props) {
     <section className="overflow-hidden rounded-xl border border-border bg-white">
       <div className="flex items-center justify-between gap-3 border-b border-border p-5">
         <div className="min-w-0"><h2 className="text-sm font-extrabold">{data.run.title}</h2><p className="mt-1 text-[9px] text-muted-foreground">{data.run.period}</p></div>
-        <span className="rounded bg-[#FFF6E4] px-2 py-1 text-[8px] font-extrabold text-[#A76700]">PREVIEW</span>
+        <span className="rounded bg-[#FFF7DF] px-2 py-1 text-[8px] font-extrabold text-[#8F5F00]">PREVIEW</span>
       </div>
       <div className="divide-y divide-border">
         {data.employees.map(person => <div key={person.name} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 px-5 py-4">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-secondary">{initials(person.name)}</div>
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[9px] font-extrabold text-brand">{initials(person.name)}</div>
           <div className="min-w-0"><p className="text-xs font-extrabold">{person.name}</p><p className="mt-1 text-[9px] text-muted-foreground">Gross {money(person.amount)} · Taxes {money(person.amount * PAYROLL_RATES.employeeTax)} · Benefits {money(person.amount * PAYROLL_RATES.benefits)}</p></div>
           <div className="text-right"><p className="text-xs font-extrabold">{money(person.amount * (1 - PAYROLL_RATES.employeeTax - PAYROLL_RATES.benefits))}</p><p className="mt-1 text-[8px] text-muted-foreground">Net pay</p></div>
         </div>)}
@@ -33,7 +33,7 @@ export function PayRun({ data, totals }: Props) {
         <div className="flex justify-between gap-3"><span className="text-muted-foreground">Employer taxes</span><span className="font-extrabold">{money(totals.employerTaxes)}</span></div>
         <div className="flex justify-between gap-3"><span className="text-muted-foreground">Net direct deposit</span><span className="font-extrabold">{money(totals.net)}</span></div>
       </div>
-      <div className="rounded-lg bg-[#FFF9EC] p-3 text-[9px] leading-4 text-muted-foreground"><Info size={14} className="mb-2 text-[#A76700]"/>Payroll runs and payroll approvals aren't available yet. This is a preview on sample data: nothing is submitted and no funds move.</div>
+      <div className="rounded-lg bg-[#FFF9EC] p-3 text-[9px] leading-4 text-muted-foreground"><Info size={14} className="mb-2 text-[#8F5F00]"/>Payroll runs and payroll approvals aren't available yet. This is a preview on sample data: nothing is submitted and no funds move.</div>
       <KitButton disabled className="mt-4 w-full">Payroll runs coming soon</KitButton>
     </aside>
   </div>

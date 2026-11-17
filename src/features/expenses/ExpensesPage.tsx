@@ -23,10 +23,10 @@ function ExpenseTabs({ tabs, tab, pendingCount, onChange }: { tabs: readonly { v
   return <div role="tablist" aria-label="Expenses sections" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-border">
     {tabs.map(item => {
       const active = tab === item.value
-      return <button key={item.value} type="button" role="tab" aria-selected={active} onClick={() => onChange(item.value)} className={cn('-mb-px flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-[11px] font-extrabold transition-colors', active ? 'border-secondary text-secondary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+      return <button key={item.value} type="button" role="tab" aria-selected={active} onClick={() => onChange(item.value)} className={cn('-mb-px flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-[11px] font-extrabold transition-colors', active ? 'border-secondary text-brand' : 'border-transparent text-muted-foreground hover:text-foreground')}>
         {item.value === 'settings' && <Settings size={13}/>}
         {item.label}
-        {item.value === 'approvals' && pendingCount > 0 && <span className={cn('grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[9px] font-extrabold', active ? 'bg-secondary text-white' : 'bg-[#FFF1D2] text-[#A76700]')}>{pendingCount}</span>}
+        {item.value === 'approvals' && pendingCount > 0 && <span className={cn('grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[9px] font-extrabold', active ? 'bg-secondary text-secondary-foreground' : 'bg-[#FFF1D2] text-[#8F5F00]')}>{pendingCount}</span>}
       </button>
     })}
   </div>

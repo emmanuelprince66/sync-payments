@@ -22,12 +22,12 @@ function StatusChip({ status }: { status: string }) {
 export function ExpenseTable({ page }: { page: ExpensesModel }) {
   const { money, createInvoice, view, filters } = page
   const columns = useMemo(() => [
-    column.display({ id: 'merchant', header: 'Merchant', meta: { headerClassName: 'px-5', cellClassName: 'px-5' }, cell: ({ row: { original } }) => <button type="button" onClick={() => view(original)} className="max-w-[220px] text-left"><p className="truncate font-extrabold hover:text-secondary">{original.name || '—'}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">{original.reference} · {original.category || 'Uncategorised'}</p></button> }),
+    column.display({ id: 'merchant', header: 'Merchant', meta: { headerClassName: 'px-5', cellClassName: 'px-5' }, cell: ({ row: { original } }) => <button type="button" onClick={() => view(original)} className="max-w-[220px] text-left"><p className="truncate font-extrabold hover:text-brand">{original.name || '—'}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">{original.reference} · {original.category || 'Uncategorised'}</p></button> }),
     column.display({ id: 'owner', header: 'Owner', cell: ({ row: { original } }) => <span className="font-bold text-foreground/70">{original.owner || '—'}</span> }),
     column.display({ id: 'date', header: 'Date', cell: ({ row: { original } }) => <span className="text-muted-foreground">{original.date || '—'}</span> }),
     column.display({ id: 'status', header: 'Status', cell: ({ row: { original } }) => <StatusChip status={original.status}/> }),
     column.display({ id: 'amount', header: 'Amount', meta: { headerClassName: 'text-right', cellClassName: 'text-right' }, cell: ({ row: { original } }) => <span className="font-extrabold">{money(original.amount)}</span> }),
-    column.display({ id: 'invoice', header: 'Bill to client', meta: { headerClassName: 'px-5 text-right', cellClassName: 'px-5 text-right' }, cell: ({ row: { original } }) => <button type="button" onClick={() => createInvoice(original)} className="rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-extrabold text-secondary hover:bg-accent">Create invoice</button> }),
+    column.display({ id: 'invoice', header: 'Bill to client', meta: { headerClassName: 'px-5 text-right', cellClassName: 'px-5 text-right' }, cell: ({ row: { original } }) => <button type="button" onClick={() => createInvoice(original)} className="rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-extrabold text-brand hover:bg-accent">Create invoice</button> }),
   ], [money, createInvoice, view])
 
   return <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-white">
@@ -50,7 +50,7 @@ export function ExpenseTable({ page }: { page: ExpensesModel }) {
           <span className="min-w-0"><span className="block truncate font-extrabold">{row.name || '—'}</span><span className="mt-1 block truncate text-[10px] text-muted-foreground">{row.owner || row.reference} · {row.category || 'Uncategorised'} · {row.date}</span></span>
           <span className="shrink-0 text-right"><span className="block font-extrabold">{money(row.amount)}</span></span>
         </button>
-        <div className="mt-3 flex items-center justify-between gap-3"><StatusChip status={row.status}/><button type="button" onClick={() => createInvoice(row)} className="rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-extrabold text-secondary hover:bg-accent">Create invoice</button></div>
+        <div className="mt-3 flex items-center justify-between gap-3"><StatusChip status={row.status}/><button type="button" onClick={() => createInvoice(row)} className="rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-extrabold text-brand hover:bg-accent">Create invoice</button></div>
       </div>}
     />
     {page.pagination.pages > 1 && <Pagination currentPage={page.pagination.page} totalPages={page.pagination.pages} onPageChange={page.pagination.setPage} className="border-border"/>}

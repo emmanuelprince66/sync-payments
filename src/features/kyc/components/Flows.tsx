@@ -19,7 +19,7 @@ function FormSkeleton() {
 }
 
 function ContinueButton({ tier, onClick }: { tier: number; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-secondary shadow-sm transition-colors hover:bg-[#F4FAF5]">
+  return <button type="button" onClick={onClick} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-brand shadow-sm transition-colors hover:bg-[#F6F7F8]">
     Continue to Tier {tier} <Icon name="arrow" size={13}/>
   </button>
 }
