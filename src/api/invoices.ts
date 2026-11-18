@@ -325,14 +325,13 @@ const monthLabel = (value: unknown) => {
 
 const oneDecimal = (value: number) => Math.round(value * 10) / 10
 
-/** Exact keys: paid_this_month, change_from_last_month_pct, average_days_to_pay, collection_rate_pct, expected_cash, counts_by_status, monthly_sent_vs_paid. */
+/** Exact keys: paid_this_month, change_from_last_month_pct, average_days_to_pay, collection_rate_pct, expected_cash, total_paid, total_overdue_amount, counts_by_status, monthly_sent_vs_paid. */
 const mapAnalytics = (response: unknown): InvoiceSummary => {
   const root = unwrap(response)
   const counts = asRecord(field(root, 'analytics', 'counts_by_status'))
   const count = (...statuses: string[]) => statuses.reduce((total, status) => total + num(counts[status]), 0)
-  // Backend bug (flagged, not fixed yet): an OVERDUE invoice is counted under SENT and again under OVERDUE.
-  // So SENT already includes overdue ones: take them out of 'awaiting payment', and never add OVERDUE to a total.
-  const awaiting = Math.max(0, count('SENT', 'VIEWED') - count('OVERDUE'))
+  // The backend now counts an overdue invoice under OVERDUE only (no longer under SENT too), so the buckets don't overlap.
+  const awaiting = count('SENT', 'VIEWED')
   const change = nullableNumber(root.change_from_last_month_pct)
   const days = nullableNumber(root.average_days_to_pay)
   const rate = nullableNumber(root.collection_rate_pct)
@@ -345,13 +344,15 @@ const mapAnalytics = (response: unknown): InvoiceSummary => {
     { label: 'Void', count: count('VOID'), amount: null, color: '#C3CCC7' },
   ]
   return {
-    outstandingCount: count('APPROVED', 'SENT', 'VIEWED'),
+    outstandingCount: count('APPROVED', 'SENT', 'VIEWED', 'OVERDUE'),
     overdueCount: count('OVERDUE'),
     paidThisMonth: num(field(root, 'analytics', 'paid_this_month')),
     paidChange: change === null ? '—' : `${change > 0 ? '+' : ''}${oneDecimal(change)}% from last month`,
     averagePaidDays: days === null ? '—' : `${oneDecimal(days)} days`,
     collectionRate: rate === null ? '—' : `${oneDecimal(rate)}%`,
     expectedCash: num(field(root, 'analytics', 'expected_cash')),
+    totalPaid: num(field(root, 'analytics', 'total_paid')),
+    totalOverdueAmount: num(field(root, 'analytics', 'total_overdue_amount')),
     months: listFrom(field(root, 'analytics', 'monthly_sent_vs_paid'), []).map(entry => {
       const record = asRecord(entry)
       return { month: monthLabel(record.month), sent: num(record.sent), paid: num(record.paid) }

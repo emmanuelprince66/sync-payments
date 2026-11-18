@@ -112,6 +112,10 @@ export type InvoiceSummary = {
   collectionRate: string
   /** Balance still expected on open invoices. */
   expectedCash: number
+  /** All-time amount paid on invoices (analytics total_paid). */
+  totalPaid: number
+  /** Balance outstanding on overdue invoices (analytics total_overdue_amount). */
+  totalOverdueAmount: number
   /** Last six months, sent vs paid amounts. */
   months: InvoiceAnalyticsMonth[]
   flow: DocumentFlowItem[]

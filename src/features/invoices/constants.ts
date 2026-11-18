@@ -53,6 +53,8 @@ export const INVOICE_STATUS_FILTERS = [
   { value: 'DRAFT', label: 'Draft' },
   { value: 'APPROVED', label: 'Approved' },
   { value: 'SENT', label: 'Sent' },
+  /** Sent and opened by the customer, not yet overdue (the backend filters this now). */
+  { value: 'VIEWED', label: 'Viewed' },
   { value: 'OVERDUE', label: 'Overdue' },
   { value: 'PAID', label: 'Paid' },
 ] as const
