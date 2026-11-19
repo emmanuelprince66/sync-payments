@@ -8,6 +8,7 @@ import { cn } from '@/lib/cn'
 import { transferStatus, type ApprovalItem } from '../approval-items'
 import { APPROVAL_FILTERS, useApprovalsQueue } from '../hooks/useApprovalsQueue'
 import { ApprovalDecisionModal } from './ApprovalDecisionModal'
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 
 const column = createColumnHelper<ApprovalItem>()
 
@@ -49,7 +50,7 @@ export function ApprovalsTab() {
     <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-white">
       <div className="flex flex-col gap-3 border-b border-border p-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 xl:mx-0 xl:px-0"><KitFilterPills value={page.filter} options={APPROVAL_FILTERS} onChange={page.setFilter}/></div>
-        <div className="flex w-full xl:max-w-xs"><KitSearch value={page.searchInput} onChange={page.setSearch} placeholder="Reference, beneficiary or narration"/></div>
+        <div className="flex w-full flex-col gap-2 sm:flex-row xl:max-w-lg"><KitSearch value={page.searchInput} onChange={page.setSearch} placeholder="Reference, beneficiary or narration"/><DateRangeFilter value={page.dateRange} onChange={page.setDateRange} placeholder="All dates" className="w-full sm:w-56"/></div>
       </div>
       <div className={cn('transition-opacity', page.refreshing && 'opacity-60')}>
         <DataTable

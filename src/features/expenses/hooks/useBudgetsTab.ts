@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useBudgets, useCategorySpend, useExpensePermissions, type Budget } from '@/api/expenses'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
+import type { DateRange } from '@/components/ui/DateRangeFilter'
 
 /** Share of a budget used before it is flagged as running low. */
 export const NEAR_LIMIT = 80
@@ -23,7 +24,10 @@ export const BUDGET_YEARS = [THIS_YEAR - 1, THIS_YEAR, THIS_YEAR + 1]
 export function useBudgetsTab() {
   const money = useFormatMoney()
   const { isOwner, canLog } = useExpensePermissions()
-  const [year, setYear] = useState(THIS_YEAR)
+  const [range, setRangeState] = useState<DateRange | undefined>()
+  // Budgets are yearly in the API (budgets/?year=), so the range shows the year it starts in.
+  const year = range?.from?.getFullYear() ?? THIS_YEAR
+  const setYear = (next: number) => setRangeState({ from: new Date(next, 0, 1), to: new Date(next, 11, 31) })
   const budgets = useBudgets(year)
   const spend = useCategorySpend()
   const [search, setSearch] = useState('')
@@ -56,6 +60,8 @@ export function useBudgetsTab() {
     year,
     years: BUDGET_YEARS,
     setYear,
+    range,
+    setRange: setRangeState,
     search,
     setSearch,
     summary: {

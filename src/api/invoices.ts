@@ -25,8 +25,8 @@ export * from './invoice-model'
  *  GET    invoices/business/{business_id}/analytics/
  *  GET    invoices/business/{business_id}/customer-summaries/?customer_ids=a,b
  *           → { results: [{ customer_id, total_paid, total_unpaid, overdue_amount, invoice_count }] }
- *  GET    invoices/business/{business_id}/saved-items/     [{ id, description, default_price, default_tax_rate, account_code, created_at }]
- *  POST   invoices/business/{business_id}/saved-items/     { description, default_price, default_tax_rate, account_code }; DELETE …/{item_id}/
+ *  GET    invoices/business/{business_id}/saved-items/     [{ id, name, description, default_price, default_tax_rate, account_code, created_at }]
+ *  POST   invoices/business/{business_id}/saved-items/     { name, description, default_price, default_tax_rate, account_code }; DELETE …/{item_id}/
  *  GET    invoices/{id}/                                   full detail
  *  PATCH  invoices/{id}/                                   any field (and `logo`, multipart) while DRAFT; afterwards only { status: APPROVED → SENT }
  *  POST   invoices/{id}/payments/                          { amount, date, method, note }; DELETE …/payments/{payment_id}/ soft-reverses
@@ -288,6 +288,7 @@ const mapItem = (value: unknown): InvoiceItem => {
   const record = unwrap(value)
   return {
     id: str(field(record, 'saved item', 'id')),
+    name: str(record.name),
     description: str(field(record, 'saved item', 'description')),
     price: num(record.default_price),
     taxRate: num(record.default_tax_rate),
@@ -477,9 +478,9 @@ const sendReminder = async (input: { invoiceId: string; channel: InvoiceReminder
 const getItems = async () => listFrom(isLive() ? await apiRequest<unknown>(`${base()}/saved-items/`) : await mock.mockInvoiceItems(), ['results']).map(mapItem)
 
 const createItem = async (input: InvoiceItemInput): Promise<InvoiceItem> => {
-  const body = { description: input.description, default_price: input.price, default_tax_rate: input.taxRate, account_code: input.account }
+  const body = { name: input.name, description: input.description || input.name, default_price: input.price, default_tax_rate: input.taxRate, account_code: input.account }
   const created = mapItem(isLive() ? await apiRequest<unknown>(`${base()}/saved-items/`, { method: 'POST', body }) : await mock.mockCreateInvoiceItem(body))
-  return { ...input, ...created, description: created.description || input.description }
+  return { ...input, ...created, name: created.name || input.name, description: created.description || input.description }
 }
 
 const deleteItem = async (id: string) => (isLive() ? apiRequest<unknown>(`${base()}/saved-items/${id}/`, { method: 'DELETE' }) : mock.mockDeleteInvoiceItem(id))

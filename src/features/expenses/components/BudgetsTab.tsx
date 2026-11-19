@@ -4,11 +4,11 @@ import { useMemo } from 'react'
 import { formatActivityDate } from '@/api/http'
 import { DataTable } from '@/components/ui/DataTable'
 import { KitEmpty, KitSearch, kitTableClass, StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
-import { KitSelect } from '@/components/ui/KitForm'
 import { KitButton } from '@/components/ui/PaymentKit'
 import { cn } from '@/lib/cn'
 import { useBudgetsTab, type BudgetHealth, type BudgetRow } from '../hooks/useBudgetsTab'
 import { BudgetModal } from './BudgetModal'
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 
 const column = createColumnHelper<BudgetRow>()
 
@@ -58,7 +58,7 @@ export function BudgetsTab() {
     <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-white">
       <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
         <KitSearch value={page.search} onChange={page.setSearch} placeholder="Search by category"/>
-        <KitSelect label="Year" className="w-full sm:w-32 [&>span]:sr-only" boxClassName="h-10" options={page.years.map(year => ({ value: String(year), label: String(year) }))} value={String(page.year)} onChange={event => page.setYear(Number(event.target.value))}/>
+        <DateRangeFilter value={page.range} onChange={page.setRange} placeholder={`This year (${page.year})`} className="w-full sm:w-56"/>
         {page.canManage && <KitButton onClick={() => page.create()} className="w-full sm:w-auto"><Plus size={14}/> Create budget</KitButton>}
       </div>
       <DataTable

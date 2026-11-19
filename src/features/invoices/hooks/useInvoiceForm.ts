@@ -19,6 +19,7 @@ import { invoiceTotals, lineAmounts } from '../totals'
 import { useCurrentUserName } from './useCurrentUserName'
 import { useInvoicePdf } from './useInvoicePdf'
 import { useNewContactForm, useNewItemForm } from './useInvoiceQuickCreate'
+import { itemLineText } from '@/api/invoice-model'
 
 /** Prefill handed over from another screen, e.g. "Create invoice" on an expense. */
 export type InvoiceDraft = { client: string; amount: number; note: string }
@@ -148,7 +149,7 @@ export function useInvoiceForm() {
   const applyItem = (item: InvoiceItem, row: number) => {
     const current = form.getValues(`lines.${row}`)
     form.setValue(`lines.${row}`, {
-      ...current, itemId: item.id, description: item.description, price: String(item.price), qty: current.qty || '1',
+      ...current, itemId: item.id, description: itemLineText(item), price: String(item.price), qty: current.qty || '1',
       taxRate: taxRateOf(item.taxRate), account: item.account || current.account,
     }, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })
   }

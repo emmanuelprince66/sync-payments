@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn'
 import { OPTIONAL_COLUMNS, SALES_ACCOUNTS, TAX_RATES } from '../constants'
 import type { InvoiceFormModel } from '../hooks/useInvoiceForm'
 import { EntityPicker } from './EntityPicker'
+import { itemTitle } from '@/api/invoice-model'
 
 const ITEM_NOTE = "Create items to save details for reuse. If you don't need to save details use the description field."
 
@@ -31,7 +32,7 @@ export function InvoiceLineTable({ model }: { model: InvoiceFormModel }) {
   const { register, formState: { errors } } = model.form
   const show = model.columns.isVisible
   const noTax = model.values.taxMode === 'none'
-  const itemOptions = model.items.list.map(item => ({ value: item.id, label: item.description, hint: `${money(item.price)} · ${item.taxRate ? `VAT ${item.taxRate}%` : 'No tax'}` }))
+  const itemOptions = model.items.list.map(item => ({ value: item.id, label: itemTitle(item), hint: `${item.name && item.description && item.description !== item.name ? `${item.description} · ` : ''}${money(item.price)} · ${item.taxRate ? `VAT ${item.taxRate}%` : 'No tax'}` }))
   const fileCount = model.files.list.length
 
   return <div className="flex flex-col gap-4">

@@ -14,9 +14,10 @@ const contactSchema = z.object({
 })
 export type NewContactValues = z.infer<typeof contactSchema>
 
-/** Saved item: the description is its name on the picker and the invoice line. */
+/** Saved item: a name, and optional details saved as its description. The invoice line reads "Name — details". */
 const itemSchema = z.object({
-  description: z.string().trim().min(1, 'Description is required').max(255, 'Keep it under 255 characters'),
+  name: z.string().trim().min(1, 'Give the item a name').max(120, 'Keep the name under 120 characters'),
+  details: z.string().trim().max(300, 'Keep the details under 300 characters'),
   price: z.string().trim().refine(value => !value || (Number.isFinite(Number(value)) && Number(value) >= 0), 'Enter a valid price'),
   taxRate: z.enum(TAX_RATES.map(rate => rate.value) as [TaxRate, ...TaxRate[]]),
   account: z.string(),
@@ -48,7 +49,7 @@ export function useNewContactForm(onCreated: (contact: Customer) => void) {
 export function useNewItemForm(onCreated: (item: InvoiceItem, row: number) => void) {
   const [row, setRow] = useState<number | null>(null)
   const create = useCreateInvoiceItem()
-  const blank = (description = ''): NewItemValues => ({ description, price: '', taxRate: DEFAULT_TAX_RATE, account: DEFAULT_ACCOUNT })
+  const blank = (name = ''): NewItemValues => ({ name, details: '', price: '', taxRate: DEFAULT_TAX_RATE, account: DEFAULT_ACCOUNT })
   const form = useForm<NewItemValues>({ resolver: zodResolver(itemSchema), defaultValues: blank() })
 
   return {
@@ -60,12 +61,13 @@ export function useNewItemForm(onCreated: (item: InvoiceItem, row: number) => vo
     submit: form.handleSubmit(async values => {
       let item: InvoiceItem
       try {
-        item = await create.mutateAsync({ description: values.description, price: Number(values.price) || 0, taxRate: Number(values.taxRate), account: values.account })
+        // The backend now stores the name on its own; the details go in description.
+        item = await create.mutateAsync({ name: values.name, description: values.details || values.name, price: Number(values.price) || 0, taxRate: Number(values.taxRate), account: values.account })
       } catch (error) {
         toast.error(invoiceErrorMessage(error, "Couldn't save the item."))
         return
       }
-      toast.success(`${item.description} saved for reuse.`)
+      toast.success(`${values.name} saved for reuse.`)
       if (row !== null) onCreated(item, row)
       setRow(null)
     }),

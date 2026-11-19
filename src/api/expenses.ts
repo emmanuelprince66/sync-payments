@@ -457,18 +457,20 @@ export const useExpenseSettings = () => {
 // ─── Transfers ──────────────────────────────────────────────────────────────
 
 /** status is one of sink's TRANSFER_STATUSES or 'ALL' (the backend's own "everything" value). */
-export type TransferQuery = { page: number; status: string; search: string; limit?: number }
+export type TransferQuery = { page: number; status: string; search: string; limit?: number; startDate?: string; endDate?: string }
 
 const getTransfers = async (businessId: string, query: TransferQuery) => {
   const limit = query.limit ?? EXPENSES_PAGE_SIZE
   if (!isLive()) {
     const term = query.search.trim().toLowerCase()
-    const rows = mock.transfers.filter(row => (!query.status || query.status === 'ALL' || row.status === query.status) && (!term || `${row.reference} ${row.beneficiaryName} ${row.beneficiaryAccount} ${row.narration}`.toLowerCase().includes(term)))
+    const rows = mock.transfers.filter(row => (!query.startDate || String(row.createdAt ?? '').slice(0, 10) >= query.startDate) && (!query.endDate || String(row.createdAt ?? '').slice(0, 10) <= query.endDate) && (!query.status || query.status === 'ALL' || row.status === query.status) && (!term || `${row.reference} ${row.beneficiaryName} ${row.beneficiaryAccount} ${row.narration}`.toLowerCase().includes(term)))
     return mockDelay({ rows: rows.slice((query.page - 1) * limit, query.page * limit), total: rows.length, pages: Math.max(Math.ceil(rows.length / limit), 1) })
   }
   const params = new URLSearchParams({ page: String(query.page), limit: String(limit) })
   if (query.status) params.set('status', query.status)
   if (query.search) params.set('search', query.search)
+  if (query.startDate) params.set('start_date', query.startDate)
+  if (query.endDate) params.set('end_date', query.endDate)
   const response = await apiRequest<unknown>(`expenses/transfers/${businessId}/?${params.toString()}`)
   const page = paginated(response, limit)
   return { rows: page.rows.map(mapTransfer), total: page.total, pages: page.pages }

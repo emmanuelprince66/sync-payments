@@ -24,7 +24,8 @@ export function NewItemModal({ model }: { model: NewItemForm }) {
   return <KitModal open={model.open} onClose={model.close} title="New item" description="Save a product or service to reuse on invoices." icon={<Package size={16}/>} panelClassName="max-w-md"
     footer={<><KitButton variant="secondary" onClick={model.close}>Cancel</KitButton><KitButton loading={model.submitting} onClick={model.submit}>Save item</KitButton></>}>
     <form onSubmit={model.submit} className="flex flex-col gap-4">
-      <KitTextarea label="Description" rows={3} placeholder="e.g. Consulting (hourly). Shown on the invoice line and in the item list" error={errors.description?.message} {...register('description')}/>
+      <KitField label="Item name" placeholder="e.g. Consulting (hourly)" autoFocus error={errors.name?.message} {...register('name')}/>
+      <KitTextarea label="Details (optional)" rows={2} placeholder="e.g. Includes setup and one revision. Shown after the name on the invoice line" error={errors.details?.message} {...register('details')}/>
       <KitMoneyField label="Default price" symbol="₦" error={errors.price?.message} {...register('price')}/>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Select label="Default tax rate" options={TAX_RATES} error={errors.taxRate?.message} {...register('taxRate')}/>

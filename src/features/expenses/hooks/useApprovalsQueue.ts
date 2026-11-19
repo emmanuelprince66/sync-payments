@@ -5,6 +5,7 @@ import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { useAuthStore } from '@/stores/auth-store'
 import { fromTransfer } from '../approval-items'
 import { useApprovalDecision } from './useApprovalDecision'
+import { useDateRangeFilter } from '@/hooks/useDateRangeFilter'
 
 /** sink's ExpenseApprovals filters, in its order. 'ALL' is a value the list endpoint understands. */
 export const APPROVAL_FILTERS = [
@@ -31,10 +32,11 @@ export function useApprovalsQueue() {
   const [searchInput, setSearchInput] = useState('')
   const search = useDebounce(searchInput, 500)
   const [page, setPage] = useState(1)
+  const dates = useDateRangeFilter({ onChange: () => setPage(1) })
   const [pageSize, setPageSize] = useState(10)
 
   const allowed = permissions.canApprove || permissions.canTransfer
-  const transfers = useExpenseTransfers({ page, status: filter, search, limit: pageSize }, allowed)
+  const transfers = useExpenseTransfers({ page, status: filter, search, limit: pageSize, startDate: dates.startDate, endDate: dates.endDate }, allowed)
   const items = useMemo(() => (transfers.data?.rows ?? []).map(row => fromTransfer(row, userId)), [transfers.data, userId])
 
   return {
@@ -53,6 +55,8 @@ export function useApprovalsQueue() {
     filter,
     setFilter: (value: ApprovalFilter) => { setFilter(value); setPage(1) },
     searchInput,
+    dateRange: dates.range,
+    setDateRange: dates.setRange,
     setSearch: (value: string) => { setSearchInput(value); setPage(1) },
     pagination: {
       page,

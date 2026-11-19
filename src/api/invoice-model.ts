@@ -17,10 +17,15 @@ export type InvoicePaymentMethod = (typeof INVOICE_PAYMENT_METHODS)[number]
 export type InvoiceTaxMode = 'exclusive' | 'inclusive' | 'none'
 
 /** A saved product or service, reusable across invoice lines. The description is its name. */
-export type InvoiceItem = { id: string; description: string; price: number; taxRate: number; account: string; createdAt: string }
+/** A saved item: `name` (added by the backend, "" on older items) and `description` (the details). */
+export type InvoiceItem = { id: string; name: string; description: string; price: number; taxRate: number; account: string; createdAt: string }
 
 /** Fields a saved item is created with (`description` required). */
 export type InvoiceItemInput = Omit<InvoiceItem, 'id' | 'createdAt'>
+
+/** What an item is called on screen and on the invoice line: the name, then the details. Older items have only a description. */
+export const itemTitle = (item: Pick<InvoiceItem, 'name' | 'description'>) => item.name || item.description
+export const itemLineText = (item: Pick<InvoiceItem, 'name' | 'description'>) => (item.name && item.description && item.description !== item.name ? `${item.name} — ${item.description}` : item.name || item.description)
 
 /** One line as saved: `amount` is qty × price less discount, `tax` the tax on it. */
 export type InvoiceLineRecord = {
