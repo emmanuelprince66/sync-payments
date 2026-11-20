@@ -98,6 +98,8 @@ export function Sidebar() {
       </div>
 
       <div className="mt-auto shrink-0 border-t border-[#3E3E3E] px-3 pb-4 pt-4">
+        {/* The "Finish verification" card is removed: it took space from the menu on shorter screens.
+            The dot on Compliance still shows verification isn't finished, and the Compliance page has the progress.
         {verification.loaded && !verification.complete && <button type="button" onClick={model.goToKyc} className="mx-1 mb-4 block w-[calc(100%-0.5rem)] rounded-xl border border-[#444444] bg-[#2D2D2D] p-4 text-left">
           <span className="mb-3 flex items-center justify-between">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#44382D] text-secondary"><ShieldCheck size={16}/></span>
@@ -107,6 +109,7 @@ export function Sidebar() {
           <span className="mt-1 block text-[10px] leading-4 text-[#AEB0B2]">Unlock higher payment limits and instant payouts.</span>
           <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-secondary" style={{ width: `${verification.percent}%` }}/></span>
         </button>}
+        */}
         <button type="button" onClick={model.openHelp} className={footerLink}><HelpCircle size={17}/> Help & support</button>
         <button type="button" onClick={model.openSettings} className={footerLink}><Settings size={17}/> Settings</button>
         <AccountBlock model={model}/>
