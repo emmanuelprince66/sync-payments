@@ -4,7 +4,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { useCreateExpense, useExpenseSettings, useUpdateExpense, type Expense } from '@/api/expenses'
-import { useBusinessBanks, useExpenseCategories } from '@/api/transactions'
+import { useBusinessBanks, useCreateExpenseCategory, useExpenseCategories } from '@/api/transactions'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { isoDay } from '@/lib/format'
 import { expenseSchema, type ExpenseValues } from '../schemas'
@@ -20,6 +20,9 @@ export function useExpenseForm({ draft, editing, onDone }: { draft: ExpenseDraft
   const create = useCreateExpense()
   const update = useUpdateExpense()
   const [step, setStep] = useState<1 | 2>(1)
+  const createCategory = useCreateExpenseCategory()
+  // + New category, right under the picker: typed here, saved, then selected.
+  const [newCategory, setNewCategory] = useState<string | null>(null)
 
   const form = useForm<ExpenseValues>({
     resolver: zodResolver(expenseSchema),
@@ -46,6 +49,22 @@ export function useExpenseForm({ draft, editing, onDone }: { draft: ExpenseDraft
 
   const expenseAccount = banks.banks.find(bank => bank.isExpenses)
 
+  const addCategory = () => {
+    const nameValue = (newCategory ?? '').trim()
+    if (nameValue.length < 2) { toast.error('Give the category a name.'); return }
+    if (!businessId) { toast.error('Select a business first'); return }
+    const existing = categories.data?.find(category => category.name.toLowerCase() === nameValue.toLowerCase())
+    if (existing) { form.setValue('categoryId', existing.id, { shouldValidate: true }); setNewCategory(null); return }
+    createCategory.mutate({ businessId, name: nameValue }, {
+      onSuccess: created => {
+        if (created.id) form.setValue('categoryId', created.id, { shouldValidate: true })
+        toast.success(`Category “${created.name}” added`)
+        setNewCategory(null)
+      },
+      onError: failure => toast.error(errorMessage(failure, 'Could not add the category.')),
+    })
+  }
+
   return {
     step,
     isEdit: Boolean(editing),
@@ -55,6 +74,15 @@ export function useExpenseForm({ draft, editing, onDone }: { draft: ExpenseDraft
     errors: form.formState.errors,
     categories: (categories.data ?? []).map(category => ({ value: category.id, label: category.name })),
     categoriesLoading: categories.isLoading,
+    newCategory: {
+      open: newCategory !== null,
+      value: newCategory ?? '',
+      start: () => setNewCategory(''),
+      change: setNewCategory,
+      cancel: () => setNewCategory(null),
+      save: addCategory,
+      saving: createCategory.isPending,
+    },
     summary: {
       name: name || 'Business expense',
       amount: money(Number(amount) || 0),

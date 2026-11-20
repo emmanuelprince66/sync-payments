@@ -1,4 +1,4 @@
-import { Clock3, CreditCard, Download, Plus, Settings, ShieldCheck, UserCheck } from 'lucide-react'
+import { Clock3, CreditCard, Download, Plus, Settings, ShieldCheck, Tag, UserCheck } from 'lucide-react'
 import { StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { KitButton } from '@/components/ui/PaymentKit'
@@ -45,6 +45,7 @@ export default function ExpensesPage() {
       subtitle="Control company spend from request through approval and payment."
       actions={<div className="flex flex-wrap gap-2">
         {tabs.tab === 'expenses' && <KitButton variant="secondary" onClick={page.exportCsv}><Download size={14}/> Export</KitButton>}
+        {page.permissions.canLog && <KitButton variant="secondary" onClick={page.categoriesModal.open}><Tag size={14}/> Categories</KitButton>}
         {tabs.canOpenSettings && tabs.tab !== 'settings' && <KitButton variant="secondary" onClick={openSettings}><Settings size={14}/> Settings</KitButton>}
         {page.permissions.canLog && <KitButton onClick={page.form.start}><Plus size={14}/> New expense</KitButton>}
       </div>}

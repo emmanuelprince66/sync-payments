@@ -70,10 +70,22 @@ export function CategoriesModal({ open, onClose, onManageBudgets }: { open: bool
         ? <ListSkeleton rows={3} rowClassName="flex items-center gap-4 p-3"/>
         : manager.rows.length === 0
           ? <KitEmpty title="No categories yet" note="Add your first one above." className="py-6"/>
-          : manager.rows.map(row => <div key={row.id || row.name} className="flex items-center gap-3 p-3">
-            <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{row.name}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{row.spent} spent · {row.count} {row.count === 1 ? 'expense' : 'expenses'}</p></div>
-            <p className="shrink-0 text-[10px] font-bold text-foreground/70">{row.budgetLabel}</p>
-          </div>)}
+          : manager.rows.map(row => manager.editing?.id === row.id
+            ? <div key={row.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
+              <input autoFocus value={manager.editing.name} onChange={event => manager.changeRename(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); manager.saveRename() } if (event.key === 'Escape') manager.cancelRename() }} aria-label="Category name" className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-white px-3 text-xs font-bold outline-none focus:border-secondary"/>
+              <div className="flex gap-2"><KitButton variant="secondary" onClick={manager.cancelRename} className="h-10 flex-1 sm:flex-none">Cancel</KitButton><KitButton onClick={manager.saveRename} loading={manager.renaming} className="h-10 flex-1 sm:flex-none">Save</KitButton></div>
+            </div>
+            : <div key={row.id} className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{row.name}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{row.spent} spent · {row.count} {row.count === 1 ? 'expense' : 'expenses'} · {row.budgetLabel}</p></div>
+                <button type="button" aria-label={`Rename ${row.name}`} onClick={() => manager.startRename(row.id, row.name)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"><Pencil size={14}/></button>
+                <button type="button" aria-label={`Delete ${row.name}`} onClick={() => manager.askDelete(row.id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-[#FFF0F0] hover:text-[#C72D34]"><Trash2 size={14}/></button>
+              </div>
+              {manager.deleting === row.id && <div className="mt-3 flex flex-col gap-2 rounded-lg bg-[#FFF0F0] p-3 sm:flex-row sm:items-center">
+                <p className="flex-1 text-[10px] font-bold text-[#7A1F24]">Delete “{row.name}”?{row.count > 0 ? ` It has ${row.count} ${row.count === 1 ? 'expense' : 'expenses'}.` : ''} This can't be undone.</p>
+                <div className="flex gap-2"><KitButton variant="secondary" onClick={manager.cancelDelete} className="h-9 flex-1 sm:flex-none">Keep</KitButton><KitButton onClick={manager.confirmDelete} loading={manager.removing} className="h-9 flex-1 bg-[#C72D34] hover:bg-[#B0262C] sm:flex-none">Delete</KitButton></div>
+              </div>}
+            </div>)}
     </div>
 
     <button type="button" onClick={onManageBudgets} className="mt-4 text-[10px] font-extrabold text-brand hover:underline">Set and track budgets in the Budgets tab</button>

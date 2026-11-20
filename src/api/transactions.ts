@@ -274,24 +274,53 @@ export const useExpenseCategories = (enabled = true) => {
   return useQuery({ queryKey: ['categories', 'EXPENSES', businessId], queryFn: () => getExpenseCategories(businessId as string), enabled: enabled && (Boolean(businessId) || !isLive()), staleTime: 5 * 60 * 1000 })
 }
 
-const createCategory = async ({ businessId, name }: { businessId: string; name: string }) => {
+/** POST category/business/{id}/ { name, type: EXPENSES } (sink's AddCategory). Resolves to the new category, so a form can select it. */
+const createCategory = async ({ businessId, name }: { businessId: string; name: string }): Promise<ExpenseCategory> => {
   if (!isLive()) {
-    MOCK_CATEGORIES.push({ id: `cat-${Date.now()}`, name })
-    return mockDelay(null, 400)
+    const created = { id: `cat-${Date.now()}`, name }
+    MOCK_CATEGORIES.push(created)
+    return mockDelay(created, 400)
   }
-  return apiRequest<unknown>(`category/business/${businessId}/`, { method: 'POST', body: { name, type: 'EXPENSES' } })
+  const response = asRecord(await apiRequest<unknown>(`category/business/${businessId}/`, { method: 'POST', body: { name, type: 'EXPENSES' } }))
+  const row = asRecord(response.data ?? response)
+  return { id: str(row.id), name: str(row.name) || name }
 }
 
-export const useCreateExpenseCategory = () => {
+/** PATCH category/{id}/ { name, type } (sink's EditExpensesCategory). */
+const renameCategory = async ({ id, name }: { id: string; name: string }) => {
+  if (!isLive()) {
+    const found = MOCK_CATEGORIES.find(category => category.id === id)
+    if (found) found.name = name
+    return mockDelay(null, 400)
+  }
+  return apiRequest<unknown>(`category/${id}/`, { method: 'PATCH', body: { name, type: 'EXPENSES' } })
+}
+
+/** DELETE category/{id}/ (sink's DeleteCategory). */
+const deleteCategory = async (id: string) => {
+  if (!isLive()) {
+    const at = MOCK_CATEGORIES.findIndex(category => category.id === id)
+    if (at >= 0) MOCK_CATEGORIES.splice(at, 1)
+    return mockDelay(null, 400)
+  }
+  return apiRequest<unknown>(`category/${id}/`, { method: 'DELETE' })
+}
+
+const useCategoryMutation = <T, R>(mutationFn: (input: T) => Promise<R>) => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: createCategory,
+    mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', 'EXPENSES'] })
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses })
     },
   })
 }
+
+export const useRenameExpenseCategory = () => useCategoryMutation(renameCategory)
+export const useDeleteExpenseCategory = () => useCategoryMutation(deleteCategory)
+
+export const useCreateExpenseCategory = () => useCategoryMutation(createCategory)
 
 export type TransferInput = { bankId: string; pin: string; ref: string; amount: string; narration: string; categoryId?: string }
 

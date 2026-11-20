@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { generatePath, useLocation, useNavigate, useParams } from 'react-router'
 import { invoiceBalance, invoiceErrorMessage, invoicePaymentState, isEditable, isInvoiceForbidden, isOut, useInvoice } from '@/api/invoices'
 import { paths } from '@/routes/paths'
+import { useBusinessDataStore } from '@/stores/business-data-store'
 import { documentFromInvoice } from '../document'
 import { useCurrentUserName } from './useCurrentUserName'
 import { useInvoiceActions } from './useInvoiceActions'
@@ -21,7 +22,13 @@ export function useInvoiceDetail() {
   const invoice = query.data
   const userName = useCurrentUserName()
 
-  const doc = useMemo(() => (invoice ? documentFromInvoice(invoice) : null), [invoice])
+  const businessLogo = useBusinessDataStore(state => state.businessData?.logo) || ''
+  // No logo saved on the invoice: use the business logo, as the Create form does.
+  const doc = useMemo(() => {
+    if (!invoice) return null
+    const base = documentFromInvoice(invoice)
+    return base.logoUrl ? base : { ...base, logoUrl: businessLogo }
+  }, [invoice, businessLogo])
   const pdf = useInvoicePdf(doc)
   const payment = useRecordPaymentForm(invoice, userName)
   const reminder = useInvoiceReminder(invoice, pdf, userName)

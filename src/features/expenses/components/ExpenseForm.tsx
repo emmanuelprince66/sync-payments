@@ -1,4 +1,4 @@
-import { ArrowRight, Check, CreditCard, ReceiptText, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Check, CreditCard, Plus, ReceiptText, ShieldCheck } from 'lucide-react'
 import type { Expense } from '@/api/expenses'
 import { KitModal, KitMoneyField, KitTextarea } from '@/components/ui/KitExtras'
 import { KitField, KitFormDate, KitSelect } from '@/components/ui/KitForm'
@@ -42,10 +42,19 @@ export function ExpenseForm({ draft, editing, onClose, onDone }: { draft: Expens
           <KitMoneyField label="Amount" symbol={symbol} error={form.errors.amount?.message} {...form.register('amount')}/>
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
-          <KitSelect label="Category" error={form.errors.categoryId?.message} {...form.register('categoryId')}>
-            <option value="">{form.categoriesLoading ? 'Loading categories…' : 'Select a category'}</option>
-            {form.categories.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </KitSelect>
+          <div className="min-w-0">
+            <KitSelect label="Category" error={form.errors.categoryId?.message} {...form.register('categoryId')}>
+              <option value="">{form.categoriesLoading ? 'Loading categories…' : 'Select a category'}</option>
+              {form.categories.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </KitSelect>
+            {/* Not a nested <form>: Enter saves the category without submitting the expense. */}
+            {form.newCategory.open
+              ? <div className="mt-3 flex flex-col gap-2 rounded-xl border border-border bg-muted/40 p-3">
+                <input autoFocus value={form.newCategory.value} onChange={event => form.newCategory.change(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); form.newCategory.save() } if (event.key === 'Escape') form.newCategory.cancel() }} placeholder="e.g. Fuel, Transport" aria-label="New category name" className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-bold outline-none focus:border-secondary"/>
+                <div className="flex gap-2"><KitButton variant="secondary" onClick={form.newCategory.cancel} className="h-9 flex-1">Cancel</KitButton><KitButton onClick={form.newCategory.save} loading={form.newCategory.saving} className="h-9 flex-1">Add category</KitButton></div>
+              </div>
+              : <button type="button" onClick={form.newCategory.start} className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-extrabold text-brand hover:underline"><Plus size={13}/>New category</button>}
+          </div>
           <KitFormDate control={form.control} name="date" label="Expense date" error={form.errors.date?.message}/>
         </div>
         <KitTextarea label="Business purpose" placeholder="What was this expense for?" {...form.register('note')}/>
