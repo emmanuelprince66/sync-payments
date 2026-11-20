@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       port: 5181,
       // Dev-only proxy so the browser avoids CORS while we talk to the Sync360 API.
       proxy: {
-        '/api/v1': { target: env.VITE_API_PROXY_TARGET || 'https://staging-api.sync360.africa', changeOrigin: true, secure: true },
+        '/api/v1': { target: env.VITE_API_PROXY_TARGET || 'https://api.sync360.africa', changeOrigin: true, secure: true },
       },
     },
   }
