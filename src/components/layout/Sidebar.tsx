@@ -91,6 +91,7 @@ export function Sidebar() {
               <Icon size={17} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-secondary' : undefined}/>
               <span>{label}</span>
               {id === 'expenses' && model.pendingApprovals > 0 &&<span className={cn('ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-extrabold', 'bg-secondary text-secondary-foreground')}>{model.pendingApprovals}</span>}
+              {id === 'payroll' && <span className="ml-auto rounded-full bg-white/10 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-white/60">Soon</span>}
               {id === 'compliance' && verification.loaded && !verification.complete && <span className={cn('ml-auto h-2 w-2 rounded-full', 'bg-secondary')}/>}
             </>}
           </NavLink>)}

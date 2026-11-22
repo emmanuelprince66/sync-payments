@@ -18,7 +18,8 @@ const loaders = {
   payouts: () => import('@/features/payouts/PayoutsPage'),
   terminals: () => import('@/features/terminals/TerminalsPage'),
   accounts: () => import('@/features/accounts/AccountsPage'),
-  payroll: () => import('@/features/payroll/PayrollPage'),
+  // Payroll is coming soon: the real page (features/payroll/PayrollPage) is kept; swap it back in here at launch.
+  payroll: () => import('@/features/payroll/PayrollComingSoon'),
   compliance: () => import('@/features/compliance/CompliancePage'),
   kyc: () => import('@/features/kyc/KycPage'),
   customers: () => import('@/features/customers/CustomersPage'),
