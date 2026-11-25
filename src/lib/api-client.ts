@@ -1,5 +1,6 @@
 import { env } from '@/config/env'
 import { useAuthStore } from '@/stores/auth-store'
+import { PLAN_GATE_COPY, planGateKind, usePlanGateStore } from '@/stores/plan-gate-store'
 
 export class ApiError extends Error {
   readonly status: number
@@ -47,6 +48,12 @@ export async function apiRequest<T>(path: string, { body, auth = true, headers, 
 
   if (!response.ok) {
     if (response.status === 401 && auth) useAuthStore.getState().logout()
+    // A plan refusal ("1" / "2" / "3") opens the upgrade dialog and reads as a sentence, never a bare code.
+    const planKind = planGateKind(data)
+    if (planKind) {
+      usePlanGateStore.getState().show(planKind)
+      throw new ApiError(PLAN_GATE_COPY[planKind].short, response.status, data)
+    }
     throw new ApiError(messageFrom(data, `Request failed (${response.status})`), response.status, data)
   }
   return data as T

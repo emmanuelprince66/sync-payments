@@ -5,6 +5,7 @@
 import { env } from '@/config/env'
 import { ApiError } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/auth-store'
+import { PLAN_GATE_COPY, planGateKind, usePlanGateStore } from '@/stores/plan-gate-store'
 
 /** True when talking to the real backend. VITE_AUTH_MODE=mock keeps the whole app on sample data. */
 export const isLive = () => env.authMode === 'api'
@@ -32,6 +33,12 @@ export async function apiFormRequest<T>(path: string, method: 'POST' | 'PATCH', 
     if (response.status === 401) useAuthStore.getState().logout()
     const record = asRecord(data)
     const message = str(record.message) || str(record.error) || str(record.detail) || `Request failed (${response.status})`
+    // A plan refusal ("1" / "2" / "3") opens the upgrade dialog and reads as a sentence, never a bare code.
+    const planKind = planGateKind(data)
+    if (planKind) {
+      usePlanGateStore.getState().show(planKind)
+      throw new ApiError(PLAN_GATE_COPY[planKind].short, response.status, data)
+    }
     throw new ApiError(message, response.status, data)
   }
   return data as T
