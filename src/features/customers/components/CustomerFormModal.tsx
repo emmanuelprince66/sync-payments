@@ -1,6 +1,7 @@
 import { CircleAlert, UserCheck, UserPlus, UserRoundPen } from 'lucide-react'
+import { KitAddressField } from '@/components/ui/KitAddressField'
 import type { Customer } from '@/api/customers'
-import { KitModal, KitTextarea } from '@/components/ui/KitExtras'
+import { KitModal } from '@/components/ui/KitExtras'
 import { KitDateField, KitField, KitSelect } from '@/components/ui/KitForm'
 import { KitButton } from '@/components/ui/PaymentKit'
 import { useCustomerForm } from '../hooks/useCustomerForm'
@@ -52,10 +53,10 @@ function CustomerForm({ customer, onClose }: { customer: Customer | null; onClos
       </div>
 
       <div className="mt-1 text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-foreground">Address (optional)</div>
-      <KitTextarea label="Street address" rows={2} placeholder="e.g. 22 Awolowo Road" error={errors.address?.message} {...register('address')}/>
+      <KitAddressField label="Street address" placeholder="Start typing the address, e.g. 22 Awolowo Road" hint="Pick a suggestion to fill the state and city." error={errors.address?.message} {...form.addressField}/>
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
-        <KitSelect label="State" placeholder="Select state" options={form.stateOptions} error={errors.state?.message} {...register('state')}/>
-        <KitField label="City" placeholder="e.g. Ikeja" error={errors.city?.message} {...register('city')}/>
+        <KitSelect label="State" placeholder="Select state" options={form.stateOptions} error={errors.state?.message} {...form.registerLocation('state')}/>
+        <KitField label="City" placeholder="e.g. Ikeja" error={errors.city?.message} {...form.registerLocation('city')}/>
       </div>
       {form.isEditing && <KitField label="Address phone" type="tel" placeholder="Delivery contact number" error={errors.addressPhone?.message} {...register('addressPhone')}/>}
 

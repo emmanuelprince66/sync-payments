@@ -33,7 +33,7 @@ export const CUSTOMER_STATUS_OPTIONS = [
 
 export type CustomerStatusFilter = typeof CUSTOMER_STATUS_OPTIONS[number]['value']
 
-export type CustomerAddress = { address: string; city: string; state: string; country: string; phone: string; isDefault: boolean }
+export type CustomerAddress = { address: string; city: string; state: string; country: string; phone: string; isDefault: boolean; /** Pinned by a picked address suggestion; "" when none. */ latitude?: string; longitude?: string }
 
 export type Customer = {
   id: string
@@ -71,7 +71,9 @@ export type CustomerInput = {
 
 const mapAddress = (value: unknown): CustomerAddress => {
   const record = asRecord(value)
-  return { address: str(record.address), city: str(record.city), state: str(record.state), country: str(record.country), phone: str(record.phone), isDefault: record.is_default === true }
+  const latitude = record.latitude != null && record.latitude !== '' ? String(record.latitude) : ''
+  const longitude = record.longitude != null && record.longitude !== '' ? String(record.longitude) : ''
+  return { address: str(record.address), city: str(record.city), state: str(record.state), country: str(record.country), phone: str(record.phone), isDefault: record.is_default === true, latitude, longitude }
 }
 
 const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Active', NEW: 'New', AT_RISK: 'At Risk', INACTIVE: 'Inactive' }
@@ -101,6 +103,8 @@ export const mapCustomer = (value: unknown): Customer => {
 
 /** Sink's nested address. A phone is only sent when editing. */
 const toAddressBody = (address: CustomerAddress, isEdit: boolean) => ({
+  // Sent only as a pair (sink): the API's latitude/longitude are optional but not nullable.
+  ...(address.latitude && address.longitude ? { latitude: address.latitude, longitude: address.longitude } : {}),
   address: address.address,
   city: address.city || undefined,
   state: address.state || undefined,

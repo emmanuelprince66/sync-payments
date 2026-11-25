@@ -11,6 +11,9 @@ export const customerSchema = z.object({
   addressPhone: z.string(),
   state: z.string(),
   city: z.string(),
+  /** Pinned by a picked suggestion; cleared when the street, state or city is edited by hand. */
+  latitude: z.string(),
+  longitude: z.string(),
 })
 export type CustomerValues = z.infer<typeof customerSchema>
 
