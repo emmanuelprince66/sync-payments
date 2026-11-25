@@ -73,7 +73,10 @@ export function PaidStamp({ doc }: { doc: InvoiceDocumentModel }) {
 export function DocumentLogo({ doc, size = 44, onDark = false }: { doc: InvoiceDocumentModel; size?: number; onDark?: boolean }) {
   if (doc.logoUrl) {
     return <span className="inline-flex items-center rounded-md" style={onDark ? { background: '#FFFFFF', padding: 6 } : undefined}>
-      <img src={doc.logoUrl} alt="Business logo" crossOrigin="anonymous" className="object-contain object-left" style={{ height: size, maxWidth: size * 3.5 }}/>
+      {/* No crossOrigin: the S3 buckets send no CORS headers, and asking for CORS makes the browser drop the
+          image entirely. Plain loading always shows it; the PDF export (html2canvas, useCORS) can only copy it
+          once the buckets allow these origins, and leaves the space empty until then. */}
+      <img src={doc.logoUrl} alt="Business logo" className="object-contain object-left" style={{ height: size, maxWidth: size * 3.5 }}/>
     </span>
   }
   return <span className="grid shrink-0 place-items-center rounded-xl text-[18px] font-black" style={{ width: size, height: size, background: onDark ? '#FFFFFF' : doc.accent, color: onDark ? doc.accent : '#FFFFFF' }}>

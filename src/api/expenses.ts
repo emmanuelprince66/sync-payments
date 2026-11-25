@@ -599,13 +599,13 @@ const createExpense = async ({ businessId, input }: { businessId: string; input:
   return input.items.length
 }
 
-/** Also reclassifies: entry_type and category_id go up with every edit. */
+/** Also reclassifies: entry_type and category_id go up with every edit. A transfer left without a category sends category_id: null, which clears the old one. */
 const updateExpense = async ({ id, input }: { id: string; input: ExpenseInput }) => {
   if (!isLive()) {
     mock.expenses = mock.expenses.map(row => (row.id === id ? { ...row, entryType: input.entryType, name: input.name, amount: input.amount, date: input.date, note: input.note ?? '', categoryId: input.categoryId } : row))
     return mockDelay(null, 500)
   }
-  return apiRequest<unknown>(`expenses/${id}/`, { method: 'PATCH', body: { entry_type: input.entryType, name: input.name, amount: input.amount, date: input.date, ...(input.categoryId ? { category_id: input.categoryId } : {}), ...(input.note ? { note: input.note } : {}) } })
+  return apiRequest<unknown>(`expenses/${id}/`, { method: 'PATCH', body: { entry_type: input.entryType, name: input.name, amount: input.amount, date: input.date, ...(input.categoryId ? { category_id: input.categoryId } : input.entryType === 'TRANSFER' ? { category_id: null } : {}), ...(input.note ? { note: input.note } : {}) } })
 }
 
 const deleteExpense = async (id: string) => {
