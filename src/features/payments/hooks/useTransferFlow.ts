@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMemo, useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useEffect, useMemo, useState } from 'react'
+import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { useLocation } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
-import { useInitiateTransfer, type InitiatedTransfer } from '@/api/expenses'
+import { ENTRY_TYPES, entryTypeLabel, useInitiateTransfer, type EntryType, type InitiatedTransfer } from '@/api/expenses'
 import { extractTransactionId, useBeneficiaryEnquiry, useBusinessBanks, useExpenseCategories, useRecentBeneficiaries, useTransfer, useTransferBanks, useWalletBalances, type RecentBeneficiary } from '@/api/transactions'
 import { maskAccount } from '@/features/transactions/format'
 import type { ReceiptDetails } from '@/features/transactions/types'
@@ -22,7 +22,9 @@ import { TRANSFER_DETAIL_FIELDS, transferSchema, type TransferValues } from '../
  * Who may pay from what (sink): wallet accounts need manage_bank_details and can_initiate_expense_transfer;
  * an expense account needs can_initiate_expense_transfer.
  * Main and sub-accounts pay through wallet/transfer; an expense account goes through the expense
- * transfer route, where the backend either releases it or holds it for approval.
+ * transfer route, where the backend either releases it or holds it for approval. That route also says what the
+ * money is (entry_type: expense, stock purchase or transfer) and may split one payout across several categories:
+ * one bank transfer and one fee for the total, one entry per category.
  */
 export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
   const location = useLocation()
@@ -44,9 +46,10 @@ export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
 
   const form = useForm<TransferValues>({
     resolver: zodResolver(transferSchema),
-    defaultValues: { fromBankId: stateBank ?? defaultBank, bankCode: '', accountNumber: '', amount: '', categoryId: '', narration: '', pin: '' },
+    defaultValues: { fromBankId: stateBank ?? defaultBank, bankCode: '', accountNumber: '', amount: '', categoryId: '', narration: '', pin: '', entryType: 'EXPENSE', split: false, items: [] },
   })
-  const [watchedFrom, bankCode, accountNumber, amount, categoryId, narration, pin] = useWatch({ control: form.control, name: ['fromBankId', 'bankCode', 'accountNumber', 'amount', 'categoryId', 'narration', 'pin'] })
+  const [watchedFrom, bankCode, accountNumber, amount, categoryId, narration, pin, entryType, split, items] = useWatch({ control: form.control, name: ['fromBankId', 'bankCode', 'accountNumber', 'amount', 'categoryId', 'narration', 'pin', 'entryType', 'split', 'items'] })
+  const lines = useFieldArray({ control: form.control, name: 'items' })
   // The form may mount before the business has loaded; fall back to the selected account until one is picked.
   const fromBankId = allowedId(watchedFrom) || stateBank || defaultBank
 
@@ -61,13 +64,19 @@ export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
   const bankName = bankOptions.find(option => option.value === bankCode)?.label ?? ''
   const fromBank = banks.banks.find(bank => bank.id === fromBankId) ?? null
   const isExpenseAccount = fromBank?.isExpenses === true
+  // Splitting is for expense payouts that aren't plain transfers; the amount is then the lines' sum.
+  const splitting = isExpenseAccount && split && entryType !== 'TRANSFER'
+  const splitTotal = (items ?? []).reduce((sum, line) => sum + (Number(line.amount) || 0), 0)
+  useEffect(() => {
+    if (splitting) form.setValue('amount', splitTotal > 0 ? String(splitTotal) : '', { shouldValidate: form.formState.isSubmitted })
+  }, [splitting, splitTotal, form])
   const fees = isExpenseAccount ? expenseTransferFees(amount) : walletTransferFees(amount)
   const availableBalance = balances.balances[fromBankId] ?? 0
   const beneficiary = enquiry.data ?? null
   const fromLabel = fromBank ? `${fromBank.account_name || 'Account'} ${maskAccount(fromBank.account_number)}` : 'Select an account'
 
   const reset = () => {
-    form.reset({ fromBankId, bankCode: '', accountNumber: '', amount: '', categoryId: '', narration: '', pin: '' })
+    form.reset({ fromBankId, bankCode: '', accountNumber: '', amount: '', categoryId: '', narration: '', pin: '', entryType: 'EXPENSE' as const, split: false, items: [] })
     setStep(1)
     setError('')
   }
@@ -108,7 +117,8 @@ export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
     const onError = (failure: unknown) => { setError(errorMessage(failure, 'Transfer failed. Please try again.')); form.setValue('pin', '') }
     if (isExpenseAccount) {
       if (!banks.businessId) return
-      initiate.mutate({ businessId: banks.businessId, amount: Number(amount), accountNumber, bankCode, categoryId: categoryId || undefined, narration: narration || undefined, pin }, {
+      const splitLines = splitting ? items.map(line => ({ categoryId: line.categoryId, name: line.name.trim(), amount: Number(line.amount) })) : undefined
+      initiate.mutate({ businessId: banks.businessId, entryType, amount: Number(amount), accountNumber, bankCode, categoryId: splitting ? undefined : categoryId || undefined, items: splitLines, narration: narration || undefined, pin }, {
         onSuccess: result => {
           if (result.status === 'SUCCESS') { finishDirect(result, result); return }
           setSubmittedForApproval(true)
@@ -158,6 +168,32 @@ export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
       applyKey: (key: string) => { const row = (recent.data ?? []).find(item => `${item.bankCode ?? item.bankName}-${item.accountNumber}` === key); if (row) applyBeneficiary(row) },
     },
     categories: (categories.data ?? []).map(category => ({ value: category.id, label: category.name })),
+    /** Expense-account payouts: what the money is, and an optional split across categories. */
+    entryType: {
+      value: entryType,
+      options: ENTRY_TYPES,
+      hint: ENTRY_TYPES.find(item => item.value === entryType)?.hint ?? '',
+      label: entryTypeLabel(entryType),
+      set: (value: EntryType) => form.setValue('entryType', value),
+    },
+    split: {
+      allowed: isExpenseAccount && entryType !== 'TRANSFER',
+      on: splitting,
+      toggle: () => {
+        if (splitting) { form.setValue('split', false); form.setValue('items', []); form.setValue('amount', ''); return }
+        // Start from what's already typed: the single amount and category become the first line.
+        form.setValue('split', true)
+        form.setValue('items', [{ categoryId, name: '', amount }, { categoryId: '', name: '', amount: '' }])
+      },
+      rows: lines.fields,
+      add: () => lines.append({ categoryId: '', name: '', amount: '' }),
+      remove: (index: number) => { if (lines.fields.length > 2) lines.remove(index) },
+      canRemove: lines.fields.length > 2,
+      total: money(splitTotal),
+      errors: form.formState.errors.items,
+      /** For the review step: each line with its category's name. */
+      summary: splitting ? (items ?? []).map(line => ({ category: categories.data?.find(category => category.id === line.categoryId)?.name ?? 'Category', name: line.name.trim(), amount: money(Number(line.amount) || 0) })) : [],
+    },
     amount: money(Number(amount) || 0),
     charges: money(fees.charges),
     stampDuty: fees.stampDuty ? money(fees.stampDuty) : '',

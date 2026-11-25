@@ -1,4 +1,4 @@
-import { Clock3, CreditCard, Download, Plus, Settings, ShieldCheck, Tag, UserCheck } from 'lucide-react'
+import { Clock3, CreditCard, Download, Package, Plus, Settings, ShieldCheck, Tag, UserCheck } from 'lucide-react'
 import { StatTile, StatTileSkeleton } from '@/components/ui/KitExtras'
 import { KitPage, KitPageHeader } from '@/components/ui/KitPage'
 import { KitButton } from '@/components/ui/PaymentKit'
@@ -47,7 +47,7 @@ export default function ExpensesPage() {
         {tabs.tab === 'expenses' && <KitButton variant="secondary" onClick={page.exportCsv}><Download size={14}/> Export</KitButton>}
         {page.permissions.canLog && <KitButton variant="secondary" onClick={page.categoriesModal.open}><Tag size={14}/> Categories</KitButton>}
         {tabs.canOpenSettings && tabs.tab !== 'settings' && <KitButton variant="secondary" onClick={openSettings}><Settings size={14}/> Settings</KitButton>}
-        {page.permissions.canLog && <KitButton onClick={page.form.start}><Plus size={14}/> New expense</KitButton>}
+        {page.permissions.canLog && <KitButton onClick={page.form.start}><Plus size={14}/> Record spend</KitButton>}
       </div>}
     />
 
@@ -62,11 +62,12 @@ export default function ExpensesPage() {
 
       <ExpenseAccountCard model={accounts} onCreate={accounts.create.open} onTransfer={accounts.transfer.start}/>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-[repeat(2,minmax(0,1fr))] xl:grid-cols-[repeat(4,minmax(0,1fr))]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-[repeat(2,minmax(0,1fr))] xl:grid-cols-[repeat(5,minmax(0,1fr))] sm:[&>*:last-child]:col-span-2 xl:[&>*:last-child]:col-span-1">
         {page.statsLoading
-          ? Array.from({ length: 4 }, (_, index) => <StatTileSkeleton key={index}/>)
+          ? Array.from({ length: 5 }, (_, index) => <StatTileSkeleton key={index}/>)
           : <>
-            <StatTile label="Month to date" value={page.stats.month} note={page.stats.monthNote} icon={CreditCard}/>
+            <StatTile label="Expenses this month" value={page.stats.month} note={page.stats.monthNote} icon={CreditCard}/>
+            <StatTile label="Purchases this month" value={page.stats.purchases} note={page.stats.purchasesNote} icon={Package} tone="blue"/>
             <StatTile label="Awaiting approval" value={page.stats.awaiting} note={page.stats.awaitingNote} icon={Clock3} tone="amber"/>
             <StatTile label="Approved" value={page.stats.approved} note={page.stats.approvedNote} icon={UserCheck} tone="blue"/>
             <StatTile label="Policy savings" value={page.stats.savings} note={page.stats.savingsNote} icon={ShieldCheck}/>

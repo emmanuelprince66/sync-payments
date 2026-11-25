@@ -10,8 +10,9 @@ import { queryKeys } from './query-keys'
 /**
  * Expenses, budgets and approval governance, same endpoints as sink-inventory (hooks/useExpensesHook,
  * useExpenseAccountsHook, api/expenses/*, types/expense-governance):
- *  GET/POST     expenses/business/{id}/                 list (results.{data,total_expenses,summary}) / log an expense
- *  GET/PATCH/DELETE expenses/{id}/
+ *  GET/POST     expenses/business/{id}/                 list (results.{data,total_expenses,total_purchases,summary}) / log one
+ *                                                       entry or a bulk { entry_type, date, note, items: [{ name, category_id, amount }] }
+ *  GET/PATCH/DELETE expenses/{id}/                      PATCH also reclassifies (entry_type and/or category_id)
  *  POST         expenses/{id}/approve/ { pin }          signing off a LOGGED expense: nothing is disbursed
  *  POST         expenses/{id}/reject/  { rejection_reason }
  *  GET          expenses/business/{id}/budgets/?year=   { year, data: [{ id, category_id, category_name, year, total_budget_amount,
@@ -23,7 +24,12 @@ import { queryKeys } from './query-keys'
  *  GET          expenses/business/{id}/recent-activity/
  *  GET          expenses/business/{id}/spend-by-user/
  *  GET          expenses/transfers/{id}/                payout requests, each with charges, stamp_duty, total_debit (decimal strings)
- *  POST         expenses/transfers/initiate/{id}/       { business_id, amount, account_number, bank_code, category_id?, narration?, pin }
+ *  POST         expenses/transfers/initiate/{id}/       { business_id, entry_type, amount, account_number, bank_code, category_id?, narration?, pin }
+ *                                                       or a split payout: items: [{ category_id, amount, name }] (one bank transfer, one fee)
+ *
+ * Every entry has an entry_type: EXPENSE (operating cost: Expense card, budgets, P&L), PURCHASE (stock / raw
+ * materials: Purchase card only) or TRANSFER (moving money between accounts: no card, budget or P&L; no category needed).
+ * List endpoints take ?entry_type=EXPENSE|PURCHASE|TRANSFER|ALL.
  *  POST         expenses/transfers/{id}/approve/ { pin } dispatches the payout
  *  POST         expenses/transfers/{id}/reject/  { rejection_reason }
  *  GET/PATCH    expenses/settings/{id}/                 limits and approval policy (owner and admins write)
@@ -32,6 +38,25 @@ import { queryKeys } from './query-keys'
  */
 
 export const EXPENSES_PAGE_SIZE = 20
+
+// ─── Entry types ────────────────────────────────────────────────────────────
+
+export type EntryType = 'EXPENSE' | 'PURCHASE' | 'TRANSFER'
+export type EntryFilter = EntryType | 'ALL'
+
+export const ENTRY_TYPES: readonly { value: EntryType; label: string; hint: string }[] = [
+  { value: 'EXPENSE', label: 'Expense', hint: 'Running costs: fuel, rent, utilities, salaries. Counts toward budgets and profit.' },
+  { value: 'PURCHASE', label: 'Purchase', hint: 'Stock or raw materials. Tracked on the Purchases card, not as an expense.' },
+  { value: 'TRANSFER', label: 'Transfer', hint: 'Moving money between accounts. Not an expense; a category is optional.' },
+]
+
+export const entryTypeLabel = (type: EntryType) => ENTRY_TYPES.find(item => item.value === type)?.label ?? 'Expense'
+
+/** Older rows come without entry_type: they are expenses. */
+export const entryTypeOf = (value: unknown): EntryType => {
+  const type = str(value).toUpperCase()
+  return type === 'PURCHASE' || type === 'TRANSFER' ? type : 'EXPENSE'
+}
 
 // ─── Permissions (sink: useExpensePermissions) ──────────────────────────────
 
@@ -88,6 +113,7 @@ const paginated = (raw: unknown, limit: number) => {
 
 export type Expense = {
   id: string
+  entryType: EntryType
   reference: string
   name: string
   category: string
@@ -104,21 +130,32 @@ export type Expense = {
   createdAt: string
 }
 
-export type ExpenseSummary = { spentThisMonth: number; accountBalance: number; bankName: string; accountNumber: string }
-export type ExpensesPageData = { rows: Expense[]; total: number; pages: number; totalExpenses: number; summary: ExpenseSummary }
-export type ExpenseQuery = { page: number; search: string; category: string; status: string; startDate: string; endDate: string; limit?: number }
-export type ExpenseInput = { name: string; categoryId: string; amount: number; date: string; note?: string }
+export type ExpenseSummary = { spentThisMonth: number; purchasedThisMonth: number; accountBalance: number; bankName: string; accountNumber: string }
+export type ExpensesPageData = { rows: Expense[]; total: number; pages: number; totalExpenses: number; totalPurchases: number; summary: ExpenseSummary }
+export type ExpenseQuery = { page: number; search: string; category: string; status: string; startDate: string; endDate: string; entryType?: EntryFilter; limit?: number }
+/** One line of a logged entry. categoryId may be '' only for a TRANSFER. */
+export type ExpenseLine = { name: string; categoryId: string; amount: number }
+export type ExpenseInput = { entryType: EntryType; name: string; categoryId: string; amount: number; date: string; note?: string }
+/** Several lines logged at once, sharing a type, date and note. */
+export type ExpenseBatchInput = { entryType: EntryType; date: string; note?: string; items: ExpenseLine[] }
 
 /** One category budget, with spend worked out by the backend. Joined to categories by categoryId. */
 export type Budget = { id: string; categoryId: string; categoryName: string; year: number; total: number; months: number; monthly: number; spent: number; remaining: number; pctUsed: number; createdAt?: string }
 export type BudgetInput = { categoryId: string; year: number; total: number; months: number }
-export type CategorySpend = { id: string; name: string; spent: number; count: number; budget: number }
+/** spent/count are EXPENSE entries (the budget maths); purchased/purchaseCount are PURCHASE entries. */
+export type CategorySpend = { id: string; name: string; spent: number; count: number; purchased: number; purchaseCount: number; budget: number }
 export type ActivityRow = { id: string; name: string; category: string; by: string; amount: number; status: string; createdAt: string }
 export type UserSpend = { id: string; name: string; total: number }
 export type ExpenseSettings = { maxPerTransaction: string; dailyTransferLimit: string; dailyTransactionLimit: number; requireApprovalForAll: boolean }
 
+/** One category's share of a split payout. */
+export type TransferItem = { id: string; categoryId: string; category: string; name: string; amount: number; note: string }
+
 export type ExpenseTransfer = {
   id: string
+  entryType: EntryType
+  /** A split payout's lines; empty for a single-category payout. */
+  items: TransferItem[]
   reference: string
   amount: number
   /** From the API (decimal strings): bank charge, stamp duty and what actually leaves the account. */
@@ -168,6 +205,7 @@ const mapExpense = (value: unknown): Expense => {
   const row = asRecord(value)
   return {
     id: str(row.id),
+    entryType: entryTypeOf(row.entry_type),
     reference: str(row.reference) || str(row.payment_reference) || str(row.id).slice(0, 8),
     name: str(row.name),
     category: refLabel(row.category),
@@ -197,13 +235,20 @@ const mapBudget = (value: unknown): Budget => {
 
 const mapCategorySpend = (value: unknown): CategorySpend => {
   const row = asRecord(value)
-  return { id: str(row.category_id) || str(row.id), name: str(row.category_name) || str(row.name), spent: num(row.spent), count: num(row.transaction_count), budget: num(asRecord(row.budget).total_budget_amount) || num(row.budget) }
+  return { id: str(row.category_id) || str(row.id), name: str(row.category_name) || str(row.name), spent: num(row.spent), count: num(row.transaction_count), purchased: num(row.purchased), purchaseCount: num(row.purchase_count), budget: num(asRecord(row.budget).total_budget_amount) || num(row.budget) }
+}
+
+const mapTransferItem = (value: unknown): TransferItem => {
+  const row = asRecord(value)
+  return { id: str(row.id), categoryId: refId(row.category) || str(row.category), category: str(row.category_name) || refLabel(row.category), name: str(row.name), amount: num(row.amount), note: str(row.note) }
 }
 
 const mapTransfer = (value: unknown): ExpenseTransfer => {
   const row = asRecord(value)
   return {
     id: str(row.id),
+    entryType: entryTypeOf(row.entry_type),
+    items: Array.isArray(row.items) ? row.items.map(mapTransferItem) : [],
     reference: str(row.payment_reference) || str(row.id).slice(0, 8),
     amount: num(row.amount),
     charges: num(row.charges),
@@ -266,14 +311,14 @@ const MOCK_CATEGORY_IDS: Record<string, string> = { Operations: 'cat-ops', Trave
 
 const mockExpense = (id: string, name: string, category: string, owner: string, amount: number, status: string, days: number, canApprove = false): Expense => {
   const date = new Date(Date.now() - days * 86_400_000)
-  return { id, reference: id, name, category, categoryId: MOCK_CATEGORY_IDS[category] ?? `cat-${category.toLowerCase()}`, amount, date: date.toISOString().slice(0, 10), note: '', status, owner, approvedBy: status === 'APPROVED' ? 'Tobi Olosunde' : '', rejectedBy: '', rejectionReason: '', canApprove, createdAt: date.toISOString() }
+  return { id, entryType: 'EXPENSE', reference: id, name, category, categoryId: MOCK_CATEGORY_IDS[category] ?? `cat-${category.toLowerCase()}`, amount, date: date.toISOString().slice(0, 10), note: '', status, owner, approvedBy: status === 'APPROVED' ? 'Tobi Olosunde' : '', rejectedBy: '', rejectionReason: '', canApprove, createdAt: date.toISOString() }
 }
 
 const mockTransfer = (id: string, amount: number, category: string, beneficiaryName: string, beneficiaryBank: string, narration: string, status: string, initiatedByName: string, hoursAgo: number, extra: Partial<ExpenseTransfer> = {}): ExpenseTransfer => {
   const created = new Date(Date.now() - hoursAgo * 3_600_000).toISOString()
   const decided = new Date(Date.now() - (hoursAgo - 1) * 3_600_000).toISOString()
   return {
-    id, reference: id, amount, ...expenseTransferFees(amount), hasFees: true, category, beneficiaryName, beneficiaryAccount: '10288340' + id.slice(-2), beneficiaryBank, narration, status,
+    id, entryType: 'EXPENSE', items: [], reference: id, amount, ...expenseTransferFees(amount), hasFees: true, category, beneficiaryName, beneficiaryAccount: '10288340' + id.slice(-2), beneficiaryBank, narration, status,
     initiatedBy: `u-${initiatedByName.split(' ')[0].toLowerCase()}`, initiatedByName,
     approvedByName: '', approvedAt: extra.approvedByName ? decided : '', rejectedByName: '', rejectedAt: extra.rejectedByName ? decided : '', rejectionReason: '',
     canApprove: false, createdAt: created, ...extra,
@@ -298,6 +343,7 @@ const mock = {
     mockExpense('EXP-2040', 'AWS', 'Software', 'David Cole', 84240, 'APPROVED', 1),
     mockExpense('EXP-2039', 'WeWork', 'Operations', 'Tobi Olosunde', 320000, 'APPROVED', 2),
     mockExpense('EXP-2038', 'Notion Labs', 'Software', 'Maya Chen', 18000, 'APPROVED', 2),
+    { ...mockExpense('EXP-2036', 'Flour, 20 bags', 'Operations', 'Tobi Olosunde', 240000, 'APPROVED', 3), entryType: 'PURCHASE' as const },
     mockExpense('EXP-2037', 'Q3 campaign production', 'Marketing', 'David Cole', 680000, 'PENDING_APPROVAL', 0, true),
     mockExpense('EXP-2035', 'Duplicate courier claim', 'Operations', 'David Cole', 42000, 'REJECTED', 6),
   ] as Expense[],
@@ -322,16 +368,18 @@ type MockBudget = Pick<Budget, 'id' | 'categoryId' | 'categoryName' | 'year' | '
 
 /** What the budgets endpoint works out server-side: spent / remaining / pct_used per category. */
 const mockBudgetRows = (year: number): Budget[] => mock.budgets.filter(budget => budget.year === year).map(budget => {
-  const spent = mock.expenses.filter(row => row.categoryId === budget.categoryId && row.status !== 'REJECTED').reduce((sum, row) => sum + row.amount, 0)
+  const spent = mock.expenses.filter(row => row.entryType === 'EXPENSE' && row.categoryId === budget.categoryId && row.status !== 'REJECTED').reduce((sum, row) => sum + row.amount, 0)
   return { ...budget, spent, remaining: budget.total - spent, pctUsed: budget.total ? Math.round((spent / budget.total) * 1000) / 10 : 0 }
 })
 
 const mockCategorySpend = (): CategorySpend[] => {
   const byName = new Map<string, CategorySpend>()
-  for (const name of ['Operations', 'Travel', 'Software', 'Marketing']) byName.set(name, { id: MOCK_CATEGORY_IDS[name], name, spent: 0, count: 0, budget: mock.budgets.find(budget => budget.categoryId === MOCK_CATEGORY_IDS[name])?.total ?? 0 })
+  for (const name of ['Operations', 'Travel', 'Software', 'Marketing']) byName.set(name, { id: MOCK_CATEGORY_IDS[name], name, spent: 0, count: 0, purchased: 0, purchaseCount: 0, budget: mock.budgets.find(budget => budget.categoryId === MOCK_CATEGORY_IDS[name])?.total ?? 0 })
   for (const row of mock.expenses) {
     const entry = byName.get(row.category)
-    if (entry && row.status !== 'REJECTED') { entry.spent += row.amount; entry.count += 1 }
+    if (!entry || row.status === 'REJECTED') continue
+    if (row.entryType === 'EXPENSE') { entry.spent += row.amount; entry.count += 1 }
+    if (row.entryType === 'PURCHASE') { entry.purchased += row.amount; entry.purchaseCount += 1 }
   }
   return [...byName.values()]
 }
@@ -342,8 +390,8 @@ const getExpenses = async (businessId: string, query: ExpenseQuery): Promise<Exp
   const limit = query.limit ?? EXPENSES_PAGE_SIZE
   if (!isLive()) {
     const term = query.search.toLowerCase()
-    const rows = mock.expenses.filter(row => (!term || `${row.name} ${row.reference} ${row.owner}`.toLowerCase().includes(term)) && (!query.status || row.status === query.status) && (!query.category || row.categoryId === query.category || row.category === query.category) && (!query.startDate || row.date >= query.startDate) && (!query.endDate || row.date <= query.endDate))
-    return mockDelay({ rows: rows.slice((query.page - 1) * limit, query.page * limit), total: rows.length, pages: Math.max(Math.ceil(rows.length / limit), 1), totalExpenses: mock.expenses.reduce((sum, row) => sum + row.amount, 0), summary: { spentThisMonth: 1_102_240, accountBalance: 42800, bankName: 'VFD Microfinance Bank', accountNumber: '0048928210' } })
+    const rows = mock.expenses.filter(row => (!query.entryType || query.entryType === 'ALL' || row.entryType === query.entryType) && (!term || `${row.name} ${row.reference} ${row.owner}`.toLowerCase().includes(term)) && (!query.status || row.status === query.status) && (!query.category || row.categoryId === query.category || row.category === query.category) && (!query.startDate || row.date >= query.startDate) && (!query.endDate || row.date <= query.endDate))
+    return mockDelay({ rows: rows.slice((query.page - 1) * limit, query.page * limit), total: rows.length, pages: Math.max(Math.ceil(rows.length / limit), 1), totalExpenses: mock.expenses.filter(row => row.entryType === 'EXPENSE').reduce((sum, row) => sum + row.amount, 0), totalPurchases: mock.expenses.filter(row => row.entryType === 'PURCHASE').reduce((sum, row) => sum + row.amount, 0), summary: { spentThisMonth: 1_102_240, purchasedThisMonth: 240_000, accountBalance: 42800, bankName: 'VFD Microfinance Bank', accountNumber: '0048928210' } })
   }
   const params = new URLSearchParams({ page: String(query.page), limit: String(limit) })
   if (query.search) params.set('search', query.search)
@@ -351,6 +399,7 @@ const getExpenses = async (businessId: string, query: ExpenseQuery): Promise<Exp
   if (query.status) params.set('status', query.status)
   if (query.startDate) params.set('start_date', query.startDate)
   if (query.endDate) params.set('end_date', query.endDate)
+  if (query.entryType) params.set('entry_type', query.entryType)
   const response = await apiRequest<unknown>(`expenses/business/${businessId}/?${params.toString()}`)
   const page = paginated(response, limit)
   const summary = asRecord(at(response, 'results.summary'))
@@ -359,7 +408,8 @@ const getExpenses = async (businessId: string, query: ExpenseQuery): Promise<Exp
     total: page.total,
     pages: page.pages,
     totalExpenses: num(at(response, 'results.total_expenses')),
-    summary: { spentThisMonth: num(summary.spent_this_month), accountBalance: num(summary.account_balance), bankName: str(summary.bank_name), accountNumber: str(summary.account_number) },
+    totalPurchases: num(at(response, 'results.total_purchases')),
+    summary: { spentThisMonth: num(summary.spent_this_month), purchasedThisMonth: num(summary.purchased_this_month), accountBalance: num(summary.account_balance), bankName: str(summary.bank_name), accountNumber: str(summary.account_number) },
   }
 }
 
@@ -404,10 +454,10 @@ export const useCategorySpend = () => {
   return useQuery({ queryKey: [...queryKeys.expenses, 'categories', businessId], queryFn: () => getCategorySpend(businessId as string), enabled: !isLive() || Boolean(businessId) })
 }
 
-/** Logged expenses and transfers together. Used for the status totals, read from the latest 100. */
+/** Logged entries and transfers together, every entry type. Used for the status totals, read from the latest 100. */
 const getExpenseTransactions = async (businessId: string) => {
   if (!isLive()) return mockDelay([...mock.expenses])
-  const response = await apiRequest<unknown>(`expenses/business/${businessId}/transactions/?limit=100`)
+  const response = await apiRequest<unknown>(`expenses/business/${businessId}/transactions/?limit=100&entry_type=ALL`)
   return paginated(response, 100).rows.map(mapExpense)
 }
 
@@ -534,20 +584,28 @@ const useInvalidateExpenses = () => {
   }
 }
 
-const createExpense = async ({ businessId, input }: { businessId: string; input: ExpenseInput }) => {
+const lineBody = (line: ExpenseLine) => ({ name: line.name, amount: line.amount, ...(line.categoryId ? { category_id: line.categoryId } : {}) })
+
+/** One line goes up flat; several go up as the bulk body. Answers with how many entries were made. */
+const createExpense = async ({ businessId, input }: { businessId: string; input: ExpenseBatchInput }) => {
   if (!isLive()) {
-    mock.expenses = [{ ...mockExpense(`EXP-${2042 + mock.expenses.length}`, input.name, 'Operations', 'Tobi Olosunde', input.amount, 'PENDING_APPROVAL', 0), categoryId: input.categoryId, note: input.note ?? '', date: input.date }, ...mock.expenses]
-    return mockDelay(null, 600)
+    const made = input.items.map((line, index) => ({ ...mockExpense(`EXP-${2042 + mock.expenses.length + index}`, line.name, 'Operations', 'Tobi Olosunde', line.amount, 'PENDING_APPROVAL', 0), entryType: input.entryType, categoryId: line.categoryId, note: input.note ?? '', date: input.date }))
+    mock.expenses = [...made, ...mock.expenses]
+    return mockDelay(made.length, 600)
   }
-  return apiRequest<unknown>(`expenses/business/${businessId}/`, { method: 'POST', body: { name: input.name, category_id: input.categoryId, amount: input.amount, date: input.date, ...(input.note ? { note: input.note } : {}) } })
+  const shared = { entry_type: input.entryType, date: input.date, ...(input.note ? { note: input.note } : {}) }
+  const body = input.items.length === 1 ? { ...shared, ...lineBody(input.items[0]) } : { ...shared, items: input.items.map(lineBody) }
+  await apiRequest<unknown>(`expenses/business/${businessId}/`, { method: 'POST', body })
+  return input.items.length
 }
 
+/** Also reclassifies: entry_type and category_id go up with every edit. */
 const updateExpense = async ({ id, input }: { id: string; input: ExpenseInput }) => {
   if (!isLive()) {
-    mock.expenses = mock.expenses.map(row => (row.id === id ? { ...row, name: input.name, amount: input.amount, date: input.date, note: input.note ?? '', categoryId: input.categoryId } : row))
+    mock.expenses = mock.expenses.map(row => (row.id === id ? { ...row, entryType: input.entryType, name: input.name, amount: input.amount, date: input.date, note: input.note ?? '', categoryId: input.categoryId } : row))
     return mockDelay(null, 500)
   }
-  return apiRequest<unknown>(`expenses/${id}/`, { method: 'PATCH', body: { name: input.name, category_id: input.categoryId, amount: input.amount, date: input.date, ...(input.note ? { note: input.note } : {}) } })
+  return apiRequest<unknown>(`expenses/${id}/`, { method: 'PATCH', body: { entry_type: input.entryType, name: input.name, amount: input.amount, date: input.date, ...(input.categoryId ? { category_id: input.categoryId } : {}), ...(input.note ? { note: input.note } : {}) } })
 }
 
 const deleteExpense = async (id: string) => {
@@ -598,20 +656,39 @@ const rejectTransfer = async ({ id, reason }: { id: string; reason: string }) =>
   return apiRequest<unknown>(`expenses/transfers/${id}/reject/`, { method: 'POST', body: { rejection_reason: reason } })
 }
 
-export type InitiateTransferInput = { businessId: string; amount: number; accountNumber: string; bankCode: string; categoryId?: string; narration?: string; pin: string }
+export type InitiateTransferInput = {
+  businessId: string
+  entryType: EntryType
+  amount: number
+  accountNumber: string
+  bankCode: string
+  categoryId?: string
+  /** A split payout: one bank transfer, one entry per category. The amount is their sum. */
+  items?: ExpenseLine[]
+  narration?: string
+  pin: string
+}
 
 export type InitiatedTransfer = { status: string; reference: string; charges: number; stampDuty: number; totalDebit: number; hasFees: boolean }
 
 /** Answers with SUCCESS when it executed straight away, or a pending status when routed for approval. */
-const initiateTransfer = async ({ businessId, amount, accountNumber, bankCode, categoryId, narration, pin }: InitiateTransferInput): Promise<InitiatedTransfer> => {
+const initiateTransfer = async ({ businessId, entryType, amount, accountNumber, bankCode, categoryId, items, narration, pin }: InitiateTransferInput): Promise<InitiatedTransfer> => {
+  const split = items && items.length > 0 ? items : null
   if (!isLive()) {
     const reference = `PAY-${1000 + mock.transfers.length}`
-    mock.transfers = [{ ...mockTransfer(reference, amount, 'Operations', 'ATLAS PRINT CO', 'Zenith Bank', narration ?? '', 'PENDING_APPROVAL', 'Tobi Olosunde', 0, { initiatedBy: 'me' }), beneficiaryAccount: accountNumber }, ...mock.transfers]
+    const lines = (split ?? []).map((line, index) => ({ id: `${reference}-${index}`, categoryId: line.categoryId, category: Object.entries(MOCK_CATEGORY_IDS).find(([, id]) => id === line.categoryId)?.[0] ?? '', name: line.name, amount: line.amount, note: '' }))
+    mock.transfers = [{ ...mockTransfer(reference, amount, 'Operations', 'ATLAS PRINT CO', 'Zenith Bank', narration ?? '', 'PENDING_APPROVAL', 'Tobi Olosunde', 0, { initiatedBy: 'me' }), entryType, items: lines, beneficiaryAccount: accountNumber }, ...mock.transfers]
     return mockDelay({ status: 'PENDING_APPROVAL', reference, ...expenseTransferFees(amount), hasFees: true }, 800)
   }
   const response = await apiRequest<unknown>(`expenses/transfers/initiate/${businessId}/`, {
     method: 'POST',
-    body: { business_id: businessId, amount: amount.toFixed(2), account_number: accountNumber, bank_code: bankCode, pin, ...(categoryId ? { category_id: categoryId } : {}), ...(narration ? { narration } : {}) },
+    body: {
+      business_id: businessId, entry_type: entryType, amount: amount.toFixed(2), account_number: accountNumber, bank_code: bankCode, pin,
+      ...(split
+        ? { items: split.map(line => ({ category_id: line.categoryId, amount: line.amount.toFixed(2), ...(line.name ? { name: line.name } : {}) })) }
+        : categoryId ? { category_id: categoryId } : {}),
+      ...(narration ? { narration } : {}),
+    },
   })
   const data = asRecord(at(response, 'data'))
   return {

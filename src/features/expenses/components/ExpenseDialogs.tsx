@@ -1,5 +1,5 @@
 import { Check, History, Pencil, Plus, Tag, Trash2 } from 'lucide-react'
-import type { Expense } from '@/api/expenses'
+import { entryTypeLabel, type Expense } from '@/api/expenses'
 import { formatActivityDate } from '@/api/http'
 import { KitEmpty, KitModal } from '@/components/ui/KitExtras'
 import { KitField } from '@/components/ui/KitForm'
@@ -29,8 +29,9 @@ export function ExpenseDetailsModal({ expense, canEdit, onClose, onEdit, onRevie
     {expense && <>
       <p className="text-center text-3xl font-extrabold [overflow-wrap:anywhere]">{money(expense.amount)}</p>
       <div className="mt-4">
+        <InfoRow label="Type" value={entryTypeLabel(expense.entryType)}/>
         <InfoRow label="Status" value={expenseStatusLabel(expense.status)}/>
-        <InfoRow label="Category" value={expense.category}/>
+        <InfoRow label="Category" value={expense.category || (expense.entryType === 'TRANSFER' ? 'No category' : '')}/>
         <InfoRow label="Owner" value={expense.owner}/>
         <InfoRow label="Date" value={expense.date}/>
         {expense.note && <InfoRow label="Business purpose" value={expense.note}/>}
@@ -77,12 +78,12 @@ export function CategoriesModal({ open, onClose, onManageBudgets }: { open: bool
             </div>
             : <div key={row.id} className="p-3">
               <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{row.name}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{row.spent} spent · {row.count} {row.count === 1 ? 'expense' : 'expenses'} · {row.budgetLabel}</p></div>
+                <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{row.name}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{row.spent} spent · {row.count} {row.count === 1 ? 'expense' : 'expenses'}{row.purchaseCount > 0 ? ` · ${row.purchased} purchased` : ''} · {row.budgetLabel}</p></div>
                 <button type="button" aria-label={`Rename ${row.name}`} onClick={() => manager.startRename(row.id, row.name)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"><Pencil size={14}/></button>
                 <button type="button" aria-label={`Delete ${row.name}`} onClick={() => manager.askDelete(row.id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-[#FFF0F0] hover:text-[#C72D34]"><Trash2 size={14}/></button>
               </div>
               {manager.deleting === row.id && <div className="mt-3 flex flex-col gap-2 rounded-lg bg-[#FFF0F0] p-3 sm:flex-row sm:items-center">
-                <p className="flex-1 text-[10px] font-bold text-[#7A1F24]">Delete “{row.name}”?{row.count > 0 ? ` It has ${row.count} ${row.count === 1 ? 'expense' : 'expenses'}.` : ''} This can't be undone.</p>
+                <p className="flex-1 text-[10px] font-bold text-[#7A1F24]">Delete “{row.name}”?{row.count + row.purchaseCount > 0 ? ` It has ${row.count + row.purchaseCount} ${row.count + row.purchaseCount === 1 ? 'entry' : 'entries'}.` : ''} This can't be undone.</p>
                 <div className="flex gap-2"><KitButton variant="secondary" onClick={manager.cancelDelete} className="h-9 flex-1 sm:flex-none">Keep</KitButton><KitButton onClick={manager.confirmDelete} loading={manager.removing} className="h-9 flex-1 bg-[#C72D34] hover:bg-[#B0262C] sm:flex-none">Delete</KitButton></div>
               </div>}
             </div>)}

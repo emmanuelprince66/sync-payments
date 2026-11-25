@@ -1,5 +1,6 @@
-import type { Expense, ExpenseTransfer } from '@/api/expenses'
+import { entryTypeLabel, type Expense, type ExpenseTransfer } from '@/api/expenses'
 import { formatActivityDate } from '@/api/http'
+import { formatNaira } from '@/lib/format'
 
 /**
  * sink-inventory's transfer statuses (types/expense-governance): wording, colour and the one-line hint
@@ -54,7 +55,7 @@ const blockReason = (status: string, canApprove: boolean, initiatedBy: string, u
 
 const when = (value: string) => (value ? formatActivityDate(value) : '')
 
-export const fromTransfer = (transfer: ExpenseTransfer, userId: string): ApprovalItem => ({
+export const fromTransfer = (transfer: ExpenseTransfer, userId: string, money: (value: number) => string = formatNaira): ApprovalItem => ({
   id: transfer.id,
   kind: 'transfer',
   reference: transfer.reference,
@@ -62,14 +63,18 @@ export const fromTransfer = (transfer: ExpenseTransfer, userId: string): Approva
   requester: transfer.initiatedByName || 'Team member',
   amount: transfer.amount,
   fees: transfer.hasFees ? { charges: transfer.charges, stampDuty: transfer.stampDuty, totalDebit: transfer.totalDebit } : null,
-  category: transfer.category || 'Uncategorised',
+  category: transfer.items.length > 1 ? `${transfer.items.length} categories` : transfer.category || transfer.items[0]?.category || 'Uncategorised',
   status: transfer.status,
   canDecide: transfer.canApprove && isPending(transfer.status),
   blockReason: blockReason(transfer.status, transfer.canApprove, transfer.initiatedBy, userId),
   details: [
     ['Beneficiary', transfer.beneficiaryName || '—'],
     ['Bank', [transfer.beneficiaryBank, transfer.beneficiaryAccount].filter(Boolean).join(' · ') || '—'],
-    ['Category', transfer.category || 'Uncategorised'],
+    ['Type', entryTypeLabel(transfer.entryType)],
+    // A split payout lists each category's share; otherwise its one category.
+    ...(transfer.items.length > 0
+      ? transfer.items.map(line => [[line.category || 'Category', line.name].filter(Boolean).join(' · '), money(line.amount)] as [string, string])
+      : [['Category', transfer.category || (transfer.entryType === 'TRANSFER' ? 'No category' : 'Uncategorised')] as [string, string]]),
     ['Requested by', transfer.initiatedByName || 'Team member'],
     ['Requested on', when(transfer.createdAt) || '—'],
     ['Reference', transfer.reference],
@@ -95,7 +100,8 @@ export const fromExpense = (expense: Expense): ApprovalItem => ({
   canDecide: expense.canApprove && isPending(expense.status),
   blockReason: blockReason(expense.status, expense.canApprove, '', ''),
   details: [
-    ['Category', expense.category || 'Uncategorised'],
+    ['Type', entryTypeLabel(expense.entryType)],
+    ['Category', expense.category || (expense.entryType === 'TRANSFER' ? 'No category' : 'Uncategorised')],
     ['Logged by', expense.owner || 'Team member'],
     ['Date', expense.date || '—'],
     ['Reference', expense.reference],

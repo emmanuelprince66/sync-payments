@@ -32,7 +32,7 @@ export function useCategoriesManager(onClose: () => void) {
     rows: (categories.data ?? []).map(category => {
       const spent = spend.data?.find(item => item.id === category.id)
       const budget = budgets.data?.find(item => item.categoryId === category.id) ?? null
-      return { id: category.id, name: category.name, spent: money(spent?.spent ?? 0), count: spent?.count ?? 0, budgetLabel: budget ? `${money(budget.total)} budget` : 'No budget' }
+      return { id: category.id, name: category.name, spent: money(spent?.spent ?? 0), count: spent?.count ?? 0, purchased: money(spent?.purchased ?? 0), purchaseCount: spent?.purchaseCount ?? 0, budgetLabel: budget ? `${money(budget.total)} budget` : 'No budget' }
     }).sort((a, b) => a.name.localeCompare(b.name)),
     editing,
     startRename: (id: string, name: string) => { setDeleting(null); setEditing({ id, name }) },

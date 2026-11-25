@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, Loader2, ShieldCheck, X } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Loader2, Plus, ShieldCheck, Split, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { KitEmpty, KitMoneyField } from '@/components/ui/KitExtras'
 import { KitField, KitSelect } from '@/components/ui/KitForm'
@@ -6,6 +6,7 @@ import { Modal, ModalTitle } from '@/components/ui/Modal'
 import { OtpInput } from '@/components/ui/OtpInput'
 import { KitButton } from '@/components/ui/PaymentKit'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EntryTypePicker } from '@/features/expenses/components/ExpenseForm'
 import { ReceiptModal } from '@/features/transactions/components/ReceiptModal'
 import { useBusinessCurrency } from '@/hooks/useCurrencySymbol'
 import { cn } from '@/lib/cn'
@@ -37,6 +38,33 @@ function ErrorNote({ children }: { children: ReactNode }) {
   return <p role="alert" className="rounded-lg bg-[#FFF0F0] px-3 py-2.5 text-[11px] font-bold text-[#C72D34]">{children}</p>
 }
 
+/** One payout split across categories: one bank transfer and one fee for the total, one entry per line. */
+function SplitLines({ flow }: { flow: TransferFlow }) {
+  const { symbol } = useBusinessCurrency()
+  return <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-[10px] font-extrabold">Split across categories</p>
+      <button type="button" onClick={flow.split.toggle} className="text-[11px] font-extrabold text-muted-foreground hover:text-foreground">Use one category</button>
+    </div>
+    {flow.split.rows.map((row, index) => <div key={row.id} className="flex flex-col gap-3 border-t border-border pt-3 first:border-0 first:pt-0">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Line {index + 1}</p>
+        {flow.split.canRemove && <button type="button" aria-label={`Remove line ${index + 1}`} onClick={() => flow.split.remove(index)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#FFF0F0] hover:text-[#C72D34]"><X size={14}/></button>}
+      </div>
+      <KitSelect label="Category" placeholder="Select a category..." options={flow.categories} error={flow.split.errors?.[index]?.categoryId?.message} {...flow.register(`items.${index}.categoryId`)}/>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
+        <KitField label="Description (Optional)" placeholder="e.g. Flour" {...flow.register(`items.${index}.name`)}/>
+        <KitMoneyField label={`Amount (${symbol})`} symbol={symbol} error={flow.split.errors?.[index]?.amount?.message} {...flow.register(`items.${index}.amount`)}/>
+      </div>
+    </div>)}
+    <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+      <button type="button" onClick={flow.split.add} className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-secondary/50 px-3 py-2 text-[11px] font-extrabold text-brand hover:bg-accent"><Plus size={13}/>Add line</button>
+      <p className="text-xs font-extrabold">Total {flow.split.total}</p>
+    </div>
+    {flow.errors.amount?.message && <p className="text-[10px] font-bold text-[#C72D34]">{flow.errors.amount.message}</p>}
+  </div>
+}
+
 function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => void }) {
   const { symbol } = useBusinessCurrency()
   return <>
@@ -58,17 +86,20 @@ function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => vo
         <KitSelect label="Recipient Bank" placeholder={flow.bank.loading ? 'Loading banks…' : 'Search for a bank...'} options={flow.bank.options} value={flow.bank.value} onChange={event => flow.setBankCode(event.target.value)} error={flow.errors.bankCode?.message}/>
         <KitField label="Account Number" inputMode="numeric" placeholder="1234567890" value={flow.accountNumber} onChange={event => flow.setAccountNumber(event.target.value)} error={flow.errors.accountNumber?.message}/>
         <div>
-          <KitSelect label="Category (Optional)" placeholder="Select a category..." options={[{ value: '', label: 'No category' }, ...flow.categories]} {...flow.register('categoryId')}/>
-          <p className="mt-1.5 text-[10px] font-semibold text-[#8F5F00]">Attach an expense category (except for stock purchases)</p>
-        </div>
-        <div>
           <span className="mb-1.5 flex items-center justify-between text-[10px] font-extrabold">Account Name{flow.verifying && <Loader2 size={13} className="animate-spin text-brand"/>}</span>
           <div className={cn('flex h-11 items-center gap-2 rounded-xl border px-3 text-xs font-bold', flow.beneficiary ? 'border-secondary/25 bg-accent text-brand' : 'border-border bg-[#F0F1F2] text-muted-foreground')}>
             {flow.beneficiary && <CheckCircle2 size={14} className="shrink-0"/>}
             <span className="truncate">{flow.beneficiary?.name ?? (flow.enquiryFailed ? 'We couldn\'t verify this account' : 'Recipient Full Name')}</span>
           </div>
         </div>
-        <KitMoneyField label={`Amount (${symbol})`} symbol={symbol} error={flow.errors.amount?.message} {...flow.register('amount')}/>
+        {flow.isExpenseAccount && <EntryTypePicker value={flow.entryType.value} options={flow.entryType.options} hint={flow.entryType.hint} onChange={flow.entryType.set}/>}
+        {!flow.split.on && <div>
+          <KitSelect label="Category (Optional)" placeholder="Select a category..." options={[{ value: '', label: 'No category' }, ...flow.categories]} {...flow.register('categoryId')}/>
+          {flow.split.allowed && <button type="button" onClick={flow.split.toggle} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-brand hover:underline"><Split size={13}/>Split across categories</button>}
+        </div>}
+        {flow.split.on
+          ? <SplitLines flow={flow}/>
+          : <KitMoneyField label={`Amount (${symbol})`} symbol={symbol} error={flow.errors.amount?.message} {...flow.register('amount')}/>}
         <KitField label="Narration (Optional)" placeholder="e.g. Rent payment" {...flow.register('narration')}/>
         {flow.isExpenseAccount && <p className="flex gap-2 rounded-lg bg-[#FAFAFA] p-3 text-[10px] leading-4 text-muted-foreground"><ShieldCheck size={14} className="shrink-0 text-brand"/>Paying from an expense account follows your approval rules: it may wait for an approver before funds move.</p>}
         {flow.error && <ErrorNote>{flow.error}</ErrorNote>}
@@ -103,7 +134,10 @@ function ConfirmTransfer({ flow, onClose }: { flow: TransferFlow; onClose: () =>
         <ConfirmRow label="Charges:" value={flow.charges}/>
         {flow.stampDuty && <ConfirmRow label="Stamp Duty:" value={flow.stampDuty}/>}
         <div className="border-t border-border pt-3"><ConfirmRow label="Total:" value={flow.total} strong tone="green"/></div>
-        {flow.categoryName && <ConfirmRow label="Category:" value={flow.categoryName}/>}
+        {flow.isExpenseAccount && <ConfirmRow label="Type:" value={flow.entryType.label}/>}
+        {flow.split.on
+          ? <div className="flex flex-col gap-2 border-t border-border pt-3">{flow.split.summary.map((line, index) => <ConfirmRow key={index} label={`${line.category}${line.name ? ` · ${line.name}` : ''}`} value={line.amount}/>)}</div>
+          : flow.categoryName && <ConfirmRow label="Category:" value={flow.categoryName}/>}
         {flow.narration && <div className="border-t border-border pt-3"><ConfirmRow label="Narration:" value={flow.narration}/></div>}
       </div>
       {flow.feesAreEstimate && <p className="mt-3 text-[11px] text-muted-foreground">The charges are an estimate and are confirmed when the payout runs.</p>}

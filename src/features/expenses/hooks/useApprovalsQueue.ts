@@ -37,7 +37,7 @@ export function useApprovalsQueue() {
 
   const allowed = permissions.canApprove || permissions.canTransfer
   const transfers = useExpenseTransfers({ page, status: filter, search, limit: pageSize, startDate: dates.startDate, endDate: dates.endDate }, allowed)
-  const items = useMemo(() => (transfers.data?.rows ?? []).map(row => fromTransfer(row, userId)), [transfers.data, userId])
+  const items = useMemo(() => (transfers.data?.rows ?? []).map(row => fromTransfer(row, userId, money)), [transfers.data, userId, money])
 
   return {
     allowed,

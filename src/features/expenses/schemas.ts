@@ -2,12 +2,25 @@ import { z } from 'zod'
 
 const money = (message: string) => z.string().trim().refine(value => Number(value) > 0, message)
 
-export const expenseSchema = z.object({
-  name: z.string().trim().min(1, 'Enter the merchant or payee'),
+export const ENTRY_TYPE_VALUES = ['EXPENSE', 'PURCHASE', 'TRANSFER'] as const
+
+const expenseLineSchema = z.object({
+  name: z.string().trim().min(1, 'Enter the merchant or item'),
   amount: money('Enter the amount'),
-  categoryId: z.string().min(1, 'Select a category'),
-  date: z.string().min(1, 'Choose the expense date'),
+  categoryId: z.string(),
+})
+
+/** One or more lines sharing a type, date and note. Every line needs a category, except on a TRANSFER. */
+export const expenseSchema = z.object({
+  entryType: z.enum(ENTRY_TYPE_VALUES),
+  items: z.array(expenseLineSchema).min(1),
+  date: z.string().min(1, 'Choose the date'),
   note: z.string(),
+}).superRefine((values, context) => {
+  if (values.entryType === 'TRANSFER') return
+  values.items.forEach((line, index) => {
+    if (!line.categoryId) context.addIssue({ code: 'custom', message: 'Select a category', path: ['items', index, 'categoryId'] })
+  })
 })
 export type ExpenseValues = z.infer<typeof expenseSchema>
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { useBudgets, useCategorySpend, useExpensePermissions, useExpenses, useExpenseSettings, useExpenseTransactions, useSpendByUser, type Expense } from '@/api/expenses'
+import { entryTypeLabel, useBudgets, useCategorySpend, useExpensePermissions, useExpenses, useExpenseSettings, useExpenseTransactions, useSpendByUser, type EntryFilter, type Expense } from '@/api/expenses'
 import { useWalletAccount } from '@/api/transactions'
 import { fromExpense } from '../approval-items'
 import { useApprovalDecision } from './useApprovalDecision'
@@ -46,10 +46,11 @@ export function useExpensesPage() {
   const search = useDebounce(searchInput, 500)
   const [category, setCategory] = useState('')
   const [status, setStatus] = useState('')
+  const [entryType, setEntryType] = useState<EntryFilter>('ALL')
   const [page, setPage] = useState(1)
   const dates = useDateRangeFilter({ onChange: () => setPage(1) })
 
-  const list = useExpenses({ page, search, category, status, startDate: dates.startDate, endDate: dates.endDate })
+  const list = useExpenses({ page, search, category, status, entryType, startDate: dates.startDate, endDate: dates.endDate })
   const transactions = useExpenseTransactions()
   const budgets = useBudgets()
   const categorySpend = useCategorySpend()
@@ -68,7 +69,9 @@ export function useExpensesPage() {
     return { awaiting, approved, rejected }
   }, [transactions.data])
 
+  // EXPENSE entries only (budgets and profit); purchases are their own card, transfers count toward neither.
   const spent = list.data?.summary.spentThisMonth ?? 0
+  const purchased = list.data?.summary.purchasedThisMonth ?? 0
   const monthlyBudget = (budgets.data ?? []).reduce((total, budget) => total + budget.monthly, 0)
   const budgetPercent = monthlyBudget ? Math.min(Math.round((spent / monthlyBudget) * 100), 100) : 0
   const income = monthWallet.data?.inflow ?? 0
@@ -100,6 +103,8 @@ export function useExpensesPage() {
     stats: {
       month: money(spent),
       monthNote: monthlyBudget ? `${budgetPercent}% of monthly budget` : 'No budget set yet',
+      purchases: money(purchased),
+      purchasesNote: 'Stock and raw materials',
       awaiting: money(sum(stat.awaiting)),
       awaitingNote: `${stat.awaiting.length} ${stat.awaiting.length === 1 ? 'request needs' : 'requests need'} review`,
       approved: money(sum(stat.approved)),
@@ -135,6 +140,8 @@ export function useExpensesPage() {
       setCategory: (value: string) => { setCategory(value); setPage(1) },
       status,
       setStatus: (value: string) => { setStatus(value); setPage(1) },
+      entryType,
+      setEntryType: (value: EntryFilter) => { setEntryType(value); setPage(1) },
       dateRange: dates.range,
       setDateRange: dates.setRange,
       active: Boolean(category || status),
@@ -166,8 +173,8 @@ export function useExpensesPage() {
     createInvoice: (expense: Expense) => navigate(paths.invoiceNew, { state: { draft: { client: '', amount: expense.amount, note: `Reimbursement for ${expense.name} · ${expense.reference}` } } }),
     exportCsv: () => {
       const rows = list.data?.rows ?? []
-      if (!rows.length) { toast.info('There are no expenses to export for these filters.'); return }
-      downloadCsv('expenses', [['Reference', 'Merchant', 'Category', 'Owner', 'Date', 'Status', 'Amount', 'Note'], ...rows.map(row => [row.reference, row.name, row.category, row.owner, row.date, row.status, row.amount, row.note])])
+      if (!rows.length) { toast.info('There is nothing to export for these filters.'); return }
+      downloadCsv('expenses', [['Reference', 'Type', 'Merchant', 'Category', 'Owner', 'Date', 'Status', 'Amount', 'Note'], ...rows.map(row => [row.reference, entryTypeLabel(row.entryType), row.name, row.category, row.owner, row.date, row.status, row.amount, row.note])])
     },
   }
 }

@@ -8,9 +8,20 @@ export const transferSchema = z.object({
   categoryId: z.string(),
   narration: z.string(),
   pin: z.string(),
+  /** Expense-account payouts only: what the money is (EXPENSE / PURCHASE / TRANSFER). */
+  entryType: z.enum(['EXPENSE', 'PURCHASE', 'TRANSFER']),
+  /** Expense-account payouts only: one bank transfer split across categories; `amount` follows their sum. */
+  split: z.boolean(),
+  items: z.array(z.object({ categoryId: z.string(), name: z.string(), amount: z.string() })),
+}).superRefine((values, context) => {
+  if (!values.split) return
+  values.items.forEach((line, index) => {
+    if (!line.categoryId) context.addIssue({ code: 'custom', message: 'Select a category', path: ['items', index, 'categoryId'] })
+    if (!(Number(line.amount) > 0)) context.addIssue({ code: 'custom', message: 'Enter the amount', path: ['items', index, 'amount'] })
+  })
 })
 
 export type TransferValues = z.infer<typeof transferSchema>
 
 /** Step 1 only checks these; the PIN comes on the review step. */
-export const TRANSFER_DETAIL_FIELDS = ['fromBankId', 'bankCode', 'accountNumber', 'amount'] as const
+export const TRANSFER_DETAIL_FIELDS = ['fromBankId', 'bankCode', 'accountNumber', 'amount', 'items'] as const
