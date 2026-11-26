@@ -1,6 +1,7 @@
 import { Bell, Menu } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useMobileSidebar, useTopbar } from './hooks'
+import { InstallAppButton } from '@/components/pwa/InstallPrompt'
 import { ProfileMenu } from './ProfileMenu'
 
 /** Same bar on every screen (as in sync-shipping): greeting + business, notifications, profile. Pages carry their own titles. */
@@ -22,6 +23,8 @@ export function Topbar() {
       <p className="hidden truncate text-[11px] font-semibold text-muted-foreground sm:block">{bar.businessName ? `Managing ${bar.businessName}` : 'Dashboard overview'} · {bar.date}</p>
     </div>
     <div className="flex shrink-0 items-center gap-2">
+      {/* Phones: icon only, so the greeting keeps its room. */}
+      <InstallAppButton className="max-sm:w-10 max-sm:justify-center max-sm:px-0 max-sm:[&>span]:sr-only"/>
       <span className="relative rounded-xl border border-border bg-white p-2.5 text-muted-foreground" role="status" aria-label={bar.unread > 0 ? `${bar.unread} unread notifications` : 'No unread notifications'}>
         <Bell size={17}/>{bar.unread > 0 && <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#E52929] ring-2 ring-white"/>}
       </span>
