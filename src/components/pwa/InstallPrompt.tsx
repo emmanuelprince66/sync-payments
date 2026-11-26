@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
+import { ManualIntro, ManualSteps } from './ManualSteps'
 import { closeInstallSheet, openInstallSheet, useInstallPrompt } from './useInstallPrompt'
 
 const DISMISS_KEY = 'syncpay.installPrompt.dismissedAt'
@@ -26,25 +27,8 @@ const svg = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke:
 const DownloadIcon = ({ size = 18 }: { size?: number }) => <svg {...svg} width={size} height={size}><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
 const CloseIcon = () => <svg {...svg}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 const CheckIcon = () => <svg {...svg} width={12} height={12} strokeWidth={3}><path d="M20 6 9 17l-5-5"/></svg>
-const ShareIcon = () => <svg {...svg} className="mx-0.5 inline -translate-y-px align-middle text-[#1367D8]"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>
-const AddIcon = () => <svg {...svg} className="mx-0.5 inline -translate-y-px align-middle"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
 
 const BENEFITS = ['Opens in one tap from your home screen', 'Full screen, like any app', 'Free, no app store needed']
-
-/** The iPhone steps, numbered, with the icons people actually see in Safari. */
-function IosSteps() {
-  const steps = [
-    <>Tap <ShareIcon/> <b>Share</b> in Safari’s toolbar</>,
-    <>Choose <AddIcon/> <b>Add to Home Screen</b></>,
-    <>Tap <b>Add</b>. Sync Pay is now on your home screen.</>,
-  ]
-  return <ol className="mt-4 space-y-2.5">
-    {steps.map((step, index) => <li key={index} className="flex items-center gap-3 rounded-2xl bg-[#F8FAF8] px-3 py-2.5 text-[13px] leading-snug text-[#242424]">
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#242424] text-[11px] font-black text-white">{index + 1}</span>
-      <span className="min-w-0">{step}</span>
-    </li>)}
-  </ol>
-}
 
 /**
  * "Get the Sync Pay app": a bottom sheet over a dimmed page (same as Sync Card's). It opens on its own a few
@@ -53,7 +37,7 @@ function IosSteps() {
  * Never shown once installed; "Not now" keeps it away for 3 days. Mounted once in main.tsx.
  */
 export function InstallPrompt() {
-  const { mode, requested, install } = useInstallPrompt()
+  const { mode, manual, requested, install } = useInstallPrompt()
   const [ready, setReady] = useState(false)
   const [dismissed, setDismissed] = useState(dismissedRecently)
   const primary = useRef<HTMLButtonElement>(null)
@@ -120,8 +104,8 @@ export function InstallPrompt() {
           </button>
         </>
         : <>
-          <p className="mt-3 text-[13px] leading-snug text-black/60">Add Sync Pay to your home screen in three taps. It opens full screen, like any app.</p>
-          <IosSteps/>
+          {manual && <ManualIntro kind={manual} appName="Sync Pay"/>}
+          {manual && <ManualSteps kind={manual} appName="Sync Pay" dark="#242424" bg="#F8FAF8" numberColour="#FFFFFF"/>}
           <button ref={primary} type="button" onClick={notNow} className="mt-5 flex h-[52px] w-full items-center justify-center rounded-full bg-[#242424] text-[15px] font-black text-white transition hover:opacity-90 active:scale-[.98]">Got it</button>
         </>}
       <button type="button" onClick={notNow} className="mt-2 h-10 w-full rounded-full text-[13px] font-extrabold text-black/55 hover:text-black">Not now</button>

@@ -44,33 +44,51 @@ export function isStandalone() {
     || (navigator as Navigator & { standalone?: boolean }).standalone === true
 }
 
-/** iPhone/iPad Safari: no beforeinstallprompt, installs through Share → Add to Home Screen. */
-export function isIosSafari() {
-  if (typeof navigator === 'undefined') return false
+/**
+ * Which hand-made steps install the app here, when the browser has no install event of its own:
+ *  - 'ios-safari': Share in the toolbar → Add to Home Screen
+ *  - 'ios-chrome': Share in the address bar → Add to Home Screen (Chrome on iPhone can since iOS 16.4)
+ *  - 'ios-other':  menu → Share → Add to Home Screen (Edge, Firefox, Opera on iPhone)
+ *  - 'in-app':     an app's built-in browser (Instagram, Facebook…): open the page in Safari / the browser first
+ *  - 'android':    ⋮ menu → Install app / Add to Home screen (Firefox, Samsung, or Chrome after its own offer was dismissed)
+ * Desktop browsers without the event get nothing: Chrome/Edge show their own install icon in the address bar.
+ */
+export type ManualKind = 'ios-safari' | 'ios-chrome' | 'ios-other' | 'in-app' | 'android'
+
+export function manualKind(): ManualKind | null {
+  if (typeof navigator === 'undefined') return null
   const ua = navigator.userAgent
+  const inApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|TikTok|musical_ly|Twitter|LinkedInApp|GSA\//.test(ua)
   // iPadOS 13+ reports itself as a Mac; touch points give it away.
   const ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
-  // In-app browsers and Chrome/Firefox/Edge on iOS can't add to the home screen the same way.
-  const otherBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|FBAN|FBAV|Instagram|Line\//.test(ua)
-  return ios && !otherBrowser && /Safari/.test(ua)
+  if (ios) {
+    if (inApp) return 'in-app'
+    if (/CriOS/.test(ua)) return 'ios-chrome'
+    if (/FxiOS|EdgiOS|OPiOS|OPT\//.test(ua)) return 'ios-other'
+    return 'ios-safari'
+  }
+  if (/Android/.test(ua)) return inApp ? 'in-app' : 'android'
+  return null
 }
 
-export type InstallMode = 'prompt' | 'ios' | null
+/** 'prompt': the browser's own install dialog is ready. 'manual': show the steps for this browser. */
+export type InstallMode = 'prompt' | 'manual' | null
 
 /** Opens the install sheet from anywhere (an "Install app" button), ignoring an earlier "Not now". */
 export const openInstallSheet = () => { sheetOpen = true; notify() }
 export const closeInstallSheet = () => { sheetOpen = false; notify() }
 
 /**
- * How the app can be installed here: 'prompt' (Chrome/Edge event), 'ios' (manual steps) or null (can't / already
- * installed), whether the sheet was opened on request, and install() for the Chrome/Edge dialog.
+ * How the app can be installed here, the manual steps to show when there is no install event, whether the
+ * sheet was opened on request, and install() for the Chrome/Edge dialog.
  */
 export function useInstallPrompt() {
   const event = useSyncExternalStore(subscribe, () => deferred, () => null)
   const done = useSyncExternalStore(subscribe, () => installed, () => false)
   const requested = useSyncExternalStore(subscribe, () => sheetOpen, () => false)
 
-  const mode: InstallMode = done || isStandalone() ? null : event ? 'prompt' : isIosSafari() ? 'ios' : null
+  const manual = manualKind()
+  const mode: InstallMode = done || isStandalone() ? null : event ? 'prompt' : manual ? 'manual' : null
 
   const install = useCallback(async () => {
     const current = deferred
@@ -84,5 +102,5 @@ export function useInstallPrompt() {
     return outcome
   }, [])
 
-  return { mode, requested, install }
+  return { mode, manual, requested, install }
 }
