@@ -4,6 +4,7 @@
  */
 import { env } from '@/config/env'
 import { ApiError } from '@/lib/api-client'
+import { firstApiError } from '@/lib/api-error'
 import { useAuthStore } from '@/stores/auth-store'
 import { PLAN_GATE_COPY, planGateKind, usePlanGateStore } from '@/stores/plan-gate-store'
 
@@ -31,8 +32,7 @@ export async function apiFormRequest<T>(path: string, method: 'POST' | 'PATCH', 
   try { data = raw ? JSON.parse(raw) : null } catch { /* keep raw text */ }
   if (!response.ok) {
     if (response.status === 401) useAuthStore.getState().logout()
-    const record = asRecord(data)
-    const message = str(record.message) || str(record.error) || str(record.detail) || `Request failed (${response.status})`
+    const message = firstApiError(data, `Request failed (${response.status})`)
     // A plan refusal ("1" / "2" / "3") opens the upgrade dialog and reads as a sentence, never a bare code.
     const planKind = planGateKind(data)
     if (planKind) {

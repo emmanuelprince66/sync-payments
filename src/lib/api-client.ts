@@ -1,4 +1,5 @@
 import { env } from '@/config/env'
+import { firstApiError } from '@/lib/api-error'
 import { useAuthStore } from '@/stores/auth-store'
 import { PLAN_GATE_COPY, planGateKind, usePlanGateStore } from '@/stores/plan-gate-store'
 
@@ -15,14 +16,8 @@ export class ApiError extends Error {
 
 type RequestOptions = Omit<RequestInit, 'body'> & { body?: unknown; auth?: boolean }
 
-const messageFrom = (data: unknown, fallback: string) => {
-  if (data && typeof data === 'object') {
-    const record = data as Record<string, unknown>
-    const detail = record.message ?? record.error ?? record.detail
-    if (typeof detail === 'string' && detail) return detail
-  }
-  return fallback
-}
+/** The backend's own words, from { message } or a DRF field dictionary (lib/api-error). */
+const messageFrom = (data: unknown, fallback: string) => firstApiError(data, fallback)
 
 /**
  * Thin fetch wrapper for the Sync360 API: adds the bearer token, parses JSON,
