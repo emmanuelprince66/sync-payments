@@ -5,6 +5,8 @@ import { KitField, KitFormDate, KitSelect } from '@/components/ui/KitForm'
 import { KitButton } from '@/components/ui/PaymentKit'
 import { useBusinessCurrency } from '@/hooks/useCurrencySymbol'
 import { cn } from '@/lib/cn'
+import { useState } from 'react'
+import { ExpenseKindChooser, type ExpenseKind } from './ExpenseKindChooser'
 import { useExpenseForm } from '../hooks/useExpenseForm'
 import type { ExpenseDraft } from '../hooks/useExpensesPage'
 
@@ -16,7 +18,7 @@ type Form = ReturnType<typeof useExpenseForm>
 export function EntryTypePicker({ value, options, hint, onChange }: { value: string; options: Form['entryType']['options']; hint: string; onChange: (value: Form['entryType']['value']) => void }) {
   return <div>
     <p className="mb-1.5 text-[10px] font-extrabold">Type</p>
-    <div role="radiogroup" aria-label="Entry type" className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+    <div role="radiogroup" aria-label="Entry type" className={cn('grid gap-1 rounded-xl bg-muted p-1', options.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
       {options.map(option => {
         const active = option.value === value
         return <button key={option.value} type="button" role="radio" aria-checked={active} onClick={() => onChange(option.value)} className={cn('h-9 rounded-lg text-[11px] font-extrabold transition-colors', active ? 'bg-white text-brand shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{option.label}</button>
@@ -44,17 +46,33 @@ function CategoryPicker({ form, index }: { form: Form; index: number }) {
   </div>
 }
 
-/** The design's two-step "Submit an expense", now for any entry type and several lines at once. */
-export function ExpenseForm({ draft, editing, onClose, onDone }: { draft: ExpenseDraft | null; editing: Expense | null; onClose: () => void; onDone: (message: string) => void }) {
+/**
+ * Add expense: first Log Expense / Log Purchase (manual: nothing moves) or Wallet Transfer (opens the expense-account
+ * transfer), then the two-step form for a manual entry, several lines at once. Editing goes straight to the form and
+ * may switch between Expense and Purchase (Transfer only stays for an older entry already marked so).
+ */
+export function ExpenseForm({ draft, editing, onClose, onDone, onWalletTransfer, transferBlockedReason }: { draft: ExpenseDraft | null; editing: Expense | null; onClose: () => void; onDone: (message: string) => void; onWalletTransfer?: () => void; transferBlockedReason?: string }) {
   const form = useExpenseForm({ draft, editing, onDone })
   const { symbol } = useBusinessCurrency()
   const several = form.lines.rows.length > 1
+  // An invoice draft or an edit already knows what it is; a new entry starts at the three choices.
+  const [kind, setKind] = useState<ExpenseKind | null>(editing || draft ? form.entryType.value as ExpenseKind : null)
+  const pick = (next: ExpenseKind) => {
+    if (next === 'WALLET_TRANSFER') { onWalletTransfer?.(); return }
+    form.entryType.set(next)
+    setKind(next)
+  }
+  const editOptions = form.entryType.options.filter(option => option.value !== 'TRANSFER' || editing?.entryType === 'TRANSFER')
+
+  if (!kind) return <KitModal open onClose={onClose} title="Add expense" description="Record spend by hand, or pay it from your expense wallet." icon={<CreditCard size={16}/>} bodyClassName="" footer={<KitButton variant="secondary" onClick={onClose}>Cancel</KitButton>}>
+    <ExpenseKindChooser onPick={pick} transferBlockedReason={onWalletTransfer ? transferBlockedReason : transferBlockedReason ?? 'Create an expense account to pay from first.'}/>
+  </KitModal>
 
   return <KitModal
     open
     onClose={onClose}
-    title={form.isEdit ? `Edit ${form.entryType.noun}` : 'Record spend'}
-    description={form.isEdit ? 'Update or reclassify this entry before it is decided.' : form.fromInvoice ? 'Created from an invoice and ready for review.' : 'Log an expense, a stock purchase or a transfer, and route it to the right approver.'}
+    title={form.isEdit ? `Edit ${form.entryType.noun}` : form.entryType.value === 'PURCHASE' ? 'Log purchase' : 'Log expense'}
+    description={form.isEdit ? 'Update or reclassify this entry before it is decided.' : form.fromInvoice ? 'Created from an invoice and ready for review.' : 'Recorded only: no money moves. It goes to the right approver.'}
     icon={<CreditCard size={16}/>}
     subheader={<div className="flex items-center gap-3 text-[10px] font-extrabold">
       {STEPS.map(([number, label], index) => <div key={label} className="flex flex-1 items-center gap-2">
@@ -73,7 +91,12 @@ export function ExpenseForm({ draft, editing, onClose, onDone }: { draft: Expens
   >
     {form.step === 1
       ? <div className="flex flex-col gap-5 p-6">
-        <EntryTypePicker value={form.entryType.value} options={form.entryType.options} hint={form.entryType.hint} onChange={form.entryType.set}/>
+        {form.isEdit
+          ? <EntryTypePicker value={form.entryType.value} options={editOptions} hint={form.entryType.hint} onChange={form.entryType.set}/>
+          : <div className="flex items-center justify-between gap-3 rounded-xl bg-muted px-3 py-2.5">
+            <div className="min-w-0"><p className="text-xs font-extrabold">{form.entryType.value === 'PURCHASE' ? 'Log Purchase' : 'Log Expense'}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{form.entryType.value === 'PURCHASE' ? 'Spent to buy goods to sell.' : 'Spent to run the business.'} Recorded only: no money moves.</p></div>
+            <button type="button" onClick={() => setKind(null)} className="shrink-0 text-[11px] font-extrabold text-brand hover:underline">Change</button>
+          </div>}
 
         <div className="flex flex-col gap-3">
           {form.lines.rows.map((row, index) => <div key={row.id} className={cn('flex flex-col gap-4', several && 'rounded-xl border border-border p-4')}>

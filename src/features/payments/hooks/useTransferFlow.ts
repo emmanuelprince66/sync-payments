@@ -43,6 +43,8 @@ export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
   const [submittedForApproval, setSubmittedForApproval] = useState(false)
   const [receipt, setReceipt] = useState<ReceiptDetails | null>(null)
   const [error, setError] = useState('')
+  // Expense-account payouts ask "What is this transfer for?" (Expense / Purchase) before the form.
+  const [purposeChosen, setPurposeChosen] = useState(false)
 
   const form = useForm<TransferValues>({
     resolver: zodResolver(transferSchema),
@@ -76,6 +78,7 @@ export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
   const fromLabel = fromBank ? `${fromBank.account_name || 'Account'} ${maskAccount(fromBank.account_number)}` : 'Select an account'
 
   const reset = () => {
+    setPurposeChosen(false)
     form.reset({ fromBankId, bankCode: '', accountNumber: '', amount: '', categoryId: '', narration: '', pin: '', entryType: 'EXPENSE' as const, split: false, items: [] })
     setStep(1)
     setError('')
@@ -175,6 +178,11 @@ export function useTransferFlow({ bankId }: { bankId?: string } = {}) {
       hint: ENTRY_TYPES.find(item => item.value === entryType)?.hint ?? '',
       label: entryTypeLabel(entryType),
       set: (value: EntryType) => form.setValue('entryType', value),
+      /** Expense-account payouts only: answered before the rest of the form shows. */
+      needsAnswer: isExpenseAccount && !purposeChosen,
+      answered: purposeChosen,
+      choose: (value: 'EXPENSE' | 'PURCHASE') => { form.setValue('entryType', value); setPurposeChosen(true) },
+      change: () => setPurposeChosen(false),
     },
     split: {
       allowed: isExpenseAccount && entryType !== 'TRANSFER',

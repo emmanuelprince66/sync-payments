@@ -6,7 +6,7 @@ import { Modal, ModalTitle } from '@/components/ui/Modal'
 import { OtpInput } from '@/components/ui/OtpInput'
 import { KitButton } from '@/components/ui/PaymentKit'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { EntryTypePicker } from '@/features/expenses/components/ExpenseForm'
+import { TransferPurposeRadio } from '@/features/expenses/components/ExpenseKindChooser'
 import { ReceiptModal } from '@/features/transactions/components/ReceiptModal'
 import { useBusinessCurrency } from '@/hooks/useCurrencySymbol'
 import { cn } from '@/lib/cn'
@@ -83,6 +83,13 @@ function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => vo
         {flow.recent.options.length > 0 && <KitSelect label="Recent recipient" placeholder="Search someone you've paid before..." options={flow.recent.options} value={flow.recent.value} onChange={event => flow.recent.applyKey(event.target.value)}/>}
         {flow.accounts.length > 1 && <KitSelect label="Pay from" value={flow.fromBankId} options={flow.accounts} onChange={event => flow.setFromBank(event.target.value)} error={flow.errors.fromBankId?.message}/>}
         <FromAccount flow={flow}/>
+        {flow.entryType.needsAnswer
+          ? <TransferPurposeRadio value={null} onChange={flow.entryType.choose}/>
+          : <>
+        {flow.isExpenseAccount && <div className="flex items-center justify-between gap-3 rounded-xl bg-accent px-3 py-2.5 text-xs">
+          <p className="min-w-0">For: <b>{flow.entryType.value === 'PURCHASE' ? 'Purchase' : 'Expense'}</b><span className="text-muted-foreground">{flow.entryType.value === 'PURCHASE' ? ' · goods to sell' : ' · running the business'}</span></p>
+          <button type="button" onClick={flow.entryType.change} className="shrink-0 text-[11px] font-extrabold text-brand hover:underline">Change</button>
+        </div>}
         <KitSelect label="Recipient Bank" placeholder={flow.bank.loading ? 'Loading banks…' : 'Search for a bank...'} options={flow.bank.options} value={flow.bank.value} onChange={event => flow.setBankCode(event.target.value)} error={flow.errors.bankCode?.message}/>
         <KitField label="Account Number" inputMode="numeric" placeholder="1234567890" value={flow.accountNumber} onChange={event => flow.setAccountNumber(event.target.value)} error={flow.errors.accountNumber?.message}/>
         <div>
@@ -92,7 +99,6 @@ function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => vo
             <span className="truncate">{flow.beneficiary?.name ?? (flow.enquiryFailed ? 'We couldn\'t verify this account' : 'Recipient Full Name')}</span>
           </div>
         </div>
-        {flow.isExpenseAccount && <EntryTypePicker value={flow.entryType.value} options={flow.entryType.options} hint={flow.entryType.hint} onChange={flow.entryType.set}/>}
         {!flow.split.on && <div>
           <KitSelect label="Category (Optional)" placeholder="Select a category..." options={[{ value: '', label: 'No category' }, ...flow.categories]} {...flow.register('categoryId')}/>
           {flow.split.allowed && <button type="button" onClick={flow.split.toggle} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-brand hover:underline"><Split size={13}/>Split across categories</button>}
@@ -104,6 +110,7 @@ function TransferForm({ flow, onClose }: { flow: TransferFlow; onClose: () => vo
         {flow.isExpenseAccount && <p className="flex gap-2 rounded-lg bg-[#FAFAFA] p-3 text-[10px] leading-4 text-muted-foreground"><ShieldCheck size={14} className="shrink-0 text-brand"/>Paying from an expense account follows your approval rules: it may wait for an approver before funds move.</p>}
         {flow.error && <ErrorNote>{flow.error}</ErrorNote>}
         <KitButton type="submit" className="h-12 w-full text-sm">Transfer Now</KitButton>
+          </>}
       </div>
     </form>
   </>

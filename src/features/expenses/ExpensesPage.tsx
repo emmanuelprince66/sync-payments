@@ -47,7 +47,7 @@ export default function ExpensesPage() {
         {tabs.tab === 'expenses' && <KitButton variant="secondary" onClick={page.exportCsv}><Download size={14}/> Export</KitButton>}
         {page.permissions.canLog && <KitButton variant="secondary" onClick={page.categoriesModal.open}><Tag size={14}/> Categories</KitButton>}
         {tabs.canOpenSettings && tabs.tab !== 'settings' && <KitButton variant="secondary" onClick={openSettings}><Settings size={14}/> Settings</KitButton>}
-        {page.permissions.canLog && <KitButton onClick={page.form.start}><Plus size={14}/> Record spend</KitButton>}
+        {page.permissions.canLog && <KitButton onClick={page.form.start}><Plus size={14}/> Add expense</KitButton>}
       </div>}
     />
 
@@ -83,7 +83,9 @@ export default function ExpensesPage() {
       </div>
     </>}
 
-    {page.form.open && <ExpenseForm draft={page.form.draft} editing={page.form.editing} onClose={page.form.close} onDone={page.form.done}/>}
+    {page.form.open && <ExpenseForm draft={page.form.draft} editing={page.form.editing} onClose={page.form.close} onDone={page.form.done}
+      onWalletTransfer={payFromId ? () => { page.form.close(); accounts.transfer.start(payFromId) } : undefined}
+      transferBlockedReason={!accounts.canTransfer ? 'You don’t have permission to move money. Ask the business owner.' : undefined}/>}
     <ExpenseDetailsModal expense={page.viewing} canEdit={page.permissions.canLog} onClose={page.closeView} onEdit={page.edit} onReview={page.review}/>
     <AuditTrailModal open={page.audit.isOpen} onClose={page.audit.close}/>
     <CategoriesModal open={page.categoriesModal.isOpen} onClose={page.categoriesModal.close} onManageBudgets={() => { page.categoriesModal.close(); tabs.setTab('budgets') }}/>
